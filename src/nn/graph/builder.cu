@@ -36,11 +36,9 @@ Node operator/(float s, const Node& n) { return n.gb().div(s, n); }
 // AffineLayer
 
 Node AffineLayer::operator()(const Node& input) const {
+    if (auto* ii = dynamic_cast<layer::InputInt*>(input.get()))
+        return weight.gb().sparse_affine(input, weight, bias);
     return weight.gb().affine(input, weight, bias);
-}
-
-Node AffineLayer::operator()(layer::SparseInput* input) const {
-    return weight.gb().sparse_affine(input, weight, bias);
 }
 
 } // namespace nn::graph

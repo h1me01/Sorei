@@ -3,14 +3,14 @@
 #include <variant>
 
 #include "../concat/concat.h"
+#include "../input.h"
 #include "../layer.h"
-#include "sparse_input.h"
 
 namespace nn::layer {
 
 class SparseAffineBase : public TypedLayer<float> {
   public:
-    SparseAffineBase(SparseInput* input, Layer* weight, Layer* bias)
+    SparseAffineBase(InputInt* input, Layer* weight, Layer* bias)
         : TypedLayer<float>("SparseAffine"),
           input_(input),
           weight_(layer_cast<TypedLayer<float>>(weight)),
@@ -31,7 +31,7 @@ class SparseAffineBase : public TypedLayer<float> {
     kernel::ActOp activation() const { return act_op_; }
     bool has_activation() const { return !std::holds_alternative<kernel::Identity>(act_op_); }
 
-    SparseInput* input() const { return input_; }
+    InputInt* input() const { return input_; }
     Layer* weight() const { return weight_; }
     Layer* bias() const { return bias_; }
 
@@ -48,7 +48,7 @@ class SparseAffineBase : public TypedLayer<float> {
     FusedConcat* concat_ = nullptr;
     kernel::ActOp act_op_ = kernel::Identity{};
 
-    SparseInput* input_;
+    InputInt* input_;
     TypedLayer<float>* weight_;
     TypedLayer<float>* bias_;
 
@@ -62,7 +62,7 @@ class SparseAffineBase : public TypedLayer<float> {
 };
 
 struct SparseAffine : SparseAffineBase {
-    SparseAffine(SparseInput* input, Layer* weight, Layer* bias)
+    SparseAffine(InputInt* input, Layer* weight, Layer* bias)
         : SparseAffineBase(input, weight, bias) {}
 
     void forward() override;
@@ -70,7 +70,7 @@ struct SparseAffine : SparseAffineBase {
 };
 
 struct SparseAffinePairwiseMul : SparseAffineBase {
-    SparseAffinePairwiseMul(SparseInput* input, Layer* weight, Layer* bias)
+    SparseAffinePairwiseMul(InputInt* input, Layer* weight, Layer* bias)
         : SparseAffineBase(input, weight, bias) {}
 
     void forward() override;

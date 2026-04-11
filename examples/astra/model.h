@@ -110,10 +110,10 @@ class AstraModel : public nn::Model {
         l3 = b.affine_layer(L2_SIZE, OUTPUT_BUCKETS);
 
         // inputs
-        auto stm_in = b.sparse_input({32, 0}, "stm_in");
-        auto nstm_in = b.sparse_input({32, 0}, "nstm_in");
+        auto stm_in = b.input_int({32, 0}, "stm_in");
+        auto nstm_in = b.input_int({32, 0}, "nstm_in");
         auto output_bucket = b.bucket_index(OUTPUT_BUCKETS, 0, "output_bucket");
-        auto target = b.input({1, 0}, "target");
+        auto target = b.input_float({1, 0}, "target");
 
         // forward pass
         auto ft_stm = ft(stm_in).clamped_relu().pairwise_mul();

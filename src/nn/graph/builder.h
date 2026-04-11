@@ -100,7 +100,6 @@ struct AffineLayer {
           bias(std::move(b)) {}
 
     Node operator()(const Node& input) const;
-    Node operator()(layer::SparseInput* input) const;
 };
 
 // GraphBuilder
@@ -115,12 +114,12 @@ class GraphBuilder {
     GraphBuilder(GraphBuilder&&) = delete;
     GraphBuilder& operator=(GraphBuilder&&) = delete;
 
-    Node input(const data::Shape& shape, const std::string& name = "") {
-        return {this, graph_.emplace_named<layer::Input>(name, "Input", shape)};
+    Node input_int(const data::Shape& shape, const std::string& name = "") {
+        return {this, graph_.emplace_named<layer::InputInt>(name, "InputInt", shape)};
     }
 
-    layer::SparseInput* sparse_input(const data::Shape& shape, const std::string& name = "") {
-        return graph_.emplace_named<layer::SparseInput>(name, "SparseInput", shape);
+    Node input_float(const data::Shape& shape, const std::string& name = "") {
+        return {this, graph_.emplace_named<layer::InputFloat>(name, "InputFloat", shape)};
     }
 
     layer::BucketIndex* bucket_index(int count, int size, const std::string& name = "") {
@@ -217,8 +216,11 @@ class GraphBuilder {
         return {this, make<layer::Affine>(input.get(), weight.get(), bias.get())};
     }
 
-    Node sparse_affine(layer::SparseInput* input, const Node& weight, const Node& bias) {
-        return {this, make<layer::SparseAffine>(input, weight.get(), bias.get())};
+    Node sparse_affine(const Node& input, const Node& weight, const Node& bias) {
+        auto* ii = dynamic_cast<layer::InputInt*>(input.get());
+        if (!ii)
+            error("GraphBuilder: sparse_affine requires InputInt as input");
+        return {this, make<layer::SparseAffine>(ii, weight.get(), bias.get())};
     }
 
     Node select(const Node& input, layer::BucketIndex* index) {

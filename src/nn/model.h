@@ -114,7 +114,7 @@ class Model {
 
     void upload(const std::string& name, const Tensor<int>& t) {
         auto* layer = get_layer(name);
-        if (auto* s = dynamic_cast<layer::SparseInput*>(layer)) {
+        if (auto* s = dynamic_cast<layer::InputInt*>(layer)) {
             s->resize(to_shape(t));
             s->data().upload(t.data());
         } else if (auto* b = dynamic_cast<layer::BucketIndex*>(layer)) {
@@ -122,16 +122,16 @@ class Model {
             b->resize(t.shape()[0]);
             b->data().upload(t.data());
         } else {
-            error("Model: '{}' must map to SparseInput or BucketIndex", name);
+            error("Model: '{}' must map to InputInt or BucketIndex", name);
         }
     }
 
     void upload(const std::string& name, const Tensor<float>& t) {
         auto* layer = get_layer(name);
 
-        auto* input = dynamic_cast<layer::Input*>(layer);
+        auto* input = dynamic_cast<layer::InputFloat*>(layer);
         if (!input)
-            error("Model: '{}' must map to Input", name);
+            error("Model: '{}' must map to InputFloat", name);
 
         input->resize(to_shape(t));
         input->data().upload(t.data());

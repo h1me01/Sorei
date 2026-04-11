@@ -4,10 +4,11 @@
 
 namespace nn::layer {
 
-class Input : public TypedLayer<float> {
+template <typename T>
+class Input : public TypedLayer<T> {
   public:
     Input(const data::Shape& shape, const std::string& name = "Input")
-        : TypedLayer<float>(name),
+        : TypedLayer<T>(name),
           shape_(shape) {}
 
     void resize(const data::Shape& shape) { shape_ = shape; }
@@ -16,5 +17,8 @@ class Input : public TypedLayer<float> {
   private:
     data::Shape shape_;
 };
+
+using InputInt = Input<int>;
+using InputFloat = Input<float>;
 
 } // namespace nn::layer

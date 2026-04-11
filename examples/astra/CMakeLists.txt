@@ -1,3 +1,11 @@
+cmake_minimum_required(VERSION 3.18)
+project(astra_example LANGUAGES CXX CUDA)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CUDA_STANDARD 20)
+set(CMAKE_CUDA_ARCHITECTURES native)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../.. sorei)
 
 add_executable(astra_example main.cu)
 target_link_libraries(astra_example PRIVATE sorei)

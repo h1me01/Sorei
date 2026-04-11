@@ -21,5 +21,3 @@ target_compile_options(sorei PRIVATE
 )
 
 set_target_properties(sorei PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
-add_subdirectory(examples/astra)

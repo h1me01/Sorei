@@ -5,21 +5,6 @@
 #include "dataloader.h"
 #include "model.h"
 
-class Timer {
-    using Clock = std::chrono::steady_clock;
-
-  public:
-    Timer() { start_ = Clock::now(); }
-
-    template <typename Duration = std::chrono::milliseconds>
-    long long elapsed() const {
-        return std::chrono::duration_cast<Duration>(Clock::now() - start_).count();
-    }
-
-  private:
-    Clock::time_point start_;
-};
-
 static float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int batch_size) {
     MNISTLoader loader(dataset, batch_size, /*seed=*/0);
     const int num_batches = dataset.size() / batch_size;
@@ -62,7 +47,6 @@ int main() {
     auto lr_sched = sorei::nn::lr_sched::CosineAnnealing(lr, lr * 0.1f, epochs);
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
-        Timer timer;
         model.clear_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {

@@ -24,6 +24,9 @@ class Network {
         CHECK(contains(layers_, prediction_));
         CHECK(!loss_ || contains(layers_, loss_));
 
+        if (loss_)
+            CHECK(loss_->shape().rows() == 1);
+
         kernel::cublas::create();
     }
 

@@ -95,6 +95,10 @@ class Model {
             auto [pred_node, loss_node] = build_graph(b);
             auto* pred = pred_node.get();
             auto* loss = loss_node.get();
+
+            if (loss && loss->shape().rows() != 1)
+                error("Model: loss output must be a scalar");
+
             graph::GraphOptimizer{}.optimize(graph_, pred, loss);
             net_ = std::make_unique<network::Network>(graph_.topological_sort(), pred, loss);
         }

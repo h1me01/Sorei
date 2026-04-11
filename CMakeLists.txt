@@ -11,7 +11,7 @@ add_library(sorei ${SOREI_SRCS})
 target_include_directories(sorei PUBLIC include)
 
 find_package(CUDAToolkit REQUIRED)
-target_link_libraries(sorei PUBLIC CUDA::cudart CUDA::cublas CUDA::cusparse)
+target_link_libraries(sorei PUBLIC CUDA::cudart CUDA::cublas)
 
 target_compile_options(sorei PRIVATE
   $<$<COMPILE_LANGUAGE:CUDA>:

@@ -6,7 +6,7 @@
 #include "../../kernel/include.h"
 #include "../layer/param.h"
 
-namespace nn::optim {
+namespace sorei::nn::optim {
 
 class Optimizer {
   public:
@@ -29,4 +29,4 @@ class Optimizer {
     std::vector<layer::Param*> params_;
 };
 
-} // namespace nn::optim
+} // namespace sorei::nn::optim

@@ -12,7 +12,7 @@
 
 #include "../layer/include.h"
 
-namespace nn::graph {
+namespace sorei::nn::graph {
 
 class Graph {
   public:
@@ -151,4 +151,4 @@ class Graph {
     }
 };
 
-} // namespace nn::graph
+} // namespace sorei::nn::graph

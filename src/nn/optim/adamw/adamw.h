@@ -5,7 +5,7 @@
 
 #include "../optimizer.h"
 
-namespace nn::optim {
+namespace sorei::nn::optim {
 
 class AdamW : public Optimizer {
   public:
@@ -65,8 +65,9 @@ class AdamW : public Optimizer {
     std::vector<tensor::GPUArray<float>> momentum_;
     std::vector<tensor::GPUArray<float>> velocity_;
 
-    void
-    save_buffers(const std::string& file, const std::vector<tensor::GPUArray<float>>& buffers) const {
+    void save_buffers(
+        const std::string& file, const std::vector<tensor::GPUArray<float>>& buffers
+    ) const {
         std::ofstream f(file, std::ios::binary);
         if (!f.is_open())
             error("Optimizer: failed to open state file for writing {}", file);
@@ -120,4 +121,4 @@ class AdamW : public Optimizer {
     }
 };
 
-} // namespace nn::optim
+} // namespace sorei::nn::optim

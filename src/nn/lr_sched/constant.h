@@ -5,7 +5,7 @@
 
 #include "lr_scheduler.h"
 
-namespace nn::lr_sched {
+namespace sorei::nn::lr_sched {
 
 struct Constant : public LRScheduler {
     explicit Constant(float lr)
@@ -14,4 +14,4 @@ struct Constant : public LRScheduler {
     std::string info() const override { return std::format("Constant(lr={:.6g})", get()); }
 };
 
-} // namespace nn::lr_sched
+} // namespace sorei::nn::lr_sched

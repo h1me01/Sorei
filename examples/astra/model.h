@@ -17,8 +17,9 @@ static int feature_index(chess::Piece pc, chess::Square psq, chess::Color view) 
 }
 
 template <typename T = float>
-static void write_quantized(std::ostream& f, const tensor::CPUMatrix<float>& src, int scale = 1) {
-    tensor::CPUArray<T> dst(src.size());
+static void
+write_quantized(std::ostream& f, const sorei::tensor::CPUMatrix<float>& src, int scale = 1) {
+    sorei::tensor::CPUArray<T> dst(src.size());
 
     for (int i = 0; i < src.size(); i++) {
         if constexpr (std::is_same_v<T, float>) {
@@ -40,8 +41,8 @@ static void write_quantized(std::ostream& f, const tensor::CPUMatrix<float>& src
 
 } // namespace
 
-class AstraModel : public nn::Model {
-    using AffineLayer = nn::graph::AffineLayer;
+class AstraModel : public sorei::nn::Model {
+    using AffineLayer = sorei::nn::graph::AffineLayer;
     using TrainingDataEntry = binpack::TrainingDataEntry;
 
   public:
@@ -102,7 +103,7 @@ class AstraModel : public nn::Model {
         return prediction().to_cpu()(0) * EVAL_SCALE;
     }
 
-    nn::GraphOutput build_graph(nn::graph::GraphBuilder& b) override {
+    sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
         // layers
         ft = b.affine_layer(768, FT_SIZE);
         l1 = b.affine_layer(FT_SIZE, L1_SIZE * OUTPUT_BUCKETS);
@@ -149,8 +150,8 @@ class AstraModel : public nn::Model {
     }
 
   private:
-    nn::Tensor<int> stm_indices{{32, 0}};
-    nn::Tensor<int> nstm_indices{{32, 0}};
-    nn::Tensor<int> bucket_indices{{0}};
-    nn::Tensor<float> targets{{0}};
+    sorei::nn::Tensor<int> stm_indices{{32, 0}};
+    sorei::nn::Tensor<int> nstm_indices{{32, 0}};
+    sorei::nn::Tensor<int> bucket_indices{{0}};
+    sorei::nn::Tensor<float> targets{{0}};
 };

@@ -11,7 +11,7 @@
 #include "network.h"
 #include "tensor.h"
 
-namespace nn {
+namespace sorei::nn {
 
 struct GraphOutput {
     graph::Node prediction;
@@ -168,4 +168,4 @@ class Model {
     }
 };
 
-} // namespace nn
+} // namespace sorei::nn

@@ -1,6 +1,6 @@
 #include "mat_mul.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
@@ -21,4 +21,4 @@ void mat_mul_forward(
     cublas::sgemm(false, false, alpha, weight, in, beta, out);
 }
 
-} // namespace kernel
+} // namespace sorei::kernel

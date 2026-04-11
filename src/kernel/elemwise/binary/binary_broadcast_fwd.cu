@@ -1,6 +1,6 @@
 #include "binary.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -45,4 +45,4 @@ void elemwise_binary_broadcast_forward(
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace kernel
+} // namespace sorei::kernel

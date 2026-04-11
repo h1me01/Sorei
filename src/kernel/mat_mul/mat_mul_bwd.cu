@@ -1,6 +1,6 @@
 #include "mat_mul.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 constexpr float alpha = 1.0f;
 constexpr float beta = 1.0f;
@@ -27,4 +27,4 @@ void mat_mul_backward(
     }
 }
 
-} // namespace kernel
+} // namespace sorei::kernel

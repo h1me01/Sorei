@@ -3,7 +3,7 @@
 #include "../cublas/cublas.h"
 #include "../util.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 void mat_mul_forward(
     const tensor::GPUMatrix<float>& weight,
@@ -19,4 +19,4 @@ void mat_mul_backward(
     const tensor::GPUMatrix<float>& out_g
 );
 
-} // namespace kernel
+} // namespace sorei::kernel

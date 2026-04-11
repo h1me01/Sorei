@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class BucketIndex : public TypedLayer<int> {
   public:
@@ -27,4 +27,4 @@ class BucketIndex : public TypedLayer<int> {
     tensor::Shape shape_;
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

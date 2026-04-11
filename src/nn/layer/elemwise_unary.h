@@ -2,7 +2,7 @@
 
 #include "layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class ElemwiseUnary : public TypedLayer<float> {
   public:
@@ -26,4 +26,4 @@ class ElemwiseUnary : public TypedLayer<float> {
     kernel::UnaryOp op_;
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

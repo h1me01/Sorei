@@ -6,7 +6,7 @@
 
 #include "graph.h"
 
-namespace nn::graph {
+namespace sorei::nn::graph {
 
 class GraphBuilder;
 
@@ -264,4 +264,4 @@ class GraphBuilder {
     }
 };
 
-} // namespace nn::graph
+} // namespace sorei::nn::graph

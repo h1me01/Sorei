@@ -6,7 +6,7 @@
 
 #include "lr_scheduler.h"
 
-namespace nn::lr_sched {
+namespace sorei::nn::lr_sched {
 
 class StepDecay : public LRScheduler {
   public:
@@ -32,4 +32,4 @@ class StepDecay : public LRScheduler {
     float lr_update(int step) override { return base_lr_ * std::pow(gamma_, step / step_size_); }
 };
 
-} // namespace nn::lr_sched
+} // namespace sorei::nn::lr_sched

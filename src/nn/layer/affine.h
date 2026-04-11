@@ -2,7 +2,7 @@
 
 #include "layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class Affine : public TypedLayer<float> {
   public:
@@ -38,7 +38,9 @@ class Affine : public TypedLayer<float> {
         };
     }
 
-    tensor::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
+    tensor::Shape shape() const override {
+        return {weight_->shape().rows(), input_->shape().cols()};
+    }
 
   private:
     TypedLayer<float>* input_;
@@ -46,4 +48,4 @@ class Affine : public TypedLayer<float> {
     TypedLayer<float>* bias_;
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

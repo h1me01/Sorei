@@ -14,7 +14,7 @@
         }                                                                                          \
     } while (0)
 
-namespace kernel::cublas {
+namespace sorei::kernel::cublas {
 
 namespace {
 cublasHandle_t handle = nullptr;
@@ -72,4 +72,4 @@ void sgemm(
     ));
 }
 
-} // namespace kernel::cublas
+} // namespace sorei::kernel::cublas

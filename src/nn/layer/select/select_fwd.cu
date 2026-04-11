@@ -1,6 +1,6 @@
 #include "select.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 256;
 
@@ -48,4 +48,4 @@ void Select::forward() {
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

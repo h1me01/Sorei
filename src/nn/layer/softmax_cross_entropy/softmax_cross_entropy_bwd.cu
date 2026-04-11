@@ -1,6 +1,6 @@
 #include "softmax_cross_entropy.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 __global__ void softmax_cross_entropy_backward_kernel(
     const float* probs,
@@ -51,4 +51,4 @@ void SoftmaxCrossEntropy::backward() {
     CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

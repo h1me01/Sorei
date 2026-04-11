@@ -6,7 +6,7 @@
 
 #include "layer/include.h"
 
-namespace nn::network {
+namespace sorei::nn::network {
 
 class Network {
   public:
@@ -101,4 +101,4 @@ class Network {
     }
 };
 
-} // namespace nn::network
+} // namespace sorei::nn::network

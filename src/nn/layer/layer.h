@@ -4,10 +4,10 @@
 #include <type_traits>
 #include <vector>
 
-#include "../../tensor/include.h"
 #include "../../kernel/include.h"
+#include "../../tensor/include.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class Layer;
 
@@ -135,4 +135,4 @@ T* layer_cast(Layer* layer) {
     return typed;
 }
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

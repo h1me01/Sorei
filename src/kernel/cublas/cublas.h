@@ -5,7 +5,7 @@
 
 #include "../util.h"
 
-namespace kernel::cublas {
+namespace sorei::kernel::cublas {
 
 void create();
 void destroy();
@@ -20,4 +20,4 @@ void sgemm(
     tensor::GPUMatrix<float>& c
 );
 
-} // namespace kernel::cublas
+} // namespace sorei::kernel::cublas

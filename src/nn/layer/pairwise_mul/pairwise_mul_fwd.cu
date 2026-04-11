@@ -1,6 +1,6 @@
 #include "pairwise_mul.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 256;
 
@@ -36,4 +36,4 @@ void PairwiseMul::forward() {
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

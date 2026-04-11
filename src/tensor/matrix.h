@@ -9,7 +9,7 @@
 #include "array.h"
 #include "shape.h"
 
-namespace tensor {
+namespace sorei::tensor {
 
 template <typename T, typename Storage>
 class MatrixBase {
@@ -184,4 +184,4 @@ class GPUMatrix : public MatrixBase<T, GPUArray<T>> {
     }
 };
 
-} // namespace data
+} // namespace sorei::tensor

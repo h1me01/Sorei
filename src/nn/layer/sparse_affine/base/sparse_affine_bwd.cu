@@ -1,6 +1,6 @@
 #include "../sparse_affine.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 512;
 constexpr dim3 block_size(BLOCK_SIZE, 1);
@@ -83,4 +83,4 @@ void SparseAffine::backward() {
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

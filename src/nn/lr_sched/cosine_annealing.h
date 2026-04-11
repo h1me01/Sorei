@@ -7,7 +7,7 @@
 
 #include "lr_scheduler.h"
 
-namespace nn::lr_sched {
+namespace sorei::nn::lr_sched {
 
 class CosineAnnealing : public LRScheduler {
   public:
@@ -39,4 +39,4 @@ class CosineAnnealing : public LRScheduler {
     }
 };
 
-} // namespace nn::lr_sched
+} // namespace sorei::nn::lr_sched

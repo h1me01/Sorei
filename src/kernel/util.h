@@ -5,7 +5,7 @@
 
 #include "../tensor/include.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 #define CUDA_KERNEL_LAUNCH_CHECK() CUDA_CHECK(cudaGetLastError())
 
@@ -38,4 +38,4 @@ DEFINE_T4_OP(sub_t4, -)
 DEFINE_T4_OP(mul_t4, *)
 DEFINE_T4_OP(div_t4, /)
 
-} // namespace kernel
+} // namespace sorei::kernel

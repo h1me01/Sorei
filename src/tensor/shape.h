@@ -5,7 +5,7 @@
 
 #include "../misc.h"
 
-namespace tensor {
+namespace sorei::tensor {
 
 class Shape {
   public:
@@ -39,4 +39,4 @@ inline std::ostream& operator<<(std::ostream& os, const Shape& shape) {
     return os;
 }
 
-} // namespace data
+} // namespace sorei::tensor

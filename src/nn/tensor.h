@@ -4,7 +4,7 @@
 
 #include "../tensor/include.h"
 
-namespace nn {
+namespace sorei::nn {
 
 // column-major 1D or 2D tensor
 template <typename T>
@@ -73,4 +73,4 @@ class Tensor {
     tensor::PinnedCPUArray<T> data_;
 };
 
-} // namespace nn
+} // namespace sorei::nn

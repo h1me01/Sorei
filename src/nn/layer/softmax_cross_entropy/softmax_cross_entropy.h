@@ -5,7 +5,7 @@
 #include "../input.h"
 #include "../layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class SoftmaxCrossEntropy : public TypedLayer<float> {
   public:
@@ -39,4 +39,4 @@ class SoftmaxCrossEntropy : public TypedLayer<float> {
     }
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

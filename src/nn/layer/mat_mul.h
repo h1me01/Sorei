@@ -2,7 +2,7 @@
 
 #include "layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class MatMul : public TypedLayer<float> {
   public:
@@ -26,11 +26,13 @@ class MatMul : public TypedLayer<float> {
         return {LayerInputSlot::from(weight_), LayerInputSlot::from(input_)};
     }
 
-    tensor::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
+    tensor::Shape shape() const override {
+        return {weight_->shape().rows(), input_->shape().cols()};
+    }
 
   private:
     TypedLayer<float>* weight_;
     TypedLayer<float>* input_;
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

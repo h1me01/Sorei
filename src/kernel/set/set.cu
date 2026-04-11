@@ -1,6 +1,6 @@
 #include "set.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 constexpr int BLOCK_SIZE = 256;
 
@@ -19,4 +19,4 @@ void set(tensor::GPUMatrix<float>& data, const float val) {
     CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace kernel
+} // namespace sorei::kernel

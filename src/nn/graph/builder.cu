@@ -1,6 +1,6 @@
 #include "builder.h"
 
-namespace nn::graph {
+namespace sorei::nn::graph {
 
 // Node
 
@@ -44,4 +44,4 @@ Node AffineLayer::operator()(const Node& input) const {
     return weight.gb().affine(input, weight, bias);
 }
 
-} // namespace nn::graph
+} // namespace sorei::nn::graph

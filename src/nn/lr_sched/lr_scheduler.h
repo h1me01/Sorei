@@ -4,7 +4,7 @@
 
 #include "../../misc.h"
 
-namespace nn::lr_sched {
+namespace sorei::nn::lr_sched {
 
 class LRScheduler {
   public:
@@ -25,4 +25,4 @@ class LRScheduler {
     int step_count_ = 0;
 };
 
-} // namespace nn::lr_sched
+} // namespace sorei::nn::lr_sched

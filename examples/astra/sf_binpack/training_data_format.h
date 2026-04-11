@@ -57,7 +57,7 @@ THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <arm_sve.h>
 #endif
 
-#include "../../../src/rng/rng.h"
+#include "rng.h"
 #include "thread_safe_types.h"
 
 #if (defined(_MSC_VER) || defined(__INTEL_COMPILER)) && !defined(__clang__)

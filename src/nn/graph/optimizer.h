@@ -5,7 +5,7 @@
 
 #include "graph.h"
 
-namespace nn::graph {
+namespace sorei::nn::graph {
 
 class GraphOptimizer {
   public:
@@ -85,8 +85,7 @@ class GraphOptimizer {
 
     void fold_self_mul(Graph& graph) {
         fixed_point<layer::ElemwiseBinary>(
-            graph,
-            [this](Graph& g, layer::ElemwiseBinary* eb) -> bool {
+            graph, [this](Graph& g, layer::ElemwiseBinary* eb) -> bool {
                 if (eb->name() != "Mul")
                     return false;
 
@@ -193,4 +192,4 @@ class GraphOptimizer {
     }
 };
 
-} // namespace nn::graph
+} // namespace sorei::nn::graph

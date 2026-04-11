@@ -2,7 +2,7 @@
 
 #include "layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class ElemwiseBinary : public TypedLayer<float> {
   public:
@@ -62,4 +62,4 @@ class ElemwiseBinary : public TypedLayer<float> {
     bool broadcast() const { return input1_->shape() != input2_->shape(); }
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

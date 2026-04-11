@@ -5,7 +5,7 @@
 
 #include "../misc.h"
 
-namespace tensor {
+namespace sorei::tensor {
 
 template <typename T>
 class CudaDevicePtr {
@@ -287,4 +287,4 @@ class GPUArray {
     CudaDevicePtr<T> data_;
 };
 
-} // namespace data
+} // namespace sorei::tensor

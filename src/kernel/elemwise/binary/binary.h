@@ -3,7 +3,7 @@
 #include "../../util.h"
 #include "../common.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 struct AddBinary {
     static constexpr std::string_view name = "Add";
@@ -79,4 +79,4 @@ void elemwise_binary_broadcast_backward(
     const BinaryOp& op
 );
 
-} // namespace kernel
+} // namespace sorei::kernel

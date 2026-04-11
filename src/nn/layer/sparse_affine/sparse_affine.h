@@ -6,7 +6,7 @@
 #include "../input.h"
 #include "../layer.h"
 
-namespace nn::layer {
+namespace sorei::nn::layer {
 
 class SparseAffineBase : public TypedLayer<float> {
   public:
@@ -41,7 +41,9 @@ class SparseAffineBase : public TypedLayer<float> {
         };
     }
 
-    tensor::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
+    tensor::Shape shape() const override {
+        return {weight_->shape().rows(), input_->shape().cols()};
+    }
 
   protected:
     int out_offset_ = 0;
@@ -81,4 +83,4 @@ struct SparseAffinePairwiseMul : SparseAffineBase {
     }
 };
 
-} // namespace nn::layer
+} // namespace sorei::nn::layer

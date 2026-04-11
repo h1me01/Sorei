@@ -3,7 +3,7 @@
 #include "../../util.h"
 #include "../common.h"
 
-namespace kernel {
+namespace sorei::kernel {
 
 // Basic arithmetic
 
@@ -212,4 +212,4 @@ inline std::optional<kernel::ActOp> as_activation(const kernel::UnaryOp& op) {
     return std::nullopt;
 }
 
-} // namespace kernel
+} // namespace sorei::kernel

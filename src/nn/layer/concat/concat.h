@@ -26,7 +26,7 @@ class ConcatBase : public TypedLayer<float> {
         return ptrs;
     }
 
-    data::Shape shape() const override {
+    tensor::Shape shape() const override {
         bool is_vertical = (axis_ == ConcatAxis::Rows);
         auto base_shape = inputs_[0]->shape();
         const int fixed = is_vertical ? base_shape.cols() : base_shape.rows();
@@ -38,7 +38,7 @@ class ConcatBase : public TypedLayer<float> {
             total += is_vertical ? s.rows() : s.cols();
         }
 
-        return is_vertical ? data::Shape{total, fixed} : data::Shape{fixed, total};
+        return is_vertical ? tensor::Shape{total, fixed} : tensor::Shape{fixed, total};
     }
 
   protected:

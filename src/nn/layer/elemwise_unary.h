@@ -19,7 +19,7 @@ class ElemwiseUnary : public TypedLayer<float> {
 
     kernel::UnaryOp op() const { return op_; }
     std::vector<LayerInputSlot> mutable_inputs() override { return {LayerInputSlot::from(input_)}; }
-    data::Shape shape() const override { return input_->shape(); }
+    tensor::Shape shape() const override { return input_->shape(); }
 
   private:
     TypedLayer<float>* input_;

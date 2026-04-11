@@ -50,7 +50,7 @@ class ElemwiseBinary : public TypedLayer<float> {
         return {LayerInputSlot::from(input1_), LayerInputSlot::from(input2_)};
     }
 
-    data::Shape shape() const override {
+    tensor::Shape shape() const override {
         return input1_->shape().cols() == 1 ? input2_->shape() : input1_->shape();
     }
 

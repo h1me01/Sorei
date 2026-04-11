@@ -52,11 +52,11 @@ __global__ void binary_backward_kernel(
 }
 
 void elemwise_binary_backward(
-    const data::GPUMatrix<float>& a,
-    data::GPUMatrix<float>& a_g,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& b_g,
-    const data::GPUMatrix<float>& c_g,
+    const tensor::GPUMatrix<float>& a,
+    tensor::GPUMatrix<float>& a_g,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& b_g,
+    const tensor::GPUMatrix<float>& c_g,
     const BinaryOp& op
 ) {
     CHECK(a.size() == b.size());

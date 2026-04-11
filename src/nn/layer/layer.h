@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "../../data/include.h"
+#include "../../tensor/include.h"
 #include "../../kernel/include.h"
 
 namespace nn::layer {
@@ -82,7 +82,7 @@ class Layer {
         return false;
     }
 
-    virtual data::Shape shape() const = 0;
+    virtual tensor::Shape shape() const = 0;
     std::string name() const { return name_; }
 
   private:
@@ -102,13 +102,13 @@ class TypedLayer : public Layer {
 
     virtual ~TypedLayer() = default;
 
-    data::GPUMatrix<T>& data() {
+    tensor::GPUMatrix<T>& data() {
         if (!drop_buffers_)
             data_.resize(shape());
         return data_;
     }
 
-    data::GPUMatrix<T>& grad() {
+    tensor::GPUMatrix<T>& grad() {
         if (requires_grad() && !drop_buffers_)
             grad_.resize(shape());
         return grad_;
@@ -116,15 +116,15 @@ class TypedLayer : public Layer {
 
   protected:
     void drop_buffers() {
-        data_ = data::GPUMatrix<T>();
-        grad_ = data::GPUMatrix<T>();
+        data_ = tensor::GPUMatrix<T>();
+        grad_ = tensor::GPUMatrix<T>();
         drop_buffers_ = true;
     }
 
   private:
     bool drop_buffers_ = false;
-    data::GPUMatrix<T> data_;
-    data::GPUMatrix<T> grad_;
+    tensor::GPUMatrix<T> data_;
+    tensor::GPUMatrix<T> grad_;
 };
 
 template <typename T>

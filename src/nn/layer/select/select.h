@@ -23,7 +23,7 @@ class Select : public TypedLayer<float> {
         return {LayerInputSlot::from(input_), LayerInputSlot::from(bucket_)};
     }
 
-    data::Shape shape() const override {
+    tensor::Shape shape() const override {
         return {input_->shape().rows() / bucket_->count(), input_->shape().cols()};
     }
 

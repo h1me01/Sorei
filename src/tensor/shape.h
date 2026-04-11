@@ -5,7 +5,7 @@
 
 #include "../misc.h"
 
-namespace data {
+namespace tensor {
 
 class Shape {
   public:

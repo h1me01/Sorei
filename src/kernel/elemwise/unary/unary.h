@@ -190,13 +190,13 @@ using UnaryOp = std::variant<
 using ActOp = std::variant<Identity, ReLU, ClampedReLU, SquaredClampedReLU, Sigmoid>;
 
 void elemwise_unary_forward(
-    const data::GPUMatrix<float>& in, data::GPUMatrix<float>& out, const UnaryOp& op
+    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const UnaryOp& op
 );
 
 void elemwise_unary_backward(
-    data::GPUMatrix<float>& in,
-    data::GPUMatrix<float>& in_g,
-    const data::GPUMatrix<float>& out_g,
+    tensor::GPUMatrix<float>& in,
+    tensor::GPUMatrix<float>& in_g,
+    const tensor::GPUMatrix<float>& out_g,
     const UnaryOp& op
 );
 

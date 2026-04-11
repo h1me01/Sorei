@@ -6,9 +6,9 @@ constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
 
 void mat_mul_forward(
-    const data::GPUMatrix<float>& weight,
-    const data::GPUMatrix<float>& in,
-    data::GPUMatrix<float>& out
+    const tensor::GPUMatrix<float>& weight,
+    const tensor::GPUMatrix<float>& in,
+    tensor::GPUMatrix<float>& out
 ) {
     CHECK(in.cols() == out.cols());
     CHECK(weight.rows() == out.rows());

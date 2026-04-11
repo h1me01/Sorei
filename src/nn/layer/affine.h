@@ -23,7 +23,7 @@ class Affine : public TypedLayer<float> {
     }
 
     void backward() override {
-        data::GPUMatrix<float> tmp;
+        tensor::GPUMatrix<float> tmp;
         kernel::elemwise_binary_broadcast_backward(
             bias_->data(), bias_->grad(), data(), tmp, grad(), kernel::AddBinary{}
         );
@@ -38,7 +38,7 @@ class Affine : public TypedLayer<float> {
         };
     }
 
-    data::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
+    tensor::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
 
   private:
     TypedLayer<float>* input_;

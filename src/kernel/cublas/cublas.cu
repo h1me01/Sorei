@@ -36,10 +36,10 @@ void sgemm(
     bool trans_a,
     bool trans_b,
     float alpha,
-    const data::GPUMatrix<float>& a,
-    const data::GPUMatrix<float>& b,
+    const tensor::GPUMatrix<float>& a,
+    const tensor::GPUMatrix<float>& b,
     float beta,
-    data::GPUMatrix<float>& c
+    tensor::GPUMatrix<float>& c
 ) {
     int m = trans_a ? a.cols() : a.rows();
     int k = trans_a ? a.rows() : a.cols();

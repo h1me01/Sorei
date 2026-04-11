@@ -29,9 +29,9 @@ binary_forward_kernel(const float* a, const float* b, float* c, const int n, Op 
 }
 
 void elemwise_binary_forward(
-    const data::GPUMatrix<float>& a,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& c,
+    const tensor::GPUMatrix<float>& a,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& c,
     const BinaryOp& op
 ) {
     CHECK(a.size() == b.size());

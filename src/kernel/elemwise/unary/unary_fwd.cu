@@ -27,7 +27,7 @@ __global__ void unary_fwd_kernel(const float* in, float* out, const int size, Op
 }
 
 void elemwise_unary_forward(
-    const data::GPUMatrix<float>& in, data::GPUMatrix<float>& out, const UnaryOp& op
+    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const UnaryOp& op
 ) {
     CHECK(in.size() == out.size());
 

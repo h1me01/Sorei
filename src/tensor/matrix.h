@@ -9,7 +9,7 @@
 #include "array.h"
 #include "shape.h"
 
-namespace data {
+namespace tensor {
 
 template <typename T, typename Storage>
 class MatrixBase {

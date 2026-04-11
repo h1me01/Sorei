@@ -59,7 +59,7 @@ class Model {
     float running_loss() { return network().running_loss().to_cpu()(0); }
 
     std::vector<layer::Param*> params() { return network().params(); }
-    data::GPUMatrix<float>& prediction() { return network().prediction(); }
+    tensor::GPUMatrix<float>& prediction() { return network().prediction(); }
 
     graph::Param get_param(const std::string& name) {
         return {nullptr, graph_.get<layer::Param>(name)};
@@ -138,7 +138,7 @@ class Model {
     }
 
     template <typename T>
-    static data::Shape to_shape(const Tensor<T>& t) {
+    static tensor::Shape to_shape(const Tensor<T>& t) {
         auto s = t.shape();
         if (s.size() == 1)
             return {1, s[0]};
@@ -147,7 +147,7 @@ class Model {
         error("to_shape: unsupported tensor dimension");
     }
 
-    static void save_param(const data::GPUMatrix<float>& data, std::ostream& f) {
+    static void save_param(const tensor::GPUMatrix<float>& data, std::ostream& f) {
         auto host = data.to_cpu();
 
         f.write(reinterpret_cast<const char*>(host.data()), host.size() * sizeof(float));
@@ -155,8 +155,8 @@ class Model {
             error("Model: failed writing data to file");
     }
 
-    static void load_param(data::GPUMatrix<float>& data, std::istream& f) {
-        data::CPUMatrix<float> host(data.shape());
+    static void load_param(tensor::GPUMatrix<float>& data, std::istream& f) {
+        tensor::CPUMatrix<float> host(data.shape());
 
         const size_t expected = host.size() * sizeof(float);
 

@@ -14,9 +14,9 @@ __global__ void binary_broadcast_forward_kernel(
 }
 
 void elemwise_binary_broadcast_forward(
-    const data::GPUMatrix<float>& a,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& c,
+    const tensor::GPUMatrix<float>& a,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& c,
     const BinaryOp& op
 ) {
     const bool repeat_a = (a.cols() == 1);

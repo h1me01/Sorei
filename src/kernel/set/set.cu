@@ -10,7 +10,7 @@ __global__ void set_kernel(float* data, const float val, const int size) {
         data[idx] = val;
 }
 
-void set(data::GPUMatrix<float>& data, const float val) {
+void set(tensor::GPUMatrix<float>& data, const float val) {
     CHECK(data.data());
 
     const int grid = cuda::ceil_div(data.size(), BLOCK_SIZE);

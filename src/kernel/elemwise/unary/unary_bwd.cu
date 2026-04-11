@@ -31,9 +31,9 @@ unary_bwd_kernel(const float* in_d, float* in_g, const float* out_g, const int s
 }
 
 void elemwise_unary_backward(
-    data::GPUMatrix<float>& in,
-    data::GPUMatrix<float>& in_g,
-    const data::GPUMatrix<float>& out_g,
+    tensor::GPUMatrix<float>& in,
+    tensor::GPUMatrix<float>& in_g,
+    const tensor::GPUMatrix<float>& out_g,
     const UnaryOp& op
 ) {
     if (in_g.empty())

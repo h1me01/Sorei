@@ -17,8 +17,8 @@ static int feature_index(chess::Piece pc, chess::Square psq, chess::Color view) 
 }
 
 template <typename T = float>
-static void write_quantized(std::ostream& f, const data::CPUMatrix<float>& src, int scale = 1) {
-    data::CPUArray<T> dst(src.size());
+static void write_quantized(std::ostream& f, const tensor::CPUMatrix<float>& src, int scale = 1) {
+    tensor::CPUArray<T> dst(src.size());
 
     for (int i = 0; i < src.size(); i++) {
         if constexpr (std::is_same_v<T, float>) {

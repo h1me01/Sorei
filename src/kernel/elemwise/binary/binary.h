@@ -48,34 +48,34 @@ struct DivBinary {
 using BinaryOp = std::variant<AddBinary, SubBinary, MulBinary, DivBinary>;
 
 void elemwise_binary_forward(
-    const data::GPUMatrix<float>& a,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& c,
+    const tensor::GPUMatrix<float>& a,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& c,
     const BinaryOp& op
 );
 
 void elemwise_binary_backward(
-    const data::GPUMatrix<float>& a,
-    data::GPUMatrix<float>& a_g,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& b_g,
-    const data::GPUMatrix<float>& c_g,
+    const tensor::GPUMatrix<float>& a,
+    tensor::GPUMatrix<float>& a_g,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& b_g,
+    const tensor::GPUMatrix<float>& c_g,
     const BinaryOp& op
 );
 
 void elemwise_binary_broadcast_forward(
-    const data::GPUMatrix<float>& a,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& c,
+    const tensor::GPUMatrix<float>& a,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& c,
     const BinaryOp& op
 );
 
 void elemwise_binary_broadcast_backward(
-    const data::GPUMatrix<float>& a,
-    data::GPUMatrix<float>& a_g,
-    const data::GPUMatrix<float>& b,
-    data::GPUMatrix<float>& b_g,
-    const data::GPUMatrix<float>& c_g,
+    const tensor::GPUMatrix<float>& a,
+    tensor::GPUMatrix<float>& a_g,
+    const tensor::GPUMatrix<float>& b,
+    tensor::GPUMatrix<float>& b_g,
+    const tensor::GPUMatrix<float>& c_g,
     const BinaryOp& op
 );
 

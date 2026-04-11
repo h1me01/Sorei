@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../data/include.h"
+#include "../tensor/include.h"
 
 namespace nn {
 
@@ -63,14 +63,14 @@ class Tensor {
         data_.resize(size());
     }
 
-    data::PinnedCPUArray<T>& data() { return data_; }
-    const data::PinnedCPUArray<T>& data() const { return data_; }
+    tensor::PinnedCPUArray<T>& data() { return data_; }
+    const tensor::PinnedCPUArray<T>& data() const { return data_; }
 
     std::vector<int> shape() const { return shape_; }
 
   private:
     std::vector<int> shape_;
-    data::PinnedCPUArray<T> data_;
+    tensor::PinnedCPUArray<T> data_;
 };
 
 } // namespace nn

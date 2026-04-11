@@ -5,7 +5,7 @@
 
 #include "../misc.h"
 
-namespace data {
+namespace tensor {
 
 template <typename T>
 class CudaDevicePtr {

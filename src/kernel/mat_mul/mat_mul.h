@@ -6,17 +6,17 @@
 namespace kernel {
 
 void mat_mul_forward(
-    const data::GPUMatrix<float>& weight,
-    const data::GPUMatrix<float>& in,
-    data::GPUMatrix<float>& out
+    const tensor::GPUMatrix<float>& weight,
+    const tensor::GPUMatrix<float>& in,
+    tensor::GPUMatrix<float>& out
 );
 
 void mat_mul_backward(
-    const data::GPUMatrix<float>& weight,
-    data::GPUMatrix<float>& weight_g,
-    const data::GPUMatrix<float>& in,
-    data::GPUMatrix<float>& in_g,
-    const data::GPUMatrix<float>& out_g
+    const tensor::GPUMatrix<float>& weight,
+    tensor::GPUMatrix<float>& weight_g,
+    const tensor::GPUMatrix<float>& in,
+    tensor::GPUMatrix<float>& in_g,
+    const tensor::GPUMatrix<float>& out_g
 );
 
 } // namespace kernel

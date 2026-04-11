@@ -18,7 +18,7 @@ class PairwiseMul : public TypedLayer<float> {
 
     std::vector<LayerInputSlot> mutable_inputs() override { return {LayerInputSlot::from(input_)}; }
 
-    data::Shape shape() const override {
+    tensor::Shape shape() const override {
         auto input_shape = input_->shape();
         return {input_shape.rows() / 2, input_shape.cols()};
     }

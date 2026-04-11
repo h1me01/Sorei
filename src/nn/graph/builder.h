@@ -79,8 +79,8 @@ struct Param : Node {
     void he_init() { get()->he_init(); }
     void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
 
-    data::GPUMatrix<float>& data() { return get()->data(); }
-    const data::GPUMatrix<float>& data() const { return get()->data(); }
+    tensor::GPUMatrix<float>& data() { return get()->data(); }
+    const tensor::GPUMatrix<float>& data() const { return get()->data(); }
 
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }
@@ -115,11 +115,11 @@ class GraphBuilder {
     GraphBuilder(GraphBuilder&&) = delete;
     GraphBuilder& operator=(GraphBuilder&&) = delete;
 
-    Node input_int(const data::Shape& shape, const std::string& name = "") {
+    Node input_int(const tensor::Shape& shape, const std::string& name = "") {
         return {this, graph_.emplace_named<layer::InputInt>(name, "InputInt", shape)};
     }
 
-    Node input_float(const data::Shape& shape, const std::string& name = "") {
+    Node input_float(const tensor::Shape& shape, const std::string& name = "") {
         return {this, graph_.emplace_named<layer::InputFloat>(name, "InputFloat", shape)};
     }
 
@@ -130,7 +130,7 @@ class GraphBuilder {
     Param param(int input_dim, int output_dim, const std::string& name = "") {
         return {
             this,
-            graph_.emplace_named<layer::Param>(name, "Param", data::Shape{output_dim, input_dim})
+            graph_.emplace_named<layer::Param>(name, "Param", tensor::Shape{output_dim, input_dim})
         };
     }
 

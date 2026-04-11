@@ -14,7 +14,7 @@ class Mean : public TypedLayer<float> {
     void backward() override;
 
     std::vector<LayerInputSlot> mutable_inputs() override { return {LayerInputSlot::from(input_)}; }
-    data::Shape shape() const override { return {1, 1}; }
+    tensor::Shape shape() const override { return {1, 1}; }
 
   private:
     TypedLayer<float>* input_;

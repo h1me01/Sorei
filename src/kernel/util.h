@@ -3,7 +3,7 @@
 #include <cuda/cmath>
 #include <cuda_runtime.h>
 
-#include "../data/include.h"
+#include "../tensor/include.h"
 
 namespace kernel {
 

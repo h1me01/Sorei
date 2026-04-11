@@ -24,12 +24,12 @@ class SoftmaxCrossEntropy : public TypedLayer<float> {
         return {LayerInputSlot::from(input_), LayerInputSlot::from(labels_)};
     }
 
-    data::Shape shape() const override { return {1, input_->shape().cols()}; }
+    tensor::Shape shape() const override { return {1, input_->shape().cols()}; }
 
   private:
     TypedLayer<float>* input_;
     InputInt* labels_;
-    data::GPUMatrix<float> probs_;
+    tensor::GPUMatrix<float> probs_;
 
     int get_block_size() const {
         unsigned int n = input_->shape().rows();

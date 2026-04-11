@@ -26,7 +26,7 @@ class MatMul : public TypedLayer<float> {
         return {LayerInputSlot::from(weight_), LayerInputSlot::from(input_)};
     }
 
-    data::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
+    tensor::Shape shape() const override { return {weight_->shape().rows(), input_->shape().cols()}; }
 
   private:
     TypedLayer<float>* weight_;

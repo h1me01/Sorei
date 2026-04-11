@@ -37,6 +37,7 @@ class Node {
     Node clamp(float lo, float hi) const;
     Node select(layer::BucketIndex* index) const;
     Node repeat(int count) const;
+    Node softmax_cross_entropy(const Node& labels) const;
 
     Node operator+(const Node& rhs) const;
     Node operator-(const Node& rhs) const;
@@ -241,6 +242,13 @@ class GraphBuilder {
     }
 
     Node mean(const Node& input) { return {this, make<layer::Mean>(input.get())}; }
+
+    Node softmax_cross_entropy(const Node& logits, const Node& labels) {
+        auto* li = dynamic_cast<layer::InputInt*>(labels.get());
+        if (!li)
+            error("GraphBuilder: softmax_cross_entropy requires InputInt as labels");
+        return {this, make<layer::SoftmaxCrossEntropy>(logits.get(), li)};
+    }
 
   private:
     Graph& graph_;

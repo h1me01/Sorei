@@ -29,10 +29,10 @@ class Param : public TypedLayer<float> {
         grad().clear();
     }
 
-    void he_init() {
+    void he_init(int input_dim) {
         tensor::CPUMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
-            result(i) = std::normal_distribution<float>(0.0, std::sqrt(2.0 / result.cols()))(
+            result(i) = std::normal_distribution<float>(0.0, std::sqrt(2.0 / input_dim))(
                 rng::get_thread_local_rng()
             );
         }

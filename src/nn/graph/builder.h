@@ -69,18 +69,15 @@ Node operator/(float s, const Node& n);
 
 // Param
 
-struct Param : Node {
-    Param() = default;
+struct ParamNode : Node {
+    ParamNode() = default;
 
-    Param(GraphBuilder* gb, layer::Layer* op)
+    ParamNode(GraphBuilder* gb, layer::Layer* op)
         : Node(gb, op) {}
 
     void uniform_init(float lo, float hi) { get()->uniform_init(lo, hi); }
-    void he_init() { get()->he_init(); }
+    void he_init(int input_dim) { get()->he_init(input_dim); }
     void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
-
-    tensor::GPUMatrix<float>& data() { return get()->data(); }
-    const tensor::GPUMatrix<float>& data() const { return get()->data(); }
 
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }
@@ -91,12 +88,12 @@ struct Param : Node {
 // AffineLayer
 
 struct AffineLayer {
-    Param weight;
-    Param bias;
+    ParamNode weight;
+    ParamNode bias;
 
     AffineLayer() = default;
 
-    AffineLayer(Param w, Param b)
+    AffineLayer(ParamNode w, ParamNode b)
         : weight(std::move(w)),
           bias(std::move(b)) {}
 
@@ -127,7 +124,7 @@ class GraphBuilder {
         return graph_.emplace_named<layer::BucketIndex>(name, "BucketIndex", count, size);
     }
 
-    Param param(int input_dim, int output_dim, const std::string& name = "") {
+    ParamNode param(int input_dim, int output_dim, const std::string& name = "") {
         return {
             this,
             graph_.emplace_named<layer::Param>(name, "Param", tensor::Shape{output_dim, input_dim})
@@ -140,7 +137,7 @@ class GraphBuilder {
                                        : name_prefix;
 
         auto w = param(input_dim, output_dim, prefix + ".W");
-        w.he_init();
+        w.he_init(input_dim);
         auto b = param(1, output_dim, prefix + ".B");
         return {w, b};
     }

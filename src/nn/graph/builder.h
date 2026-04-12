@@ -139,9 +139,9 @@ class GraphBuilder {
                                        ? ("Affine" + std::to_string(affine_param_group_count_++))
                                        : name_prefix;
 
-        auto w = param(input_dim, output_dim, prefix + "_W");
+        auto w = param(input_dim, output_dim, prefix + ".W");
         w.he_init();
-        auto b = param(1, output_dim, prefix + "_B");
+        auto b = param(1, output_dim, prefix + ".B");
         return {w, b};
     }
 

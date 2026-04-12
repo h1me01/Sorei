@@ -61,8 +61,8 @@ class Model {
     std::vector<layer::Param*> params() { return network().params(); }
     tensor::GPUMatrix<float>& prediction() { return network().prediction(); }
 
-    graph::Param get_param(const std::string& name) {
-        return {nullptr, graph_.get<layer::Param>(name)};
+    layer::Param& get_param(const std::string& name) {
+        return *graph_.get<layer::Param>(name);
     }
 
     void load_params(const std::string& file) {

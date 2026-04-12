@@ -150,8 +150,8 @@ class AstraModel : public sorei::nn::Model {
     }
 
   private:
-    sorei::nn::Tensor<int> stm_indices{{32, 0}};
-    sorei::nn::Tensor<int> nstm_indices{{32, 0}};
-    sorei::nn::Tensor<int> bucket_indices{{0}};
-    sorei::nn::Tensor<float> targets{{0}};
+    sorei::nn::Tensor<int> stm_indices;
+    sorei::nn::Tensor<int> nstm_indices;
+    sorei::nn::Tensor<int> bucket_indices;
+    sorei::nn::Tensor<float> targets;
 };

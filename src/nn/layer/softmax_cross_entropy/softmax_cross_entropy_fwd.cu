@@ -79,7 +79,7 @@ void SoftmaxCrossEntropy::forward() {
         logits.data(), labels.data(), losses.data(), probs_.data(), logits.cols(), logits.rows()
     );
 
-    CUDA_CHECK(cudaGetLastError());
+    CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

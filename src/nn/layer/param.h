@@ -48,6 +48,8 @@ class Param : public TypedLayer<float> {
     }
 
     bool requires_grad() const override { return true; }
+    int input_dim() const { return shape_.cols(); }
+    int output_dim() const { return shape_.rows(); }
     float lower_bound() const { return lower_bound_; }
     float upper_bound() const { return upper_bound_; }
     tensor::Shape shape() const override { return shape_; }

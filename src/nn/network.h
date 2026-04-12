@@ -26,16 +26,12 @@ class Network {
 
         if (loss_)
             CHECK(loss_->shape().rows() == 1);
-
-        kernel::cublas::create();
     }
 
     Network(const Network&) = delete;
     Network& operator=(const Network&) = delete;
     Network(Network&&) = delete;
     Network& operator=(Network&&) = delete;
-
-    ~Network() { kernel::cublas::destroy(); }
 
     void forward() {
         for (auto* layer : layers_)

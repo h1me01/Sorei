@@ -17,20 +17,16 @@
 namespace sorei::kernel::cublas {
 
 namespace {
-cublasHandle_t handle = nullptr;
+cublasHandle_t get_handle() {
+    struct HandleOwner {
+        cublasHandle_t handle;
+        HandleOwner() { CUBLAS_CHECK(cublasCreate(&handle)); }
+        ~HandleOwner() { cublasDestroy(handle); }
+    };
+    static HandleOwner owner;
+    return owner.handle;
 }
-
-void create() {
-    if (!handle)
-        CUBLAS_CHECK(cublasCreate(&handle));
-}
-
-void destroy() {
-    if (handle) {
-        CUBLAS_CHECK(cublasDestroy(handle));
-        handle = nullptr;
-    }
-}
+} // namespace
 
 void sgemm(
     bool trans_a,
@@ -55,7 +51,7 @@ void sgemm(
     CHECK(c.data());
 
     CUBLAS_CHECK(cublasSgemm(
-        handle,
+        get_handle(),
         trans_a ? CUBLAS_OP_T : CUBLAS_OP_N,
         trans_b ? CUBLAS_OP_T : CUBLAS_OP_N,
         m,

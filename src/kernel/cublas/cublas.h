@@ -7,9 +7,6 @@
 
 namespace sorei::kernel::cublas {
 
-void create();
-void destroy();
-
 void sgemm(
     bool trans_a,
     bool trans_b,

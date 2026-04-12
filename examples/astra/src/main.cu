@@ -1,3 +1,6 @@
+#include <chrono>
+#include <filesystem>
+
 #include "binpack_loader.h"
 #include "model.h"
 
@@ -21,10 +24,9 @@ int main() {
     const int epochs = 100;
     const int batch_size = 16384;
     const int batches_per_epoch = 6104;
-    const int report_rate = 100;
     const int save_rate = 20;
 
-    const std::string checkpoint_dir = "examples/astra/checkpoints";
+    const std::string checkpoint_dir = "checkpoints";
 
     AstraModel model;
     for (auto p : model.params())
@@ -69,33 +71,30 @@ int main() {
             model.backward();
             optim.step(lr_sched.get());
 
-            bool last_batch = (batch == batches_per_epoch);
-            if (batch % report_rate == 0 || last_batch) {
-                float loss = model.running_loss();
+            if (batch % 100 == 0 || batch == batches_per_epoch) {
                 float time_sec = timer.elapsed() / 1000.0f;
-
                 sorei::print(
                     "\repoch/batch = {:3d}/{:4d} | loss = {:1.6f} | pos/sec = {:7d} | time = "
                     "{:3d}s",
                     epoch,
                     batch,
-                    loss / batch,
+                    model.running_loss() / batch,
                     (int)std::round((batch_size * batch) / time_sec),
                     (int)std::round(time_sec)
                 );
 
-                if (!last_batch)
+                if (batch != batches_per_epoch)
                     std::cout << std::flush;
                 else
-                    std::cout << std::endl;
+                    sorei::println("");
             }
         }
 
         if (epoch % save_rate == 0) {
-            const std::string epoch_checkpoint_dir =
-                checkpoint_dir + "/epoch_" + std::to_string(epoch);
-            model.save_params(epoch_checkpoint_dir + "/model.nn");
-            optim.save_state(epoch_checkpoint_dir + "/optimizer");
+            std::string e_checkpoint_dir = checkpoint_dir + "/epoch_" + std::to_string(epoch);
+            std::filesystem::create_directories(e_checkpoint_dir);
+            model.save_params(e_checkpoint_dir + "/model.nn");
+            optim.save_state(e_checkpoint_dir + "/optimizer");
         }
 
         lr_sched.step();

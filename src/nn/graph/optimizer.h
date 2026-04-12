@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 #include "graph.h"
@@ -81,12 +82,23 @@ class GraphOptimizer {
         }
     }
 
+    static std::optional<layer::ActOp> as_activation(const layer::ElemwiseUnary::Op& op) {
+        if (std::holds_alternative<cuda::ReLU>(op))
+            return layer::ActOp{std::get<cuda::ReLU>(op)};
+        if (std::holds_alternative<cuda::ClampedReLU>(op))
+            return layer::ActOp{std::get<cuda::ClampedReLU>(op)};
+        if (std::holds_alternative<cuda::SquaredClampedReLU>(op))
+            return layer::ActOp{std::get<cuda::SquaredClampedReLU>(op)};
+        if (std::holds_alternative<cuda::Sigmoid>(op))
+            return layer::ActOp{std::get<cuda::Sigmoid>(op)};
+        return std::nullopt;
+    }
+
     // Folding passes
 
     void fold_self_mul(Graph& graph) {
         fixed_point<layer::ElemwiseBinary>(
-            graph,
-            [this](Graph& g, layer::ElemwiseBinary* eb) -> bool {
+            graph, [this](Graph& g, layer::ElemwiseBinary* eb) -> bool {
                 if (eb->name() != "Mul")
                     return false;
 
@@ -94,7 +106,7 @@ class GraphOptimizer {
                 if (ins[0] != ins[1])
                     return false;
 
-                auto* replacement = g.emplace<layer::ElemwiseUnary>(ins[0], kernel::PowInt{2});
+                auto* replacement = g.emplace<layer::ElemwiseUnary>(ins[0], cuda::PowInt{2});
                 redirect_and_remove(g, eb, replacement);
                 return true;
             }
@@ -112,7 +124,7 @@ class GraphOptimizer {
             if (!unary)
                 return false;
 
-            auto act = kernel::as_activation(unary->op());
+            auto act = as_activation(unary->op());
             if (!act)
                 return false;
 
@@ -173,7 +185,7 @@ class GraphOptimizer {
             if (!unary)
                 return false;
 
-            auto act = kernel::as_activation(unary->op());
+            auto act = as_activation(unary->op());
             if (!act)
                 return false;
 

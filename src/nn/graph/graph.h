@@ -43,7 +43,7 @@ class Graph {
             std::string extra;
             if (auto* sa = dynamic_cast<layer::SparseAffineBase*>(n))
                 if (sa->has_activation())
-                    extra += " [+" + kernel::elemwise_op_name(sa->activation()) + "]";
+                    extra += " [+" + layer::elemwise_op_name(sa->activation()) + "]";
             if (auto* spwm = dynamic_cast<layer::SparseAffinePairwiseMul*>(n))
                 extra += " [+PairwiseMul]";
             if (auto* c = dynamic_cast<layer::ConcatBase*>(n))

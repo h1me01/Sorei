@@ -14,7 +14,7 @@
         }                                                                                          \
     } while (0)
 
-namespace sorei::kernel::cublas {
+namespace sorei::cuda::cublas {
 
 namespace {
 cublasHandle_t get_handle() {
@@ -68,4 +68,4 @@ void sgemm(
     ));
 }
 
-} // namespace sorei::kernel::cublas
+} // namespace sorei::cuda::cublas

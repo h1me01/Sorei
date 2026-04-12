@@ -2,8 +2,8 @@
 
 #include "../util.h"
 
-namespace sorei::kernel {
+namespace sorei::cuda {
 
 void set(tensor::GPUMatrix<float>& data, const float val);
 
-} // namespace sorei::kernel
+} // namespace sorei::cuda

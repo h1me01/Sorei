@@ -1,6 +1,8 @@
 #pragma once
 
+#include "elemwise/binary/binary.h"
 #include "layer.h"
+#include "mat_mul/mat_mul.h"
 
 namespace sorei::nn::layer {
 
@@ -16,20 +18,18 @@ class Affine : public TypedLayer<float> {
     }
 
     void forward() override {
-        kernel::mat_mul_forward(weight_->data(), input_->data(), data());
-        kernel::elemwise_binary_broadcast_forward(
-            bias_->data(), data(), data(), kernel::AddBinary{}
+        MatMul::forward(weight_->data(), input_->data(), data());
+        ElemwiseBinary::broadcast_forward(
+            bias_->data(), data(), data(), ElemwiseBinary::Op{cuda::AddBinary{}}
         );
     }
 
     void backward() override {
         tensor::GPUMatrix<float> tmp;
-        kernel::elemwise_binary_broadcast_backward(
-            bias_->data(), bias_->grad(), data(), tmp, grad(), kernel::AddBinary{}
+        ElemwiseBinary::broadcast_backward(
+            bias_->data(), bias_->grad(), data(), tmp, grad(), ElemwiseBinary::Op{cuda::AddBinary{}}
         );
-        kernel::mat_mul_backward(
-            weight_->data(), weight_->grad(), input_->data(), input_->grad(), grad()
-        );
+        MatMul::backward(weight_->data(), weight_->grad(), input_->data(), input_->grad(), grad());
     }
 
     std::vector<LayerInputSlot> mutable_inputs() override {

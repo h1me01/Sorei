@@ -1,4 +1,4 @@
-#include "../../../kernel/util.h"
+#include "../../../cuda/util.h"
 
 #include "adamw.h"
 
@@ -22,7 +22,7 @@ __device__ void adam_update(
     mom = beta1 * mom + (1.0f - beta1) * grad;
     vel = beta2 * vel + (1.0f - beta2) * grad * grad;
     val -= lr * mom / (sqrtf(vel) + 1e-8f);
-    val = kernel::clamp(val, min_val, max_val);
+    val = cuda::clamp(val, min_val, max_val);
 }
 
 __global__ void adam_kernel(
@@ -44,10 +44,10 @@ __global__ void adam_kernel(
         return;
 
     if (vec_idx + 4 <= size) {
-        float4 val = kernel::as_vec<float4>(data)[idx];
-        float4 mom = kernel::as_vec<float4>(moms)[idx];
-        float4 vel = kernel::as_vec<float4>(vels)[idx];
-        const float4 grad = kernel::as_vec<const float4>(grads)[idx];
+        float4 val = cuda::as_vec<float4>(data)[idx];
+        float4 mom = cuda::as_vec<float4>(moms)[idx];
+        float4 vel = cuda::as_vec<float4>(vels)[idx];
+        const float4 grad = cuda::as_vec<const float4>(grads)[idx];
 
         const auto update = [&](float& v, float& m, float& ve, float g) {
             adam_update(v, m, ve, g, lr, beta1, beta2, decay, min_val, max_val);
@@ -58,9 +58,9 @@ __global__ void adam_kernel(
         update(val.z, mom.z, vel.z, grad.z);
         update(val.w, mom.w, vel.w, grad.w);
 
-        kernel::as_vec<float4>(data)[idx] = val;
-        kernel::as_vec<float4>(moms)[idx] = mom;
-        kernel::as_vec<float4>(vels)[idx] = vel;
+        cuda::as_vec<float4>(data)[idx] = val;
+        cuda::as_vec<float4>(moms)[idx] = mom;
+        cuda::as_vec<float4>(vels)[idx] = vel;
     } else {
         for (int i = vec_idx; i < size; i++) {
             adam_update(

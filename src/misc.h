@@ -29,6 +29,8 @@
         }                                                                                          \
     } while (0)
 
+#define SOREI_CUDA_KERNEL_LAUNCH_CHECK() SOREI_CUDA_CHECK(cudaGetLastError())
+
 namespace sorei {
 
 template <typename... Args>

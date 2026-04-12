@@ -5,7 +5,7 @@
 
 #include "../util.h"
 
-namespace sorei::kernel::cublas {
+namespace sorei::cuda::cublas {
 
 void sgemm(
     bool trans_a,
@@ -17,4 +17,4 @@ void sgemm(
     tensor::GPUMatrix<float>& c
 );
 
-} // namespace sorei::kernel::cublas
+} // namespace sorei::cuda::cublas

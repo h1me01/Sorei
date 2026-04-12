@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../../util.h"
-#include "../common.h"
+#include <string_view>
 
-namespace sorei::kernel {
+namespace sorei::cuda {
 
 // Basic arithmetic
 
@@ -172,44 +171,4 @@ struct Sigmoid {
     __device__ float backward_from_output(float y) const { return y * (1.0f - y); }
 };
 
-// ElemwiseUnary
-
-using UnaryOp = std::variant<
-    Identity,
-    AddScaleUnary,
-    DivLeftUnary,
-    Clamp,
-    Abs,
-    PowInt,
-    PowFloat,
-    ReLU,
-    ClampedReLU,
-    SquaredClampedReLU,
-    Sigmoid>;
-
-using ActOp = std::variant<Identity, ReLU, ClampedReLU, SquaredClampedReLU, Sigmoid>;
-
-void elemwise_unary_forward(
-    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const UnaryOp& op
-);
-
-void elemwise_unary_backward(
-    tensor::GPUMatrix<float>& in,
-    tensor::GPUMatrix<float>& in_g,
-    const tensor::GPUMatrix<float>& out_g,
-    const UnaryOp& op
-);
-
-inline std::optional<kernel::ActOp> as_activation(const kernel::UnaryOp& op) {
-    if (std::holds_alternative<kernel::ReLU>(op))
-        return kernel::ActOp{std::get<kernel::ReLU>(op)};
-    if (std::holds_alternative<kernel::ClampedReLU>(op))
-        return kernel::ActOp{std::get<kernel::ClampedReLU>(op)};
-    if (std::holds_alternative<kernel::SquaredClampedReLU>(op))
-        return kernel::ActOp{std::get<kernel::SquaredClampedReLU>(op)};
-    if (std::holds_alternative<kernel::Sigmoid>(op))
-        return kernel::ActOp{std::get<kernel::Sigmoid>(op)};
-    return std::nullopt;
-}
-
-} // namespace sorei::kernel
+} // namespace sorei::cuda

@@ -29,14 +29,14 @@ __global__ void sparse_affine_fwd_vec_kernel(
         shared_indices[i] = sample_indices[i];
     __syncthreads();
 
-    const float4* w4 = kernel::as_vec<const float4>(weight);
+    const float4* w4 = cuda::as_vec<const float4>(weight);
 
-    float4 val = kernel::as_vec<const float4>(bias)[row4];
+    float4 val = cuda::as_vec<const float4>(bias)[row4];
     for (int i = 0; i < max_entries; i++) {
         const int idx = shared_indices[i];
         if (idx == -1)
             break;
-        val = kernel::add_t4(val, w4[idx * weight_r4 + row4]);
+        val = cuda::add_t4(val, w4[idx * weight_r4 + row4]);
     }
 
     val.x = op.forward(val.x);
@@ -44,7 +44,7 @@ __global__ void sparse_affine_fwd_vec_kernel(
     val.z = op.forward(val.z);
     val.w = op.forward(val.w);
 
-    kernel::as_vec<float4>(out)[out_r4 * batch_idx + row4] = val;
+    cuda::as_vec<float4>(out)[out_r4 * batch_idx + row4] = val;
 }
 
 template <typename Op>

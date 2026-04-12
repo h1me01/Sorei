@@ -1,11 +1,11 @@
 #include "mat_mul.h"
 
-namespace sorei::kernel {
+namespace sorei::nn::layer {
 
 constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
 
-void mat_mul_forward(
+void MatMul::forward(
     const tensor::GPUMatrix<float>& weight,
     const tensor::GPUMatrix<float>& in,
     tensor::GPUMatrix<float>& out
@@ -18,7 +18,7 @@ void mat_mul_forward(
     SOREI_CHECK(in.data());
     SOREI_CHECK(out.data());
 
-    cublas::sgemm(false, false, alpha, weight, in, beta, out);
+    cuda::cublas::sgemm(false, false, alpha, weight, in, beta, out);
 }
 
-} // namespace sorei::kernel
+} // namespace sorei::nn::layer

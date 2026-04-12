@@ -1,6 +1,6 @@
 #include "binary.h"
 
-namespace sorei::kernel {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -14,25 +14,25 @@ binary_forward_kernel(const float* a, const float* b, float* c, const int n, Op 
         return;
 
     if (vec_idx + 4 <= n) {
-        float4 a4 = as_vec<const float4>(a)[idx];
-        float4 b4 = as_vec<const float4>(b)[idx];
+        float4 a4 = cuda::as_vec<const float4>(a)[idx];
+        float4 b4 = cuda::as_vec<const float4>(b)[idx];
         float4 c4;
         c4.x = op.forward(a4.x, b4.x);
         c4.y = op.forward(a4.y, b4.y);
         c4.z = op.forward(a4.z, b4.z);
         c4.w = op.forward(a4.w, b4.w);
-        as_vec<float4>(c)[idx] = c4;
+        cuda::as_vec<float4>(c)[idx] = c4;
     } else {
         for (int i = vec_idx; i < n; i++)
             c[i] = op.forward(a[i], b[i]);
     }
 }
 
-void elemwise_binary_forward(
+void ElemwiseBinary::forward(
     const tensor::GPUMatrix<float>& a,
     const tensor::GPUMatrix<float>& b,
     tensor::GPUMatrix<float>& c,
-    const BinaryOp& op
+    const Op& op
 ) {
     SOREI_CHECK(a.size() == b.size());
     SOREI_CHECK(a.size() == c.size());
@@ -53,4 +53,4 @@ void elemwise_binary_forward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::kernel
+} // namespace sorei::nn::layer

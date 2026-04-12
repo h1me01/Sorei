@@ -145,37 +145,37 @@ class GraphBuilder {
         return {w, b};
     }
 
-    Node relu(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), kernel::ReLU{})}; }
+    Node relu(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), cuda::ReLU{})}; }
 
     // relu clamped to [0, 1]
     Node clamped_relu(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::ClampedReLU{})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::ClampedReLU{})};
     }
 
     // relu clamped to [0, 1] and squared
     Node squared_clamped_relu(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::SquaredClampedReLU{})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::SquaredClampedReLU{})};
     }
 
     Node sigmoid(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::Sigmoid{})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Sigmoid{})};
     }
 
-    Node abs(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), kernel::Abs{})}; }
+    Node abs(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Abs{})}; }
 
     Node neg(const Node& x) { return affine_unary(x, -1.0f, 0.0f); }
 
     Node clamp(const Node& x, float lo, float hi) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::Clamp{lo, hi})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Clamp{lo, hi})};
     }
 
     Node pow(const Node& x, float e) {
         if (std::fabs(e) <= 16777216.0f) {
             int n = static_cast<int>(e);
             if (std::fabs(e - n) < 1e-6f)
-                return {this, make<layer::ElemwiseUnary>(x.get(), kernel::PowInt{n})};
+                return {this, make<layer::ElemwiseUnary>(x.get(), cuda::PowInt{n})};
         }
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::PowFloat{e})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::PowFloat{e})};
     }
 
     Node add(const Node& x, float s) { return affine_unary(x, 1.0f, s); }
@@ -190,23 +190,23 @@ class GraphBuilder {
     }
 
     Node div(float s, const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::DivLeftUnary{s})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::DivLeftUnary{s})};
     }
 
     Node add(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), kernel::AddBinary{})};
+        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::AddBinary{})};
     }
 
     Node sub(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), kernel::SubBinary{})};
+        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::SubBinary{})};
     }
 
     Node mul(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), kernel::MulBinary{})};
+        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::MulBinary{})};
     }
 
     Node div(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), kernel::DivBinary{})};
+        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::DivBinary{})};
     }
 
     Node mat_mul(const Node& weight, const Node& input) {
@@ -260,7 +260,7 @@ class GraphBuilder {
     }
 
     Node affine_unary(const Node& x, float scale, float bias) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), kernel::AddScaleUnary{scale, bias})};
+        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::AddScaleUnary{scale, bias})};
     }
 };
 

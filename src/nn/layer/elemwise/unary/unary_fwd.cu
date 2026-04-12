@@ -1,6 +1,6 @@
 #include "unary.h"
 
-namespace sorei::kernel {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -13,21 +13,21 @@ __global__ void unary_fwd_kernel(const float* in, float* out, const int size, Op
         return;
 
     if (vec_idx + 4 <= size) {
-        float4 in4 = as_vec<const float4>(in)[idx];
+        float4 in4 = cuda::as_vec<const float4>(in)[idx];
         float4 out4;
         out4.x = op.forward(in4.x);
         out4.y = op.forward(in4.y);
         out4.z = op.forward(in4.z);
         out4.w = op.forward(in4.w);
-        as_vec<float4>(out)[idx] = out4;
+        cuda::as_vec<float4>(out)[idx] = out4;
     } else {
         for (int i = vec_idx; i < size; i++)
             out[i] = op.forward(in[i]);
     }
 }
 
-void elemwise_unary_forward(
-    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const UnaryOp& op
+void ElemwiseUnary::forward(
+    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const Op& op
 ) {
     SOREI_CHECK(in.size() == out.size());
 
@@ -46,4 +46,4 @@ void elemwise_unary_forward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::kernel
+} // namespace sorei::nn::layer

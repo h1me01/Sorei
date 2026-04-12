@@ -8,90 +8,6 @@
 namespace sorei::tensor {
 
 template <typename T>
-class CudaDevicePtr {
-  public:
-    CudaDevicePtr() = default;
-
-    explicit CudaDevicePtr(size_t count) {
-        if (count > 0)
-            SOREI_CUDA_CHECK(cudaMalloc(&ptr_, count * sizeof(T)));
-    }
-
-    ~CudaDevicePtr() {
-        if (ptr_)
-            cudaFree(ptr_);
-    }
-
-    CudaDevicePtr(const CudaDevicePtr&) = delete;
-    CudaDevicePtr& operator=(const CudaDevicePtr&) = delete;
-
-    CudaDevicePtr(CudaDevicePtr&& other) noexcept
-        : ptr_(other.ptr_) {
-        other.ptr_ = nullptr;
-    }
-
-    CudaDevicePtr& operator=(CudaDevicePtr&& other) noexcept {
-        if (this != &other) {
-            if (ptr_)
-                cudaFree(ptr_);
-
-            ptr_ = other.ptr_;
-            other.ptr_ = nullptr;
-        }
-        return *this;
-    }
-
-    T* get() const { return ptr_; }
-
-    explicit operator bool() const { return ptr_ != nullptr; }
-
-  private:
-    T* ptr_ = nullptr;
-};
-
-template <typename T>
-class CudaHostPtr {
-  public:
-    CudaHostPtr() = default;
-
-    explicit CudaHostPtr(size_t count) {
-        if (count > 0)
-            SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, count * sizeof(T)));
-    }
-
-    ~CudaHostPtr() {
-        if (ptr_)
-            cudaFreeHost(ptr_);
-    }
-
-    CudaHostPtr(const CudaHostPtr&) = delete;
-    CudaHostPtr& operator=(const CudaHostPtr&) = delete;
-
-    CudaHostPtr(CudaHostPtr&& other) noexcept
-        : ptr_(other.ptr_) {
-        other.ptr_ = nullptr;
-    }
-
-    CudaHostPtr& operator=(CudaHostPtr&& other) noexcept {
-        if (this != &other) {
-            if (ptr_)
-                cudaFreeHost(ptr_);
-
-            ptr_ = other.ptr_;
-            other.ptr_ = nullptr;
-        }
-        return *this;
-    }
-
-    T* get() const { return ptr_; }
-
-    explicit operator bool() const { return ptr_ != nullptr; }
-
-  private:
-    T* ptr_ = nullptr;
-};
-
-template <typename T>
 class CPUArray {
   public:
     CPUArray() = default;
@@ -137,7 +53,6 @@ class CPUArray {
     void clear() { std::memset(data_.get(), 0, bytes()); }
     void fill(T value) { std::fill_n(data_.get(), size_, value); }
 
-    // no-op if size = size()
     void resize(int size) {
         if (size == size_)
             return;
@@ -157,15 +72,23 @@ class PinnedCPUArray {
     PinnedCPUArray() = default;
 
     explicit PinnedCPUArray(int size)
-        : size_(size),
-          data_(size) {
+        : size_(size) {
+        if (size > 0)
+            SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, size * sizeof(T)));
         clear();
     }
 
+    ~PinnedCPUArray() {
+        if (ptr_)
+            cudaFreeHost(ptr_);
+    }
+
     PinnedCPUArray(const PinnedCPUArray& other)
-        : size_(other.size_),
-          data_(other.size_) {
-        std::memcpy(data_.get(), other.data_.get(), bytes());
+        : size_(other.size_) {
+        if (size_ > 0) {
+            SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, bytes()));
+            std::memcpy(ptr_, other.ptr_, bytes());
+        }
     }
 
     PinnedCPUArray& operator=(const PinnedCPUArray& other) {
@@ -176,39 +99,58 @@ class PinnedCPUArray {
         return *this;
     }
 
-    PinnedCPUArray(PinnedCPUArray&&) noexcept = default;
-    PinnedCPUArray& operator=(PinnedCPUArray&&) noexcept = default;
+    PinnedCPUArray(PinnedCPUArray&& other) noexcept
+        : size_(other.size_),
+          ptr_(other.ptr_) {
+        other.size_ = 0;
+        other.ptr_ = nullptr;
+    }
+
+    PinnedCPUArray& operator=(PinnedCPUArray&& other) noexcept {
+        if (this != &other) {
+            if (ptr_)
+                cudaFreeHost(ptr_);
+            size_ = other.size_;
+            ptr_ = other.ptr_;
+            other.size_ = 0;
+            other.ptr_ = nullptr;
+        }
+        return *this;
+    }
 
     int size() const { return size_; }
     size_t bytes() const { return size_ * sizeof(T); }
     bool empty() const { return size_ == 0; }
-    T* data() const { return data_.get(); }
+    T* data() const { return ptr_; }
 
     T operator[](int i) const {
         SOREI_CHECK(i >= 0 && i < size_);
-        return data_.get()[i];
+        return ptr_[i];
     }
 
     T& operator[](int i) {
         SOREI_CHECK(i >= 0 && i < size_);
-        return data_.get()[i];
+        return ptr_[i];
     }
 
-    void clear() { std::memset(data_.get(), 0, bytes()); }
-    void fill(T value) { std::fill_n(data_.get(), size_, value); }
+    void clear() { std::memset(ptr_, 0, bytes()); }
+    void fill(T value) { std::fill_n(ptr_, size_, value); }
 
-    // no-op if size = size()
     void resize(int size) {
         if (size == size_)
             return;
+        if (ptr_)
+            cudaFreeHost(ptr_);
+        ptr_ = nullptr;
         size_ = size;
-        data_ = CudaHostPtr<T>(size);
+        if (size > 0)
+            SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, bytes()));
         clear();
     }
 
   private:
     int size_ = 0;
-    CudaHostPtr<T> data_;
+    T* ptr_ = nullptr;
 };
 
 template <typename T>
@@ -217,17 +159,23 @@ class GPUArray {
     GPUArray() = default;
 
     explicit GPUArray(int size)
-        : size_(size),
-          data_(size) {
+        : size_(size) {
+        if (size > 0)
+            SOREI_CUDA_CHECK(cudaMalloc(&ptr_, size * sizeof(T)));
         clear();
     }
 
+    ~GPUArray() {
+        if (ptr_)
+            cudaFree(ptr_);
+    }
+
     GPUArray(const GPUArray& other)
-        : size_(other.size_),
-          data_(other.size_) {
-        SOREI_CUDA_CHECK(
-            cudaMemcpy(data_.get(), other.data_.get(), bytes(), cudaMemcpyDeviceToDevice)
-        );
+        : size_(other.size_) {
+        if (size_ > 0) {
+            SOREI_CUDA_CHECK(cudaMalloc(&ptr_, bytes()));
+            SOREI_CUDA_CHECK(cudaMemcpy(ptr_, other.ptr_, bytes(), cudaMemcpyDeviceToDevice));
+        }
     }
 
     GPUArray& operator=(const GPUArray& other) {
@@ -238,22 +186,41 @@ class GPUArray {
         return *this;
     }
 
-    GPUArray(GPUArray&&) noexcept = default;
-    GPUArray& operator=(GPUArray&&) noexcept = default;
+    GPUArray(GPUArray&& other) noexcept
+        : size_(other.size_),
+          ptr_(other.ptr_) {
+        other.size_ = 0;
+        other.ptr_ = nullptr;
+    }
+
+    GPUArray& operator=(GPUArray&& other) noexcept {
+        if (this != &other) {
+            if (ptr_)
+                cudaFree(ptr_);
+            size_ = other.size_;
+            ptr_ = other.ptr_;
+            other.size_ = 0;
+            other.ptr_ = nullptr;
+        }
+        return *this;
+    }
 
     int size() const { return size_; }
     size_t bytes() const { return size_ * sizeof(T); }
     bool empty() const { return size_ == 0; }
-    T* data() const { return data_.get(); }
+    T* data() const { return ptr_; }
 
-    void clear() { SOREI_CUDA_CHECK(cudaMemsetAsync(data_.get(), 0, bytes(), 0)); }
+    void clear() { SOREI_CUDA_CHECK(cudaMemsetAsync(ptr_, 0, bytes(), 0)); }
 
-    // no-op if size = size()
     void resize(int size) {
         if (size == size_)
             return;
+        if (ptr_)
+            cudaFree(ptr_);
+        ptr_ = nullptr;
         size_ = size;
-        data_ = CudaDevicePtr<T>(size);
+        if (size > 0)
+            SOREI_CUDA_CHECK(cudaMalloc(&ptr_, bytes()));
         clear();
     }
 
@@ -261,14 +228,14 @@ class GPUArray {
     void upload(const Src& src) {
         SOREI_CHECK(src.size() == size_);
         SOREI_CHECK(src.bytes() == bytes());
-        SOREI_CUDA_CHECK(cudaMemcpy(data_.get(), src.data(), bytes(), cudaMemcpyHostToDevice));
+        SOREI_CUDA_CHECK(cudaMemcpy(ptr_, src.data(), bytes(), cudaMemcpyHostToDevice));
     }
 
     template <typename Dst>
     void download(Dst& dst) const {
         SOREI_CHECK(size_ == dst.size());
         SOREI_CHECK(bytes() == dst.bytes());
-        SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), data_.get(), bytes(), cudaMemcpyDeviceToHost));
+        SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), ptr_, bytes(), cudaMemcpyDeviceToHost));
     }
 
     CPUArray<T> to_cpu() const {
@@ -286,7 +253,7 @@ class GPUArray {
 
   private:
     int size_ = 0;
-    CudaDevicePtr<T> data_;
+    T* ptr_ = nullptr;
 };
 
 } // namespace sorei::tensor

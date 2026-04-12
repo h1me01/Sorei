@@ -2,10 +2,9 @@
 
 #include "affine.h"
 #include "concat/concat.h"
-#include "elemwise_binary.h"
-#include "elemwise_unary.h"
+#include "elemwise/include.h"
 #include "input.h"
-#include "mat_mul.h"
+#include "mat_mul/mat_mul.h"
 #include "mean/mean.h"
 #include "pairwise_mul/pairwise_mul.h"
 #include "param.h"

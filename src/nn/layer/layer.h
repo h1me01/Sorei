@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "../../kernel/include.h"
+#include "../../cuda/include.h"
 #include "../../tensor/include.h"
 
 namespace sorei::nn::layer {

@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../../util.h"
-#include "../common.h"
+#include <string_view>
 
-namespace sorei::kernel {
+namespace sorei::cuda {
 
 struct AddBinary {
     static constexpr std::string_view name = "Add";
@@ -45,38 +44,4 @@ struct DivBinary {
     }
 };
 
-using BinaryOp = std::variant<AddBinary, SubBinary, MulBinary, DivBinary>;
-
-void elemwise_binary_forward(
-    const tensor::GPUMatrix<float>& a,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& c,
-    const BinaryOp& op
-);
-
-void elemwise_binary_backward(
-    const tensor::GPUMatrix<float>& a,
-    tensor::GPUMatrix<float>& a_g,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& b_g,
-    const tensor::GPUMatrix<float>& c_g,
-    const BinaryOp& op
-);
-
-void elemwise_binary_broadcast_forward(
-    const tensor::GPUMatrix<float>& a,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& c,
-    const BinaryOp& op
-);
-
-void elemwise_binary_broadcast_backward(
-    const tensor::GPUMatrix<float>& a,
-    tensor::GPUMatrix<float>& a_g,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& b_g,
-    const tensor::GPUMatrix<float>& c_g,
-    const BinaryOp& op
-);
-
-} // namespace sorei::kernel
+} // namespace sorei::cuda

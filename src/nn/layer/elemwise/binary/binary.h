@@ -1,13 +1,17 @@
 #pragma once
 
-#include "layer.h"
+#include "../../layer.h"
+#include "../common.h"
 
 namespace sorei::nn::layer {
 
 class ElemwiseBinary : public TypedLayer<float> {
   public:
-    ElemwiseBinary(Layer* input1, Layer* input2, kernel::BinaryOp op)
-        : TypedLayer<float>(kernel::elemwise_op_name(op)),
+    using Op = std::variant<cuda::AddBinary, cuda::SubBinary, cuda::MulBinary, cuda::DivBinary>;
+
+  public:
+    ElemwiseBinary(Layer* input1, Layer* input2, Op op)
+        : TypedLayer<float>(elemwise_op_name(op)),
           input1_(layer_cast<TypedLayer<float>>(input1)),
           input2_(layer_cast<TypedLayer<float>>(input2)),
           op_(op) {
@@ -25,26 +29,55 @@ class ElemwiseBinary : public TypedLayer<float> {
     }
 
     void forward() override {
-        if (broadcast()) {
-            kernel::elemwise_binary_broadcast_forward(
-                input1_->data(), input2_->data(), data(), op_
-            );
-        } else {
-            kernel::elemwise_binary_forward(input1_->data(), input2_->data(), data(), op_);
-        }
+        if (broadcast())
+            broadcast_forward(input1_->data(), input2_->data(), data(), op_);
+        else
+            forward(input1_->data(), input2_->data(), data(), op_);
     }
 
     void backward() override {
         if (broadcast()) {
-            kernel::elemwise_binary_broadcast_backward(
+            broadcast_backward(
                 input1_->data(), input1_->grad(), input2_->data(), input2_->grad(), grad(), op_
             );
         } else {
-            kernel::elemwise_binary_backward(
+            backward(
                 input1_->data(), input1_->grad(), input2_->data(), input2_->grad(), grad(), op_
             );
         }
     }
+
+    static void forward(
+        const tensor::GPUMatrix<float>& a,
+        const tensor::GPUMatrix<float>& b,
+        tensor::GPUMatrix<float>& c,
+        const Op& op
+    );
+
+    static void backward(
+        const tensor::GPUMatrix<float>& a,
+        tensor::GPUMatrix<float>& a_g,
+        const tensor::GPUMatrix<float>& b,
+        tensor::GPUMatrix<float>& b_g,
+        const tensor::GPUMatrix<float>& c_g,
+        const Op& op
+    );
+
+    static void broadcast_forward(
+        const tensor::GPUMatrix<float>& a,
+        const tensor::GPUMatrix<float>& b,
+        tensor::GPUMatrix<float>& c,
+        const Op& op
+    );
+
+    static void broadcast_backward(
+        const tensor::GPUMatrix<float>& a,
+        tensor::GPUMatrix<float>& a_g,
+        const tensor::GPUMatrix<float>& b,
+        tensor::GPUMatrix<float>& b_g,
+        const tensor::GPUMatrix<float>& c_g,
+        const Op& op
+    );
 
     std::vector<LayerInputSlot> mutable_inputs() override {
         return {LayerInputSlot::from(input1_), LayerInputSlot::from(input2_)};
@@ -57,7 +90,7 @@ class ElemwiseBinary : public TypedLayer<float> {
   private:
     TypedLayer<float>* input1_;
     TypedLayer<float>* input2_;
-    kernel::BinaryOp op_;
+    Op op_;
 
     bool broadcast() const { return input1_->shape() != input2_->shape(); }
 };

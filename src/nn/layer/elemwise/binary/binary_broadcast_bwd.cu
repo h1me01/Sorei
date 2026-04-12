@@ -1,6 +1,6 @@
 #include "binary.h"
 
-namespace sorei::kernel {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -34,13 +34,13 @@ __global__ void binary_broadcast_backward_kernel(
             atomicAdd(&broadcast_g[b_idx], bg);
 }
 
-void elemwise_binary_broadcast_backward(
+void ElemwiseBinary::broadcast_backward(
     const tensor::GPUMatrix<float>& a,
     tensor::GPUMatrix<float>& a_g,
     const tensor::GPUMatrix<float>& b,
     tensor::GPUMatrix<float>& b_g,
     const tensor::GPUMatrix<float>& c_g,
-    const BinaryOp& op
+    const Op& op
 ) {
     const bool repeat_a = (a.cols() == 1);
 
@@ -92,4 +92,4 @@ void elemwise_binary_broadcast_backward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::kernel
+} // namespace sorei::nn::layer

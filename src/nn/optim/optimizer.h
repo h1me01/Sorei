@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "../../kernel/include.h"
+#include "../../cuda/include.h"
 #include "../layer/param.h"
 
 namespace sorei::nn::optim {

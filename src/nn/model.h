@@ -70,8 +70,6 @@ class Model {
 
         for (auto* p : net_->params())
             load_param(p->data(), f);
-
-        println("Model: loaded parameters from {}", file);
     }
 
     void save_params(const std::string& file) {

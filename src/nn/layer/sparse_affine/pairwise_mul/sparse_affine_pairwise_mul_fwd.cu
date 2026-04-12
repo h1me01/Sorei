@@ -31,8 +31,8 @@ __global__ void sparse_affine_pairwise_mul_fwd_vec_kernel(
         shared_indices[i] = sample_indices[i];
     __syncthreads();
 
-    const float4* w4 = kernel::as_vec<const float4>(weight);
-    const float4* b4 = kernel::as_vec<const float4>(bias);
+    const float4* w4 = cuda::as_vec<const float4>(weight);
+    const float4* b4 = cuda::as_vec<const float4>(bias);
 
     float4 sum_a = b4[row4];
     float4 sum_b = b4[row4 + half4];
@@ -43,8 +43,8 @@ __global__ void sparse_affine_pairwise_mul_fwd_vec_kernel(
             break;
 
         const int base = idx * weight_r4 + row4;
-        sum_a = kernel::add_t4(sum_a, w4[base]);
-        sum_b = kernel::add_t4(sum_b, w4[base + half4]);
+        sum_a = cuda::add_t4(sum_a, w4[base]);
+        sum_b = cuda::add_t4(sum_b, w4[base + half4]);
     }
 
     sum_a.x = op.forward(sum_a.x);
@@ -57,7 +57,7 @@ __global__ void sparse_affine_pairwise_mul_fwd_vec_kernel(
     sum_b.z = op.forward(sum_b.z);
     sum_b.w = op.forward(sum_b.w);
 
-    kernel::as_vec<float4>(out)[out_r4 * batch_idx + row4] = kernel::mul_t4(sum_a, sum_b);
+    cuda::as_vec<float4>(out)[out_r4 * batch_idx + row4] = cuda::mul_t4(sum_a, sum_b);
 }
 
 template <typename Op>

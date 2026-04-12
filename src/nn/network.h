@@ -39,8 +39,8 @@ class Network {
 
         if (loss_) {
             running_loss_.resize(loss_->shape());
-            kernel::elemwise_binary_forward(
-                running_loss_, loss_->data(), running_loss_, kernel::AddBinary{}
+            layer::ElemwiseBinary::forward(
+                running_loss_, loss_->data(), running_loss_, cuda::AddBinary{}
             );
         }
     }
@@ -50,7 +50,7 @@ class Network {
 
         zero_grads();
 
-        kernel::set(loss_->grad(), 1.0f);
+        cuda::set(loss_->grad(), 1.0f);
         for (int i = (int)layers_.size() - 1; i >= 0; --i)
             layers_[i]->backward();
     }

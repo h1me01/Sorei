@@ -8,6 +8,9 @@
 
 namespace sorei::nn::layer {
 
+using ActOp = std::
+    variant<cuda::Identity, cuda::ReLU, cuda::ClampedReLU, cuda::SquaredClampedReLU, cuda::Sigmoid>;
+
 class SparseAffineBase : public TypedLayer<float> {
   public:
     SparseAffineBase(InputInt* input, Layer* weight, Layer* bias)
@@ -27,9 +30,9 @@ class SparseAffineBase : public TypedLayer<float> {
         drop_buffers();
     }
 
-    void set_activation(kernel::ActOp act_op) { act_op_ = act_op; }
-    kernel::ActOp activation() const { return act_op_; }
-    bool has_activation() const { return !std::holds_alternative<kernel::Identity>(act_op_); }
+    void set_activation(ActOp act_op) { act_op_ = act_op; }
+    ActOp activation() const { return act_op_; }
+    bool has_activation() const { return !std::holds_alternative<cuda::Identity>(act_op_); }
 
     InputInt* input() const { return input_; }
     Layer* weight() const { return weight_; }
@@ -48,7 +51,7 @@ class SparseAffineBase : public TypedLayer<float> {
   protected:
     int out_offset_ = 0;
     FusedConcat* concat_ = nullptr;
-    kernel::ActOp act_op_ = kernel::Identity{};
+    ActOp act_op_ = cuda::Identity{};
 
     InputInt* input_;
     TypedLayer<float>* weight_;

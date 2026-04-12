@@ -1,6 +1,6 @@
 #include "binary.h"
 
-namespace sorei::kernel {
+namespace sorei::nn::layer {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -15,9 +15,9 @@ __global__ void binary_backward_kernel(
         return;
 
     if (vec_idx + 4 <= size) {
-        float4 c_g4 = as_vec<const float4>(c_g)[idx];
-        float4 a4 = as_vec<const float4>(a)[idx];
-        float4 b4 = as_vec<const float4>(b)[idx];
+        float4 c_g4 = cuda::as_vec<const float4>(c_g)[idx];
+        float4 a4 = cuda::as_vec<const float4>(a)[idx];
+        float4 b4 = cuda::as_vec<const float4>(b)[idx];
 
         float4 a_g4 = {0.0f, 0.0f, 0.0f, 0.0f};
         float4 b_g4 = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -28,13 +28,13 @@ __global__ void binary_backward_kernel(
         op.backward(c_g4.w, a4.w, b4.w, a_g4.w, b_g4.w);
 
         if constexpr (GradF) {
-            float4& a_g_ref = as_vec<float4>(a_g)[idx];
-            a_g_ref = add_t4(a_g_ref, a_g4);
+            float4& a_g_ref = cuda::as_vec<float4>(a_g)[idx];
+            a_g_ref = cuda::add_t4(a_g_ref, a_g4);
         }
 
         if constexpr (GradB) {
-            float4& b_g_ref = as_vec<float4>(b_g)[idx];
-            b_g_ref = add_t4(b_g_ref, b_g4);
+            float4& b_g_ref = cuda::as_vec<float4>(b_g)[idx];
+            b_g_ref = cuda::add_t4(b_g_ref, b_g4);
         }
     } else {
         for (int i = vec_idx; i < size; i++) {
@@ -51,13 +51,13 @@ __global__ void binary_backward_kernel(
     }
 }
 
-void elemwise_binary_backward(
+void ElemwiseBinary::backward(
     const tensor::GPUMatrix<float>& a,
     tensor::GPUMatrix<float>& a_g,
     const tensor::GPUMatrix<float>& b,
     tensor::GPUMatrix<float>& b_g,
     const tensor::GPUMatrix<float>& c_g,
-    const BinaryOp& op
+    const Op& op
 ) {
     SOREI_CHECK(a.size() == b.size());
     SOREI_CHECK(a.size() == c_g.size());
@@ -93,4 +93,4 @@ void elemwise_binary_backward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::kernel
+} // namespace sorei::nn::layer

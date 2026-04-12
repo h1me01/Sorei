@@ -17,7 +17,7 @@ class CosineAnnealing : public LRScheduler {
           end_(end),
           max_steps_(max_steps - 1) {
 
-        CHECK(max_steps > 1);
+        SOREI_CHECK(max_steps > 1);
     }
 
     std::string info() const override {

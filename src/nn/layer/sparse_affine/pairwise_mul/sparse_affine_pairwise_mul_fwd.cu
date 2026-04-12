@@ -104,14 +104,14 @@ void SparseAffinePairwiseMul::forward() {
 
     const int w_r = weight.rows();
 
-    CHECK(out.cols() <= 65535);
-    CHECK(indices.cols() == out.cols());
-    CHECK(2 * out.rows() >= w_r + out_offset_);
+    SOREI_CHECK(out.cols() <= 65535);
+    SOREI_CHECK(indices.cols() == out.cols());
+    SOREI_CHECK(2 * out.rows() >= w_r + out_offset_);
 
-    CHECK(weight.data());
-    CHECK(bias.data());
-    CHECK(out.data());
-    CHECK(indices.data());
+    SOREI_CHECK(weight.data());
+    SOREI_CHECK(bias.data());
+    SOREI_CHECK(out.data());
+    SOREI_CHECK(indices.data());
 
     const int max_entries = indices.rows();
 
@@ -155,7 +155,7 @@ void SparseAffinePairwiseMul::forward() {
         act_op_
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

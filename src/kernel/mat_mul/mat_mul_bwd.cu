@@ -12,17 +12,17 @@ void mat_mul_backward(
     tensor::GPUMatrix<float>& in_g,
     const tensor::GPUMatrix<float>& out_g
 ) {
-    CHECK(weight.rows() == out_g.rows());
+    SOREI_CHECK(weight.rows() == out_g.rows());
 
-    CHECK(weight.data());
-    CHECK(in.data());
+    SOREI_CHECK(weight.data());
+    SOREI_CHECK(in.data());
 
     if (!weight_g.empty())
         cublas::sgemm(false, true, alpha, out_g, in, beta, weight_g);
 
     if (!in_g.empty()) {
-        CHECK(in_g.cols() == out_g.cols());
-        CHECK(in_g.rows() == weight.cols());
+        SOREI_CHECK(in_g.cols() == out_g.cols());
+        SOREI_CHECK(in_g.rows() == weight.cols());
         cublas::sgemm(true, false, alpha, weight, out_g, beta, in_g);
     }
 }

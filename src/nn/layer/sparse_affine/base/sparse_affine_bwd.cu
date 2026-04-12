@@ -48,16 +48,16 @@ void SparseAffine::backward() {
     auto& out_g = effective_grad();
     auto& indices = input_->data();
 
-    CHECK(weight_g.data());
-    CHECK(bias_g.data());
-    CHECK(out.data());
-    CHECK(out_g.data());
-    CHECK(indices.data());
+    SOREI_CHECK(weight_g.data());
+    SOREI_CHECK(bias_g.data());
+    SOREI_CHECK(out.data());
+    SOREI_CHECK(out_g.data());
+    SOREI_CHECK(indices.data());
 
-    CHECK(out_g.cols() <= 65535);
-    CHECK(indices.cols() == out_g.cols());
-    CHECK(weight_g.rows() == bias_g.rows());
-    CHECK(out_g.rows() >= weight_g.rows() + out_offset_);
+    SOREI_CHECK(out_g.cols() <= 65535);
+    SOREI_CHECK(indices.cols() == out_g.cols());
+    SOREI_CHECK(weight_g.rows() == bias_g.rows());
+    SOREI_CHECK(out_g.rows() >= weight_g.rows() + out_offset_);
 
     const int row_tiles = cuda::ceil_div(weight_g.rows(), BLOCK_SIZE);
     dim3 grid(out_g.cols(), row_tiles);
@@ -80,7 +80,7 @@ void SparseAffine::backward() {
         act_op_
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

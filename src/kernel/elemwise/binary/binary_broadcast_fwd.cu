@@ -23,13 +23,13 @@ void elemwise_binary_broadcast_forward(
     const auto& full = repeat_a ? b : a;
     const auto& broadcast = repeat_a ? a : b;
 
-    CHECK(full.shape() == c.shape());
-    CHECK(full.rows() == broadcast.rows());
-    CHECK(broadcast.cols() == 1);
+    SOREI_CHECK(full.shape() == c.shape());
+    SOREI_CHECK(full.rows() == broadcast.rows());
+    SOREI_CHECK(broadcast.cols() == 1);
 
-    CHECK(a.data());
-    CHECK(b.data());
-    CHECK(c.data());
+    SOREI_CHECK(a.data());
+    SOREI_CHECK(b.data());
+    SOREI_CHECK(c.data());
 
     const int grid = cuda::ceil_div(c.size(), BLOCK_SIZE);
 
@@ -42,7 +42,7 @@ void elemwise_binary_broadcast_forward(
         op
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::kernel

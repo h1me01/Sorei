@@ -29,14 +29,14 @@ write_quantized(std::ostream& f, const sorei::tensor::CPUMatrix<float>& src, int
             constexpr T hi = std::numeric_limits<T>::max();
             const T qv = static_cast<T>(std::round(src(i) * scale));
             if (qv < lo || qv > hi)
-                println("Warning: value {} out of range, clamping", src(i));
+                sorei::println("Warning: value {} out of range, clamping", src(i));
             dst[i] = std::clamp(qv, lo, hi);
         }
     }
 
     f.write(reinterpret_cast<const char*>(dst.data()), dst.size() * sizeof(T));
     if (!f.good())
-        error("Failed writing quantized data");
+        sorei::error("Failed writing quantized data");
 }
 
 } // namespace
@@ -137,7 +137,7 @@ class AstraModel : public sorei::nn::Model {
     void quantize_params(const std::string& path = "examples/astra/quantized_model.nnue") {
         std::ofstream f(path, std::ios::binary);
         if (!f.is_open())
-            error("Failed writing quantized parameters to {}", path);
+            sorei::error("Failed writing quantized parameters to {}", path);
 
         write_quantized<int16_t>(f, ft.weight.data().to_cpu(), 255);
         write_quantized<int16_t>(f, ft.bias.data().to_cpu(), 255);

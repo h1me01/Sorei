@@ -16,13 +16,13 @@ class Param : public TypedLayer<float> {
           shape_(shape) {}
 
     void uniform_init(float min_val, float max_val) {
-        CHECK(min_val <= max_val);
+        SOREI_CHECK(min_val <= max_val);
 
         tensor::CPUMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
-            result(i) = std::uniform_real_distribution<float>(min_val, max_val)(
-                rng::get_thread_local_rng()
-            );
+            result(i) =
+                std::uniform_real_distribution<float>(min_val, max_val)(rng::get_thread_local_rng()
+                );
         }
         data().upload(result);
 
@@ -42,7 +42,7 @@ class Param : public TypedLayer<float> {
     }
 
     void set_bounds(float min_val, float max_val) {
-        CHECK(min_val <= max_val);
+        SOREI_CHECK(min_val <= max_val);
         lower_bound_ = min_val;
         upper_bound_ = max_val;
     }

@@ -20,7 +20,7 @@ class MNISTDataset {
             std::abort();
         }
 
-        CHECK(read_be32(fi) == 0x00000803u);
+        SOREI_CHECK(read_be32(fi) == 0x00000803u);
         n_ = read_be32(fi);
         rows_ = read_be32(fi);
         cols_ = read_be32(fi);
@@ -28,7 +28,7 @@ class MNISTDataset {
 
         std::vector<uint8_t> raw(n_ * dim_);
         fi.read(reinterpret_cast<char*>(raw.data()), raw.size());
-        CHECK(fi);
+        SOREI_CHECK(fi);
 
         pixels_.resize(n_ * dim_);
         for (int i = 0; i < (int)raw.size(); i++)
@@ -40,12 +40,12 @@ class MNISTDataset {
             std::abort();
         }
 
-        CHECK(read_be32(fl) == 0x00000801u);
-        CHECK(read_be32(fl) == (uint32_t)n_);
+        SOREI_CHECK(read_be32(fl) == 0x00000801u);
+        SOREI_CHECK(read_be32(fl) == (uint32_t)n_);
 
         std::vector<uint8_t> raw_lbl(n_);
         fl.read(reinterpret_cast<char*>(raw_lbl.data()), n_);
-        CHECK(fl);
+        SOREI_CHECK(fl);
 
         labels_.resize(n_);
         for (int i = 0; i < n_; i++)

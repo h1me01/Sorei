@@ -13,7 +13,7 @@ class Shape {
         : rows_(rows),
           cols_(cols) {
 
-        CHECK(rows >= 0 && cols >= 0);
+        SOREI_CHECK(rows >= 0 && cols >= 0);
     }
 
     bool operator==(const Shape& other) const {

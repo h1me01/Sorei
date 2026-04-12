@@ -17,12 +17,12 @@ class Timer {
 };
 
 int main() {
-    constexpr float lr = 0.001f;
-    constexpr int epochs = 100;
-    constexpr int batch_size = 16384;
-    constexpr int batches_per_epoch = 6104;
-    constexpr int report_rate = 100;
-    constexpr int save_rate = 20;
+    const float lr = 0.001f;
+    const int epochs = 100;
+    const int batch_size = 16384;
+    const int batches_per_epoch = 6104;
+    const int report_rate = 100;
+    const int save_rate = 20;
 
     const std::string checkpoint_dir = "examples/astra/checkpoints";
 
@@ -45,19 +45,19 @@ int main() {
         }
     );
 
-    println("\nTraining configuration:");
-    println("  Device         {}", device_info());
-    println("  Epochs         {}", epochs);
-    println("  Batch Size     {}", batch_size);
-    println("  Batches/Epoch  {}", batches_per_epoch);
-    println("  Save Rate      {}", save_rate);
-    println("  LR Scheduler   {}", lr_sched.info());
-    println("  Output Path    {}", checkpoint_dir);
+    sorei::println("\nTraining configuration:");
+    sorei::println("  Device         {}", sorei::device_info());
+    sorei::println("  Epochs         {}", epochs);
+    sorei::println("  Batch Size     {}", batch_size);
+    sorei::println("  Batches/Epoch  {}", batches_per_epoch);
+    sorei::println("  Save Rate      {}", save_rate);
+    sorei::println("  LR Scheduler   {}", lr_sched.info());
+    sorei::println("  Output Path    {}", checkpoint_dir);
 
-    println("\nTraining Data");
+    sorei::println("\nTraining Data");
     for (const auto& f : binpack_loader.filenames())
-        println("  {}", f);
-    println("");
+        sorei::println("  {}", f);
+    sorei::println("");
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
         Timer timer;
@@ -74,7 +74,7 @@ int main() {
                 float loss = model.running_loss();
                 float time_sec = timer.elapsed() / 1000.0f;
 
-                print(
+                sorei::print(
                     "\repoch/batch = {:3d}/{:4d} | loss = {:1.6f} | pos/sec = {:7d} | time = "
                     "{:3d}s",
                     epoch,
@@ -103,5 +103,5 @@ int main() {
 
     model.quantize_params();
 
-    println("Prediction: {}", model.predict(chess::Position::startPosition().fen()));
+    sorei::println("Prediction: {}", model.predict(chess::Position::startPosition().fen()));
 }

@@ -59,15 +59,15 @@ void elemwise_binary_backward(
     const tensor::GPUMatrix<float>& c_g,
     const BinaryOp& op
 ) {
-    CHECK(a.size() == b.size());
-    CHECK(a.size() == c_g.size());
+    SOREI_CHECK(a.size() == b.size());
+    SOREI_CHECK(a.size() == c_g.size());
 
-    CHECK(a.data());
-    CHECK(b.data());
-    CHECK(c_g.data());
+    SOREI_CHECK(a.data());
+    SOREI_CHECK(b.data());
+    SOREI_CHECK(c_g.data());
 
-    CHECK(c_g.data() != a.data());
-    CHECK(c_g.data() != b.data());
+    SOREI_CHECK(c_g.data() != a.data());
+    SOREI_CHECK(c_g.data() != b.data());
 
     const int grid = cuda::ceil_div(a.size(), 4 * BLOCK_SIZE);
 
@@ -90,7 +90,7 @@ void elemwise_binary_backward(
         op
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::kernel

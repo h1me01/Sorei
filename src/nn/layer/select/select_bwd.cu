@@ -34,21 +34,21 @@ void Select::backward() {
     if (!input_->requires_grad())
         return;
 
-    CHECK(indices.rows() == 1);
-    CHECK(in_g.cols() == out_g.cols());
-    CHECK(out_g.cols() == indices.cols());
-    CHECK(in_g.rows() % out_g.rows() == 0);
+    SOREI_CHECK(indices.rows() == 1);
+    SOREI_CHECK(in_g.cols() == out_g.cols());
+    SOREI_CHECK(out_g.cols() == indices.cols());
+    SOREI_CHECK(in_g.rows() % out_g.rows() == 0);
 
-    CHECK(in_g.data());
-    CHECK(out_g.data());
-    CHECK(indices.data());
+    SOREI_CHECK(in_g.data());
+    SOREI_CHECK(out_g.data());
+    SOREI_CHECK(indices.data());
 
     const int blocks = cuda::ceil_div(out_g.size(), BLOCK_SIZE);
     select_bwd_kernel<<<blocks, BLOCK_SIZE>>>(
         in_g.data(), out_g.data(), indices.data(), in_g.rows(), out_g.rows(), out_g.cols()
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

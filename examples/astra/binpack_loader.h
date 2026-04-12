@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "sf_binpack/training_data_format.h"
+#include "sorei/nn.h"
 
 class BinpackLoader {
   public:
@@ -137,29 +138,20 @@ class BinpackLoader {
     std::unique_ptr<binpack::CompressedTrainingDataEntryParallelReader> stream_;
 
     static void validate_files(const std::vector<std::string>& files) {
+        if (files.empty())
+            sorei::error("BinpackLoader: no training data files provided");
+
         for (const auto& f : files) {
+            if (!std::filesystem::exists(f))
+                sorei::error("BinpackLoader: missing file {}", f);
+
             std::ifstream file(f);
-            if (!file.good()) {
-                std::cout << "BinpackLoader: File check failed for: " << f << '\n';
-                std::abort();
-            }
+            if (!file.is_open())
+                sorei::error("BinpackLoader: cannot open file (permission or invalid path): {}", f);
         }
 
-        std::vector<std::string> non_binpack_files;
         for (const auto& f : files)
             if (!f.ends_with(".binpack"))
-                non_binpack_files.push_back(f);
-
-        if (!non_binpack_files.empty()) {
-            std::cout << "BinpackLoader: the following files do not have .binpack extension:\n";
-            for (const auto& f : non_binpack_files)
-                std::cout << f << '\n';
-            std::abort();
-        }
-
-        if (files.empty()) {
-            std::cout << "BinpackLoader: no training data files provided\n";
-            std::abort();
-        }
+                sorei::error("BinpackLoader: {} is not a binpack file", f);
     }
 };

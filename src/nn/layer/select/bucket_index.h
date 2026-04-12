@@ -11,11 +11,11 @@ class BucketIndex : public TypedLayer<int> {
           count_(count),
           shape_(1, size) {
 
-        CHECK(count > 0);
+        SOREI_CHECK(count > 0);
     }
 
     void resize(int size) {
-        CHECK(size > 0);
+        SOREI_CHECK(size > 0);
         shape_ = tensor::Shape(1, size);
     }
 

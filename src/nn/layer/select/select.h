@@ -12,8 +12,8 @@ class Select : public TypedLayer<float> {
           input_(layer_cast<TypedLayer<float>>(input)),
           bucket_(bucket) {
 
-        CHECK(bucket_);
-        CHECK(input_->shape().rows() % bucket_->count() == 0);
+        SOREI_CHECK(bucket_);
+        SOREI_CHECK(input_->shape().rows() % bucket_->count() == 0);
     }
 
     void forward() override;

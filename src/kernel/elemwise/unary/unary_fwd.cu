@@ -29,10 +29,10 @@ __global__ void unary_fwd_kernel(const float* in, float* out, const int size, Op
 void elemwise_unary_forward(
     const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const UnaryOp& op
 ) {
-    CHECK(in.size() == out.size());
+    SOREI_CHECK(in.size() == out.size());
 
-    CHECK(in.data());
-    CHECK(out.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out.data());
 
     const int grid = cuda::ceil_div(in.size(), 4 * BLOCK_SIZE);
 
@@ -43,7 +43,7 @@ void elemwise_unary_forward(
         op
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::kernel

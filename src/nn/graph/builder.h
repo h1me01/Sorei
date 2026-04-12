@@ -19,7 +19,7 @@ class Node {
     Node(GraphBuilder* gb, layer::Layer* op)
         : gb_(gb),
           layer_(op) {
-        CHECK(layer_);
+        SOREI_CHECK(layer_);
     }
 
     Node relu() const;
@@ -50,7 +50,7 @@ class Node {
     Node operator/(float s) const;
 
     GraphBuilder& gb() const {
-        CHECK(gb_);
+        SOREI_CHECK(gb_);
         return *gb_;
     }
 
@@ -78,6 +78,9 @@ struct ParamNode : Node {
     void uniform_init(float lo, float hi) { get()->uniform_init(lo, hi); }
     void he_init(int input_dim) { get()->he_init(input_dim); }
     void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
+
+    tensor::GPUMatrix<float>& data() { return get()->data(); }
+    const tensor::GPUMatrix<float>& data() const { return get()->data(); }
 
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }

@@ -77,13 +77,13 @@ void AdamW::step(float lr) {
         auto& moms = momentum_[i];
         auto& vels = velocity_[i];
 
-        CHECK(moms.size() == data.size());
-        CHECK(vels.size() == data.size());
+        SOREI_CHECK(moms.size() == data.size());
+        SOREI_CHECK(vels.size() == data.size());
 
-        CHECK(data.data());
-        CHECK(grad.data());
-        CHECK(moms.data());
-        CHECK(vels.data());
+        SOREI_CHECK(data.data());
+        SOREI_CHECK(grad.data());
+        SOREI_CHECK(moms.data());
+        SOREI_CHECK(vels.data());
 
         const int blocks = cuda::ceil_div(data.size(), 4 * BLOCK_SIZE);
         adam_kernel<<<blocks, BLOCK_SIZE>>>(
@@ -100,7 +100,7 @@ void AdamW::step(float lr) {
             data.size()
         );
 
-        CUDA_KERNEL_LAUNCH_CHECK();
+        SOREI_CUDA_KERNEL_LAUNCH_CHECK();
     }
 }
 

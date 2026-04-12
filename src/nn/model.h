@@ -61,9 +61,7 @@ class Model {
     std::vector<layer::Param*> params() { return network().params(); }
     tensor::GPUMatrix<float>& prediction() { return network().prediction(); }
 
-    layer::Param& get_param(const std::string& name) {
-        return *graph_.get<layer::Param>(name);
-    }
+    layer::Param& get_param(const std::string& name) { return *graph_.get<layer::Param>(name); }
 
     void load_params(const std::string& file) {
         std::ifstream f(file, std::ios::binary);
@@ -118,7 +116,7 @@ class Model {
             s->resize(to_shape(t));
             s->data().upload(t.data());
         } else if (auto* b = dynamic_cast<layer::BucketIndex*>(layer)) {
-            CHECK(t.shape().size() == 1);
+            SOREI_CHECK(t.shape().size() == 1);
             b->resize(t.shape()[0]);
             b->data().upload(t.data());
         } else {

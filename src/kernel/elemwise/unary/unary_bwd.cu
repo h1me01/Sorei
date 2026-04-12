@@ -39,10 +39,10 @@ void elemwise_unary_backward(
     if (in_g.empty())
         return;
 
-    CHECK(in.size() == out_g.size());
+    SOREI_CHECK(in.size() == out_g.size());
 
-    CHECK(in.data());
-    CHECK(out_g.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out_g.data());
 
     const int grid = cuda::ceil_div(in.size(), 4 * BLOCK_SIZE);
 
@@ -55,7 +55,7 @@ void elemwise_unary_backward(
         op
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::kernel

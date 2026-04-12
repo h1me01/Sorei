@@ -16,11 +16,11 @@ class SparseAffineBase : public TypedLayer<float> {
           weight_(layer_cast<TypedLayer<float>>(weight)),
           bias_(layer_cast<TypedLayer<float>>(bias)) {
 
-        CHECK(input);
+        SOREI_CHECK(input);
     }
 
     void fuse_with_concat(FusedConcat* c) {
-        CHECK(c);
+        SOREI_CHECK(c);
         concat_ = c;
         out_offset_ = c->offset_of(this);
         // concat holds out buffer

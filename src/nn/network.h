@@ -18,14 +18,14 @@ class Network {
           loss_(dynamic_cast<layer::TypedLayer<float>*>(loss)) {
 
         for (auto* layer : layers_)
-            CHECK(layer);
+            SOREI_CHECK(layer);
 
-        CHECK(prediction_);
-        CHECK(contains(layers_, prediction_));
-        CHECK(!loss_ || contains(layers_, loss_));
+        SOREI_CHECK(prediction_);
+        SOREI_CHECK(contains(layers_, prediction_));
+        SOREI_CHECK(!loss_ || contains(layers_, loss_));
 
         if (loss_)
-            CHECK(loss_->shape().rows() == 1);
+            SOREI_CHECK(loss_->shape().rows() == 1);
     }
 
     Network(const Network&) = delete;
@@ -46,7 +46,7 @@ class Network {
     }
 
     void backward() {
-        CHECK(loss_);
+        SOREI_CHECK(loss_);
 
         zero_grads();
 

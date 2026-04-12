@@ -16,11 +16,11 @@ class ElemwiseBinary : public TypedLayer<float> {
         const auto s2 = input2_->shape();
 
         if (broadcast()) {
-            CHECK(s1.rows() == s2.rows());
-            CHECK(s1.cols() == 1 || s2.cols() == 1);
+            SOREI_CHECK(s1.rows() == s2.rows());
+            SOREI_CHECK(s1.cols() == 1 || s2.cols() == 1);
         } else {
-            CHECK(s1.rows() == s2.rows());
-            CHECK(s1.cols() == s2.cols() || s1.cols() == 0 || s2.cols() == 0);
+            SOREI_CHECK(s1.rows() == s2.rows());
+            SOREI_CHECK(s1.cols() == s2.cols() || s1.cols() == 0 || s2.cols() == 0);
         }
     }
 

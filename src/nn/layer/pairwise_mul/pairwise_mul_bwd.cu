@@ -31,19 +31,19 @@ void PairwiseMul::backward() {
     if (!input_->requires_grad())
         return;
 
-    CHECK(in.rows() % 2 == 0);
-    CHECK(in.cols() == out_g.cols());
-    CHECK(out_g.rows() == in.rows() / 2);
+    SOREI_CHECK(in.rows() % 2 == 0);
+    SOREI_CHECK(in.cols() == out_g.cols());
+    SOREI_CHECK(out_g.rows() == in.rows() / 2);
 
-    CHECK(in.data());
-    CHECK(out_g.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out_g.data());
 
     const int blocks = cuda::ceil_div(out_g.size(), BLOCK_SIZE);
     pairwise_mul_bwd_kernel<<<blocks, BLOCK_SIZE>>>(
         in.data(), in_g.data(), out_g.data(), out_g.rows(), out_g.cols()
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

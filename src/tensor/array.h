@@ -14,7 +14,7 @@ class CudaDevicePtr {
 
     explicit CudaDevicePtr(size_t count) {
         if (count > 0)
-            CUDA_CHECK(cudaMalloc(&ptr_, count * sizeof(T)));
+            SOREI_CUDA_CHECK(cudaMalloc(&ptr_, count * sizeof(T)));
     }
 
     ~CudaDevicePtr() {
@@ -56,7 +56,7 @@ class CudaHostPtr {
 
     explicit CudaHostPtr(size_t count) {
         if (count > 0)
-            CUDA_CHECK(cudaMallocHost(&ptr_, count * sizeof(T)));
+            SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, count * sizeof(T)));
     }
 
     ~CudaHostPtr() {
@@ -125,12 +125,12 @@ class CPUArray {
     T* data() const { return data_.get(); }
 
     T operator[](int i) const {
-        CHECK(i >= 0 && i < size_);
+        SOREI_CHECK(i >= 0 && i < size_);
         return data_.get()[i];
     }
 
     T& operator[](int i) {
-        CHECK(i >= 0 && i < size_);
+        SOREI_CHECK(i >= 0 && i < size_);
         return data_.get()[i];
     }
 
@@ -185,12 +185,12 @@ class PinnedCPUArray {
     T* data() const { return data_.get(); }
 
     T operator[](int i) const {
-        CHECK(i >= 0 && i < size_);
+        SOREI_CHECK(i >= 0 && i < size_);
         return data_.get()[i];
     }
 
     T& operator[](int i) {
-        CHECK(i >= 0 && i < size_);
+        SOREI_CHECK(i >= 0 && i < size_);
         return data_.get()[i];
     }
 
@@ -225,7 +225,9 @@ class GPUArray {
     GPUArray(const GPUArray& other)
         : size_(other.size_),
           data_(other.size_) {
-        CUDA_CHECK(cudaMemcpy(data_.get(), other.data_.get(), bytes(), cudaMemcpyDeviceToDevice));
+        SOREI_CUDA_CHECK(
+            cudaMemcpy(data_.get(), other.data_.get(), bytes(), cudaMemcpyDeviceToDevice)
+        );
     }
 
     GPUArray& operator=(const GPUArray& other) {
@@ -244,7 +246,7 @@ class GPUArray {
     bool empty() const { return size_ == 0; }
     T* data() const { return data_.get(); }
 
-    void clear() { CUDA_CHECK(cudaMemsetAsync(data_.get(), 0, bytes(), 0)); }
+    void clear() { SOREI_CUDA_CHECK(cudaMemsetAsync(data_.get(), 0, bytes(), 0)); }
 
     // no-op if size = size()
     void resize(int size) {
@@ -257,16 +259,16 @@ class GPUArray {
 
     template <typename Src>
     void upload(const Src& src) {
-        CHECK(src.size() == size_);
-        CHECK(src.bytes() == bytes());
-        CUDA_CHECK(cudaMemcpy(data_.get(), src.data(), bytes(), cudaMemcpyHostToDevice));
+        SOREI_CHECK(src.size() == size_);
+        SOREI_CHECK(src.bytes() == bytes());
+        SOREI_CUDA_CHECK(cudaMemcpy(data_.get(), src.data(), bytes(), cudaMemcpyHostToDevice));
     }
 
     template <typename Dst>
     void download(Dst& dst) const {
-        CHECK(size_ == dst.size());
-        CHECK(bytes() == dst.bytes());
-        CUDA_CHECK(cudaMemcpy(dst.data(), data_.get(), bytes(), cudaMemcpyDeviceToHost));
+        SOREI_CHECK(size_ == dst.size());
+        SOREI_CHECK(bytes() == dst.bytes());
+        SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), data_.get(), bytes(), cudaMemcpyDeviceToHost));
     }
 
     CPUArray<T> to_cpu() const {

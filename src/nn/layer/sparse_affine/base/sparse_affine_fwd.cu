@@ -84,21 +84,21 @@ void SparseAffine::forward() {
     auto& out = effective_data();
     auto& indices = input_->data();
 
-    CHECK(weight.data());
-    CHECK(bias.data());
-    CHECK(out.data());
-    CHECK(indices.data());
+    SOREI_CHECK(weight.data());
+    SOREI_CHECK(bias.data());
+    SOREI_CHECK(out.data());
+    SOREI_CHECK(indices.data());
 
-    CHECK(weight.rows() == bias.rows());
-    CHECK(out.cols() <= 65535);
-    CHECK(out.rows() >= weight.rows() + out_offset_);
+    SOREI_CHECK(weight.rows() == bias.rows());
+    SOREI_CHECK(out.cols() <= 65535);
+    SOREI_CHECK(out.rows() >= weight.rows() + out_offset_);
 
     const int w_r = weight.rows();
 
-    CHECK(out.cols() <= 65535);
-    CHECK(indices.cols() == out.cols());
-    CHECK(weight.rows() == bias.rows());
-    CHECK(out.rows() >= w_r + out_offset_);
+    SOREI_CHECK(out.cols() <= 65535);
+    SOREI_CHECK(indices.cols() == out.cols());
+    SOREI_CHECK(weight.rows() == bias.rows());
+    SOREI_CHECK(out.rows() >= w_r + out_offset_);
 
     const int max_entries = indices.rows();
 
@@ -142,7 +142,7 @@ void SparseAffine::forward() {
         act_op_
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

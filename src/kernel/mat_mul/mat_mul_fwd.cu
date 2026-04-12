@@ -10,13 +10,13 @@ void mat_mul_forward(
     const tensor::GPUMatrix<float>& in,
     tensor::GPUMatrix<float>& out
 ) {
-    CHECK(in.cols() == out.cols());
-    CHECK(weight.rows() == out.rows());
-    CHECK(weight.cols() == in.rows());
+    SOREI_CHECK(in.cols() == out.cols());
+    SOREI_CHECK(weight.rows() == out.rows());
+    SOREI_CHECK(weight.cols() == in.rows());
 
-    CHECK(weight.data());
-    CHECK(in.data());
-    CHECK(out.data());
+    SOREI_CHECK(weight.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out.data());
 
     cublas::sgemm(false, false, alpha, weight, in, beta, out);
 }

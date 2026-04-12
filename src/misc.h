@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-#define CHECK(expr)                                                                                \
+#define SOREI_CHECK(expr)                                                                          \
     do {                                                                                           \
         if (!static_cast<bool>(expr)) {                                                            \
             printf("CHECK failed: %s\n", #expr);                                                   \
@@ -17,7 +17,7 @@
         }                                                                                          \
     } while (0)
 
-#define CUDA_CHECK(expr)                                                                           \
+#define SOREI_CUDA_CHECK(expr)                                                                     \
     do {                                                                                           \
         cudaError_t result = (expr);                                                               \
         if (result != cudaSuccess) {                                                               \
@@ -28,6 +28,8 @@
             std::exit(1);                                                                          \
         }                                                                                          \
     } while (0)
+
+namespace sorei {
 
 template <typename... Args>
 inline void print(std::string_view fmt, Args&&... args) {
@@ -46,14 +48,16 @@ template <typename... Args>
     std::abort();
 }
 
-inline void set_device(int id) { CUDA_CHECK(cudaSetDevice(id)); }
+inline void set_device(int id) { SOREI_CUDA_CHECK(cudaSetDevice(id)); }
 
 inline std::string device_info() {
     int device = -1;
-    CUDA_CHECK(cudaGetDevice(&device));
+    SOREI_CUDA_CHECK(cudaGetDevice(&device));
 
     cudaDeviceProp prop{};
-    CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
+    SOREI_CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
 
     return prop.name;
 }
+
+} // namespace sorei

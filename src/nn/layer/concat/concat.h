@@ -12,7 +12,7 @@ class ConcatBase : public TypedLayer<float> {
         : TypedLayer<float>("Concat"),
           axis_(axis) {
 
-        CHECK(!inputs.empty());
+        SOREI_CHECK(!inputs.empty());
         for (auto* p : inputs)
             inputs_.push_back(layer_cast<TypedLayer<float>>(p));
     }
@@ -34,7 +34,7 @@ class ConcatBase : public TypedLayer<float> {
         int total = 0;
         for (const auto& input : inputs_) {
             auto s = input->shape();
-            CHECK((is_vertical ? s.cols() : s.rows()) == fixed);
+            SOREI_CHECK((is_vertical ? s.cols() : s.rows()) == fixed);
             total += is_vertical ? s.rows() : s.cols();
         }
 
@@ -68,7 +68,7 @@ struct FusedConcat : ConcatBase {
                 return offset;
             offset += input->shape().rows();
         }
-        CHECK(false);
+        SOREI_CHECK(false);
         return -1;
     }
 };

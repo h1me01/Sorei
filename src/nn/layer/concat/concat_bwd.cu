@@ -27,32 +27,32 @@ __global__ void concat_bwd_kernel(
 
 void Concat::backward() {
     auto& out_g = grad();
-    CHECK(out_g.data());
+    SOREI_CHECK(out_g.data());
 
     int offset = 0;
     for (const auto& input : inputs_) {
         auto& in_g = input->grad();
-        CHECK(in_g.data());
+        SOREI_CHECK(in_g.data());
 
         const int blocks = cuda::ceil_div(in_g.size(), BLOCK_SIZE);
 
         if (axis_ == ConcatAxis::Rows) {
-            CHECK(in_g.cols() == out_g.cols());
-            CHECK(offset + in_g.rows() <= out_g.rows());
+            SOREI_CHECK(in_g.cols() == out_g.cols());
+            SOREI_CHECK(offset + in_g.rows() <= out_g.rows());
 
             concat_bwd_kernel<ConcatAxis::Rows><<<blocks, BLOCK_SIZE>>>(
                 in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
             );
         } else {
-            CHECK(in_g.rows() == out_g.rows());
-            CHECK(offset + in_g.cols() <= out_g.cols());
+            SOREI_CHECK(in_g.rows() == out_g.rows());
+            SOREI_CHECK(offset + in_g.cols() <= out_g.cols());
 
             concat_bwd_kernel<ConcatAxis::Cols><<<blocks, BLOCK_SIZE>>>(
                 in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
             );
         }
 
-        CUDA_KERNEL_LAUNCH_CHECK();
+        SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 
         offset += (axis_ == ConcatAxis::Rows) ? in_g.rows() : in_g.cols();
     }

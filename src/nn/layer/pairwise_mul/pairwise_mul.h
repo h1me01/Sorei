@@ -10,7 +10,7 @@ class PairwiseMul : public TypedLayer<float> {
         : TypedLayer<float>("PairwiseMul"),
           input_(layer_cast<TypedLayer<float>>(input)) {
 
-        CHECK(input_->shape().rows() % 2 == 0);
+        SOREI_CHECK(input_->shape().rows() % 2 == 0);
     }
 
     void forward() override;

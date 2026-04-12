@@ -35,12 +35,12 @@ class MatrixBase {
     T& operator()(int i) { return data_[i]; }
 
     T operator()(int r, int c) const {
-        CHECK(in_bounds(r, c));
+        SOREI_CHECK(in_bounds(r, c));
         return data_[rows() * c + r];
     }
 
     T& operator()(int r, int c) {
-        CHECK(in_bounds(r, c));
+        SOREI_CHECK(in_bounds(r, c));
         return data_[rows() * c + r];
     }
 
@@ -87,7 +87,7 @@ class CPUMatrix : public MatrixBase<T, Storage> {
     }
 
     CPUMatrix reshape(int r, int c) const {
-        CHECK(r * c == this->size());
+        SOREI_CHECK(r * c == this->size());
         CPUMatrix out(Shape(r, c));
         std::copy(this->begin(), this->end(), out.begin());
         return out;
@@ -118,7 +118,7 @@ class CPUMatrix : public MatrixBase<T, Storage> {
   private:
     template <typename Op>
     CPUMatrix elementwise(const CPUMatrix& o, Op op) const {
-        CHECK(this->shape_ == o.shape_);
+        SOREI_CHECK(this->shape_ == o.shape_);
         CPUMatrix out(this->shape_);
         for (int i = 0; i < this->size(); i++)
             out(i) = op((*this)(i), o(i));
@@ -158,15 +158,15 @@ class GPUMatrix : public MatrixBase<T, GPUArray<T>> {
 
     template <typename Src>
     void upload(const Src& src) {
-        CHECK(this->size() == src.size());
-        CHECK(this->bytes() == src.bytes());
+        SOREI_CHECK(this->size() == src.size());
+        SOREI_CHECK(this->bytes() == src.bytes());
         this->data_.upload(src);
     }
 
     template <typename Dst>
     void download(Dst& dst) const {
-        CHECK(this->size() == dst.size());
-        CHECK(this->bytes() == dst.bytes());
+        SOREI_CHECK(this->size() == dst.size());
+        SOREI_CHECK(this->bytes() == dst.bytes());
         this->data_.download(dst);
     }
 

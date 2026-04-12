@@ -22,7 +22,7 @@ class LayerInputSlot {
             [](void* ptr) -> Layer* { return *static_cast<T**>(ptr); },
             [](void* ptr, Layer* layer) {
                 auto* typed = dynamic_cast<T*>(layer);
-                CHECK(typed);
+                SOREI_CHECK(typed);
                 *static_cast<T**>(ptr) = typed;
             }
         );
@@ -129,9 +129,9 @@ class TypedLayer : public Layer {
 
 template <typename T>
 T* layer_cast(Layer* layer) {
-    CHECK(layer);
+    SOREI_CHECK(layer);
     T* typed = dynamic_cast<T*>(layer);
-    CHECK(typed);
+    SOREI_CHECK(typed);
     return typed;
 }
 

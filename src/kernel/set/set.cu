@@ -11,12 +11,12 @@ __global__ void set_kernel(float* data, const float val, const int size) {
 }
 
 void set(tensor::GPUMatrix<float>& data, const float val) {
-    CHECK(data.data());
+    SOREI_CHECK(data.data());
 
     const int grid = cuda::ceil_div(data.size(), BLOCK_SIZE);
     set_kernel<<<grid, BLOCK_SIZE>>>(data.data(), val, data.size());
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::kernel

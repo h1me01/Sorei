@@ -17,8 +17,8 @@ class AdamW : public Optimizer {
           beta2_(beta2),
           decay_(decay) {
 
-        CHECK(beta1 >= 0.0f && beta1 < 1.0f);
-        CHECK(beta2 >= 0.0f && beta2 < 1.0f);
+        SOREI_CHECK(beta1 >= 0.0f && beta1 < 1.0f);
+        SOREI_CHECK(beta2 >= 0.0f && beta2 < 1.0f);
 
         for (auto* t : params_) {
             int size = t->data().size();
@@ -65,9 +65,8 @@ class AdamW : public Optimizer {
     std::vector<tensor::GPUArray<float>> momentum_;
     std::vector<tensor::GPUArray<float>> velocity_;
 
-    void save_buffers(
-        const std::string& file, const std::vector<tensor::GPUArray<float>>& buffers
-    ) const {
+    void save_buffers(const std::string& file, const std::vector<tensor::GPUArray<float>>& buffers)
+        const {
         std::ofstream f(file, std::ios::binary);
         if (!f.is_open())
             error("Optimizer: failed to open state file for writing {}", file);

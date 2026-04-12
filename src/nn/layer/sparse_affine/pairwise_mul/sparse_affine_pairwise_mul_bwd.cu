@@ -76,17 +76,17 @@ void SparseAffinePairwiseMul::backward() {
     auto& out_g = effective_grad();
     auto& indices = input_->data();
 
-    CHECK(out_g.cols() <= 65535);
-    CHECK(indices.cols() == out_g.cols());
-    CHECK(weight_g.rows() == bias_g.rows());
-    CHECK(2 * out_g.rows() >= weight_g.rows() + out_offset_);
+    SOREI_CHECK(out_g.cols() <= 65535);
+    SOREI_CHECK(indices.cols() == out_g.cols());
+    SOREI_CHECK(weight_g.rows() == bias_g.rows());
+    SOREI_CHECK(2 * out_g.rows() >= weight_g.rows() + out_offset_);
 
-    CHECK(weight_g.data());
-    CHECK(bias_g.data());
-    CHECK(weight.data());
-    CHECK(bias.data());
-    CHECK(out_g.data());
-    CHECK(indices.data());
+    SOREI_CHECK(weight_g.data());
+    SOREI_CHECK(bias_g.data());
+    SOREI_CHECK(weight.data());
+    SOREI_CHECK(bias.data());
+    SOREI_CHECK(out_g.data());
+    SOREI_CHECK(indices.data());
 
     const int max_entries = indices.rows();
     const int row_tiles = cuda::ceil_div(weight_g.rows() / 2, BLOCK_SIZE);
@@ -113,7 +113,7 @@ void SparseAffinePairwiseMul::backward() {
         act_op_
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

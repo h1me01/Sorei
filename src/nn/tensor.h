@@ -20,28 +20,28 @@ class Tensor {
     }
 
     T operator[](int i) const {
-        CHECK(shape_.size() == 1);
-        CHECK(i >= 0 && i < shape_[0]);
+        SOREI_CHECK(shape_.size() == 1);
+        SOREI_CHECK(i >= 0 && i < shape_[0]);
         return data_[i];
     }
 
     T& operator[](int i) {
-        CHECK(shape_.size() == 1);
-        CHECK(i >= 0 && i < shape_[0]);
+        SOREI_CHECK(shape_.size() == 1);
+        SOREI_CHECK(i >= 0 && i < shape_[0]);
         return data_[i];
     }
 
     T operator()(int row, int col) const {
-        CHECK(shape_.size() == 2);
-        CHECK(row >= 0 && row < shape_[0]);
-        CHECK(col >= 0 && col < shape_[1]);
+        SOREI_CHECK(shape_.size() == 2);
+        SOREI_CHECK(row >= 0 && row < shape_[0]);
+        SOREI_CHECK(col >= 0 && col < shape_[1]);
         return data_[row + col * shape_[0]];
     }
 
     T& operator()(int row, int col) {
-        CHECK(shape_.size() == 2);
-        CHECK(row >= 0 && row < shape_[0]);
-        CHECK(col >= 0 && col < shape_[1]);
+        SOREI_CHECK(shape_.size() == 2);
+        SOREI_CHECK(row >= 0 && row < shape_[0]);
+        SOREI_CHECK(col >= 0 && col < shape_[1]);
         return data_[row + col * shape_[0]];
     }
 

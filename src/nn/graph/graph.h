@@ -80,10 +80,10 @@ class Graph {
     template <typename T>
     T* get(const std::string& name) const {
         auto it = named_ops_.find(name);
-        CHECK(it != named_ops_.end());
+        SOREI_CHECK(it != named_ops_.end());
 
         T* p = dynamic_cast<T*>(it->second);
-        CHECK(p);
+        SOREI_CHECK(p);
 
         return p;
     }
@@ -116,7 +116,7 @@ class Graph {
     template <typename T, typename... Args>
     layer::Layer* emplace(Args&&... args) {
         nodes_.push_back(std::make_unique<T>(std::forward<Args>(args)...));
-        CHECK(nodes_.back());
+        SOREI_CHECK(nodes_.back());
         return nodes_.back().get();
     }
 
@@ -134,7 +134,7 @@ class Graph {
     }
 
     void erase(layer::Layer* op) {
-        CHECK(op);
+        SOREI_CHECK(op);
         auto it = std::find_if(nodes_.begin(), nodes_.end(), [op](const auto& p) {
             return p.get() == op;
         });

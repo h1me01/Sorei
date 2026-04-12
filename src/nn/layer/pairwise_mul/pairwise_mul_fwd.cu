@@ -23,17 +23,17 @@ void PairwiseMul::forward() {
     auto& in = input_->data();
     auto& out = data();
 
-    CHECK(in.rows() % 2 == 0);
-    CHECK(in.cols() == out.cols());
-    CHECK(out.rows() == in.rows() / 2);
+    SOREI_CHECK(in.rows() % 2 == 0);
+    SOREI_CHECK(in.cols() == out.cols());
+    SOREI_CHECK(out.rows() == in.rows() / 2);
 
-    CHECK(in.data());
-    CHECK(out.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out.data());
 
     const int blocks = cuda::ceil_div(out.size(), BLOCK_SIZE);
     pairwise_mul_fwd_kernel<<<blocks, BLOCK_SIZE>>>(in.data(), out.data(), out.rows(), out.cols());
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

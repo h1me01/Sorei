@@ -2,7 +2,7 @@
 
 #include "cublas.h"
 
-#define CUBLAS_CHECK(expr)                                                                         \
+#define SOREI_CUBLAS_CHECK(expr)                                                                   \
     do {                                                                                           \
         cublasStatus_t status = (expr);                                                            \
         if (status != CUBLAS_STATUS_SUCCESS) {                                                     \
@@ -20,7 +20,7 @@ namespace {
 cublasHandle_t get_handle() {
     struct HandleOwner {
         cublasHandle_t handle;
-        HandleOwner() { CUBLAS_CHECK(cublasCreate(&handle)); }
+        HandleOwner() { SOREI_CUBLAS_CHECK(cublasCreate(&handle)); }
         ~HandleOwner() { cublasDestroy(handle); }
     };
     static HandleOwner owner;
@@ -42,15 +42,15 @@ void sgemm(
     int n = trans_b ? b.rows() : b.cols();
     int k_b = trans_b ? b.cols() : b.rows();
 
-    CHECK(k == k_b);
-    CHECK(c.rows() == m);
-    CHECK(c.cols() == n);
+    SOREI_CHECK(k == k_b);
+    SOREI_CHECK(c.rows() == m);
+    SOREI_CHECK(c.cols() == n);
 
-    CHECK(a.data());
-    CHECK(b.data());
-    CHECK(c.data());
+    SOREI_CHECK(a.data());
+    SOREI_CHECK(b.data());
+    SOREI_CHECK(c.data());
 
-    CUBLAS_CHECK(cublasSgemm(
+    SOREI_CUBLAS_CHECK(cublasSgemm(
         get_handle(),
         trans_a ? CUBLAS_OP_T : CUBLAS_OP_N,
         trans_b ? CUBLAS_OP_T : CUBLAS_OP_N,

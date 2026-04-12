@@ -29,15 +29,15 @@ static float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int b
 }
 
 int main() {
-    constexpr float lr = 0.001f;
-    constexpr int epochs = 20;
-    constexpr int batch_size = 256;
+    const float lr = 0.001f;
+    const int epochs = 20;
+    const int batch_size = 256;
 
     MNISTDataset train_set("data/train-images.idx3-ubyte", "data/train-labels.idx1-ubyte");
     MNISTDataset test_set("data/t10k-images.idx3-ubyte", "data/t10k-labels.idx1-ubyte");
 
-    println("{} training samples", train_set.size());
-    println("{} test samples\n", test_set.size());
+    sorei::println("{} training samples", train_set.size());
+    sorei::println("{} test samples\n", test_set.size());
 
     MNISTLoader train_loader(train_set, batch_size);
     const int batches_per_epoch = train_loader.batches_per_epoch();
@@ -56,7 +56,7 @@ int main() {
             optim.step(lr_sched.get());
         }
 
-        print(
+        sorei::print(
             "\repoch {:2d}/{} | loss {:.5f} | test accuracy: {:.2f}%\n",
             epoch,
             epochs,

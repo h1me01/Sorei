@@ -31,21 +31,21 @@ void Select::forward() {
     auto& out = data();
     auto& indices = bucket_->data();
 
-    CHECK(indices.rows() == 1);
-    CHECK(in.cols() == out.cols());
-    CHECK(out.cols() == indices.cols());
-    CHECK(in.rows() % out.rows() == 0);
+    SOREI_CHECK(indices.rows() == 1);
+    SOREI_CHECK(in.cols() == out.cols());
+    SOREI_CHECK(out.cols() == indices.cols());
+    SOREI_CHECK(in.rows() % out.rows() == 0);
 
-    CHECK(in.data());
-    CHECK(out.data());
-    CHECK(indices.data());
+    SOREI_CHECK(in.data());
+    SOREI_CHECK(out.data());
+    SOREI_CHECK(indices.data());
 
     const int blocks = cuda::ceil_div(out.size(), BLOCK_SIZE);
     select_fwd_kernel<<<blocks, BLOCK_SIZE>>>(
         in.data(), out.data(), indices.data(), in.rows(), out.rows(), out.cols()
     );
 
-    CUDA_KERNEL_LAUNCH_CHECK();
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn::layer

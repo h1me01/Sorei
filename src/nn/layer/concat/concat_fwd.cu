@@ -22,32 +22,32 @@ __global__ void concat_fwd_kernel(
 
 void Concat::forward() {
     auto& out = data();
-    CHECK(out.data());
+    SOREI_CHECK(out.data());
 
     int offset = 0;
     for (const auto& input : inputs_) {
         auto& in = input->data();
-        CHECK(in.data());
+        SOREI_CHECK(in.data());
 
         const int blocks = cuda::ceil_div(in.size(), BLOCK_SIZE);
 
         if (axis_ == ConcatAxis::Rows) {
-            CHECK(in.cols() == out.cols());
-            CHECK(offset + in.rows() <= out.rows());
+            SOREI_CHECK(in.cols() == out.cols());
+            SOREI_CHECK(offset + in.rows() <= out.rows());
 
             concat_fwd_kernel<ConcatAxis::Rows><<<blocks, BLOCK_SIZE>>>(
                 in.data(), out.data(), in.rows(), in.cols(), out.rows(), offset
             );
         } else {
-            CHECK(in.rows() == out.rows());
-            CHECK(offset + in.cols() <= out.cols());
+            SOREI_CHECK(in.rows() == out.rows());
+            SOREI_CHECK(offset + in.cols() <= out.cols());
 
             concat_fwd_kernel<ConcatAxis::Cols><<<blocks, BLOCK_SIZE>>>(
                 in.data(), out.data(), in.rows(), in.cols(), out.rows(), offset
             );
         }
 
-        CUDA_KERNEL_LAUNCH_CHECK();
+        SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 
         offset += (axis_ == ConcatAxis::Rows) ? in.rows() : in.cols();
     }

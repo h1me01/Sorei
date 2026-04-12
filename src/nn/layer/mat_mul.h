@@ -11,7 +11,7 @@ class MatMul : public TypedLayer<float> {
           weight_(layer_cast<TypedLayer<float>>(weight)),
           input_(layer_cast<TypedLayer<float>>(input)) {
 
-        CHECK(weight_->shape().cols() == input_->shape().rows());
+        SOREI_CHECK(weight_->shape().cols() == input_->shape().rows());
     }
 
     void forward() override { kernel::mat_mul_forward(weight_->data(), input_->data(), data()); }

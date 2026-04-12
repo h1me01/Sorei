@@ -16,7 +16,7 @@ class StepDecay : public LRScheduler {
           gamma_(gamma),
           step_size_(step_size) {
 
-        CHECK(step_size > 0);
+        SOREI_CHECK(step_size > 0);
     }
 
     std::string info() const override {

@@ -12,7 +12,7 @@ class Affine : public TypedLayer<float> {
           weight_(layer_cast<TypedLayer<float>>(weight)),
           bias_(layer_cast<TypedLayer<float>>(bias)) {
 
-        CHECK(weight_->shape().cols() == input_->shape().rows());
+        SOREI_CHECK(weight_->shape().cols() == input_->shape().rows());
     }
 
     void forward() override {

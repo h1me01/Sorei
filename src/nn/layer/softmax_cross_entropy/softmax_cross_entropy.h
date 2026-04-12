@@ -14,7 +14,7 @@ class SoftmaxCrossEntropy : public TypedLayer<float> {
           input_(layer_cast<TypedLayer<float>>(logits)),
           labels_(labels) {
 
-        CHECK(labels_);
+        SOREI_CHECK(labels_);
     }
 
     void forward() override;

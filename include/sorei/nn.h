@@ -1,3 +1,3 @@
 #pragma once
 
-#include "../../src/nn/include.h"
+#include "../../sorei/src/nn/include.h"

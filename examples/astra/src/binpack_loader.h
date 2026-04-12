@@ -14,7 +14,7 @@
 #include <thread>
 #include <vector>
 
-#include "sf_binpack/training_data_format.h"
+#include "../sf_binpack/training_data_format.h"
 #include "sorei/nn.h"
 
 class BinpackLoader {

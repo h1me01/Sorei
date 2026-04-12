@@ -8,7 +8,7 @@ set(CMAKE_CUDA_ARCHITECTURES native)
 file(GLOB_RECURSE SOREI_SRCS CONFIGURE_DEPENDS src/*.cu src/*.cpp)
 add_library(sorei ${SOREI_SRCS})
 
-target_include_directories(sorei PUBLIC include)
+target_include_directories(sorei PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 find_package(CUDAToolkit REQUIRED)
 target_link_libraries(sorei PUBLIC CUDA::cudart CUDA::cublas)

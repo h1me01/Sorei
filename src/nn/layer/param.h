@@ -21,8 +21,7 @@ class Param : public TypedLayer<float> {
         tensor::CPUMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
             result(i) =
-                std::uniform_real_distribution<float>(min_val, max_val)(rng::get_thread_local_rng()
-                );
+                std::uniform_real_distribution<float>(min_val, max_val)(rng::thread_local_rng());
         }
         data().upload(result);
 
@@ -33,7 +32,7 @@ class Param : public TypedLayer<float> {
         tensor::CPUMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
             result(i) = std::normal_distribution<float>(0.0, std::sqrt(2.0 / input_dim))(
-                rng::get_thread_local_rng()
+                rng::thread_local_rng()
             );
         }
         data().upload(result);

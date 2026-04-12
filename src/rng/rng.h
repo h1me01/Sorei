@@ -5,7 +5,7 @@
 namespace sorei::rng {
 
 template <typename RNG = std::mt19937_64>
-auto& get_thread_local_rng(typename RNG::result_type seed = RNG::default_seed) {
+auto& thread_local_rng(typename RNG::result_type seed = RNG::default_seed) {
     static thread_local RNG rng(seed);
     return rng;
 }

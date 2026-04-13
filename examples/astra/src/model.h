@@ -2,19 +2,10 @@
 
 #include <fstream>
 
-#include "../sf_binpack/training_data_format.h"
+#include "binpack_loader.h"
 #include "sorei/nn.h"
 
 namespace {
-
-static float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
-
-static int feature_index(chess::Piece pc, chess::Square psq, chess::Color view) {
-    if (view == chess::Color::Black)
-        psq.flipVertically();
-
-    return (int)psq + (int)pc.type() * 64 + (pc.color() != view) * 64 * 6;
-}
 
 template <typename T = float>
 static void
@@ -41,67 +32,16 @@ write_quantized(std::ostream& f, const sorei::tensor::CPUMatrix<float>& src, int
 
 } // namespace
 
-class AstraModel : public sorei::nn::Model {
+struct AstraModel : public sorei::nn::Model {
     using AffineLayer = sorei::nn::graph::AffineLayer;
     using TrainingDataEntry = binpack::TrainingDataEntry;
 
-  public:
     static constexpr int FT_SIZE = 1024;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
     static constexpr int OUTPUT_BUCKETS = 8;
-    static constexpr float EVAL_SCALE = 400.0f;
-    static constexpr float WDL_WEIGHT = 0.7f;
 
     AffineLayer ft, l1, l2, l3;
-
-    void feed(const std::vector<TrainingDataEntry>& batch) {
-        const int batch_size = batch.size();
-
-        stm_indices.resize({32, batch_size});
-        nstm_indices.resize({32, batch_size});
-        bucket_indices.resize({batch_size});
-        targets.resize({batch_size});
-
-        stm_indices.fill(-1);
-        nstm_indices.fill(-1);
-
-        for (size_t i = 0; i < batch.size(); i++) {
-            const auto& entry = batch[i];
-            const chess::Color stm = entry.pos.sideToMove();
-
-            int j = 0;
-            for (auto sq : entry.pos.piecesBB()) {
-                chess::Piece pc = entry.pos.pieceAt(sq);
-                stm_indices(j, i) = feature_index(pc, sq, stm);
-                nstm_indices(j, i) = feature_index(pc, sq, !stm);
-                ++j;
-            }
-
-            const float score_target = sigmoid(entry.score / EVAL_SCALE);
-            const float wdl_target = (entry.result + 1) / 2.0f;
-            targets[i] = WDL_WEIGHT * wdl_target + (1.0f - WDL_WEIGHT) * score_target;
-
-            bucket_indices[i] = (entry.pos.pieceCount() - 2) / 4;
-        }
-
-        forward({
-            {"stm_in", stm_indices},
-            {"nstm_in", nstm_indices},
-            {"output_bucket", bucket_indices},
-            {"target", targets},
-        });
-    }
-
-    float predict(const std::string& fen) {
-        chess::Position pos;
-        pos.set(fen);
-        std::vector<binpack::TrainingDataEntry> ds{{pos}};
-
-        feed(ds);
-
-        return prediction().to_cpu()(0) * EVAL_SCALE;
-    }
 
     sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
         // layers
@@ -134,7 +74,24 @@ class AstraModel : public sorei::nn::Model {
         return {.prediction = l3_out, .loss = loss};
     }
 
-    void quantize_params(const std::string& path = "examples/astra/quantized_model.nnue") {
+    float predict(const std::string& fen) {
+        chess::Position pos;
+        pos.set(fen);
+        std::vector<binpack::TrainingDataEntry> ds{{pos}};
+
+        BatchData batch{ds};
+
+        forward({
+            {"stm_in", batch.stm_indices()},
+            {"nstm_in", batch.nstm_indices()},
+            {"output_bucket", batch.bucket_indices()},
+            {"target", batch.targets()},
+        });
+
+        return prediction().to_cpu()(0) * BatchData::EVAL_SCALE;
+    }
+
+    void quantize_params(const std::string& path = "quantized_model.nnue") {
         std::ofstream f(path, std::ios::binary);
         if (!f.is_open())
             sorei::error("Failed writing quantized parameters to {}", path);
@@ -148,10 +105,4 @@ class AstraModel : public sorei::nn::Model {
         write_quantized<float>(f, l3.weight.data().to_cpu().transpose());
         write_quantized<float>(f, l3.bias.data().to_cpu());
     }
-
-  private:
-    sorei::nn::Tensor<int> stm_indices;
-    sorei::nn::Tensor<int> nstm_indices;
-    sorei::nn::Tensor<int> bucket_indices;
-    sorei::nn::Tensor<float> targets;
 };

@@ -21,10 +21,10 @@ class Timer {
 
 int main() {
     const float lr = 0.001f;
-    const int epochs = 100;
+    const int epochs = 400;
     const int batch_size = 16384;
     const int batches_per_epoch = 6104;
-    const int save_rate = 20;
+    const int save_rate = 40;
 
     const std::string checkpoint_dir = "checkpoints";
 
@@ -37,7 +37,7 @@ int main() {
 
     auto binpack_loader = BinpackLoader(
         batch_size,
-        2,
+        4,
         {"/home/h1me/Downloads/data.binpack"},
         [](const binpack::TrainingDataEntry& e) {
             return std::abs(e.score) > 10000 //
@@ -46,6 +46,8 @@ int main() {
                    || e.move.type != chess::MoveType::Normal;
         }
     );
+
+    auto prefetcher = BatchPrefetcher(binpack_loader, batch_size);
 
     sorei::println("\nTraining configuration:");
     sorei::println("  Device         {}", sorei::device_info());
@@ -67,7 +69,16 @@ int main() {
         model.clear_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            model.feed(binpack_loader.next());
+            auto* gpu_batch = prefetcher.next();
+            if (!gpu_batch)
+                break;
+
+            model.forward(
+                {{"stm_in", gpu_batch->stm_indices},
+                 {"nstm_in", gpu_batch->nstm_indices},
+                 {"output_bucket", gpu_batch->bucket_indices},
+                 {"target", gpu_batch->targets}}
+            );
             model.backward();
             optim.step(lr_sched.get());
 
@@ -102,5 +113,7 @@ int main() {
 
     model.quantize_params();
 
-    sorei::println("Prediction: {}", model.predict(chess::Position::startPosition().fen()));
+    sorei::println(
+        "\nstartpos eval: {:.2f}", model.predict(chess::Position::startPosition().fen())
+    );
 }

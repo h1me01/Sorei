@@ -30,6 +30,7 @@ THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <array>
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <climits>
 #include <cmath>
 #include <condition_variable>
@@ -608,8 +609,8 @@ struct EnumTraits<PieceType> {
             return static_cast<PieceType>(it / 2);
     }
 
-    [[nodiscard]] static constexpr std::optional<PieceType> fromString(std::string_view sv
-    ) noexcept {
+    [[nodiscard]] static constexpr std::optional<PieceType>
+    fromString(std::string_view sv) noexcept {
         if (sv.size() != 1)
             return {};
 
@@ -1204,14 +1205,16 @@ struct EnumTraits<Square> {
     [[nodiscard]] static constexpr std::string_view toString(Square sq) {
         assert(sq.isOk());
 
-        return std::string_view("a1b1c1d1e1f1g1h1"
-                                "a2b2c2d2e2f2g2h2"
-                                "a3b3c3d3e3f3g3h3"
-                                "a4b4c4d4e4f4g4h4"
-                                "a5b5c5d5e5f5g5h5"
-                                "a6b6c6d6e6f6g6h6"
-                                "a7b7c7d7e7f7g7h7"
-                                "a8b8c8d8e8f8g8h8")
+        return std::string_view(
+                   "a1b1c1d1e1f1g1h1"
+                   "a2b2c2d2e2f2g2h2"
+                   "a3b3c3d3e3f3g3h3"
+                   "a4b4c4d4e4f4g4h4"
+                   "a5b5c5d5e5f5g5h5"
+                   "a6b6c6d6e6f6g6h6"
+                   "a7b7c7d7e7f7g7h7"
+                   "a8b8c8d8e8f8g8h8"
+        )
             .substr(ordinal(sq) * 2, 2);
     }
 
@@ -4269,9 +4272,7 @@ inline void forEachLegalMove(const Position& pos, FuncT&& func) {
         // TODO: use iterators so we don't loop over all moves
         //       when we can avoid it.
         movegen::forEachPseudoLegalPawnMove(
-            *this,
-            move.from,
-            [&isValid, &move](const Move& genMove) {
+            *this, move.from, [&isValid, &move](const Move& genMove) {
                 if (move == genMove) {
                     isValid = true;
                 }
@@ -4434,9 +4435,11 @@ compressRook(const Position& position, Square sq, Piece piece) {
         ((sq == a1 && contains(castlingRights, CastlingRights::WhiteQueenSide)) ||
          (sq == h1 && contains(castlingRights, CastlingRights::WhiteKingSide)))) {
         return 13;
-    } else if (color == Color::Black &&
-               ((sq == a8 && contains(castlingRights, CastlingRights::BlackQueenSide)) ||
-                (sq == h8 && contains(castlingRights, CastlingRights::BlackKingSide)))) {
+    } else if (
+        color == Color::Black &&
+        ((sq == a8 && contains(castlingRights, CastlingRights::BlackQueenSide)) ||
+         (sq == h8 && contains(castlingRights, CastlingRights::BlackKingSide)))
+    ) {
         return 14;
     } else {
         return static_cast<std::uint8_t>(ordinal(piece));
@@ -4461,8 +4464,8 @@ compressKing(const Position& position, Square /* sq */, Piece piece) {
 namespace detail::lookup {
 static constexpr EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)>
     pieceCompressorFunc = []() {
-        EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)> pieceCompressorFunc_{
-        };
+        EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)>
+            pieceCompressorFunc_{};
 
         pieceCompressorFunc_[PieceType::Knight] = detail::compressOrdinaryPiece;
         pieceCompressorFunc_[PieceType::Bishop] = detail::compressOrdinaryPiece;
@@ -4472,9 +4475,9 @@ static constexpr EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, 
         pieceCompressorFunc_[PieceType::Rook] = detail::compressRook;
         pieceCompressorFunc_[PieceType::King] = detail::compressKing;
 
-        pieceCompressorFunc_[PieceType::None] = [](const Position&, Square, Piece
-                                                ) -> std::uint8_t { /* should never happen */
-                                                                    return 0;
+        pieceCompressorFunc_[PieceType::None] = [](const Position&, Square, Piece) -> std::uint8_t {
+            /* should never happen */
+            return 0;
         };
 
         return pieceCompressorFunc_;
@@ -6465,7 +6468,7 @@ struct CompressedTrainingDataEntryParallelReader {
         }
 
         for (size_t i = 0; i < m_inputFiles.size(); ++i) {
-            m_fileMutexes.push_back(std::make_unique<std::mutex>());
+            m_fileMutexes.push_back(std::make_unique<std::timed_mutex>());
         }
         m_distribution_weights = sizes;
         m_ringBuffer.reserve_internal(threadBufferSize);
@@ -6626,9 +6629,17 @@ struct CompressedTrainingDataEntryParallelReader {
     std::vector<std::thread> m_workers;
 
     // Per File Lock
-    std::vector<std::unique_ptr<std::mutex>> m_fileMutexes;
+    std::vector<std::unique_ptr<std::timed_mutex>> m_fileMutexes;
     std::vector<double> m_distribution_weights;
     std::function<bool(const TrainingDataEntry&)> m_skipPredicate;
+
+    // Avoid blocking too long on a contended per-file mutex; if locking times out,
+    // the worker can retry by selecting a different file, and warnings are rate-limited.
+    // This is especially important if one fileserver is particularly slow.
+    static constexpr std::chrono::milliseconds kMaxLockWaitTime{2000};
+    static constexpr int64_t kWarningCooldownSeconds = 300;
+    std::atomic<uint64_t> m_timeout_count{0};
+    std::atomic<int64_t> m_last_warning_time{-kWarningCooldownSeconds};
 
     // DDP support
     int m_rank;
@@ -6659,10 +6670,43 @@ struct CompressedTrainingDataEntryParallelReader {
     ) {
         if (m_offset + sizeof(PackedTrainingDataEntry) + 2 > m_chunk.size()) {
             auto& prng = rng::get_thread_local_rng();
-            const std::size_t fileId = local_dist(prng);
-            auto& inputFile = m_inputFiles[fileId];
 
-            std::unique_lock lock(*m_fileMutexes[fileId]);
+            std::size_t fileId;
+            std::unique_lock<std::remove_reference_t<decltype(*m_fileMutexes[0])>> lock;
+
+            while (true) {
+                fileId = local_dist(prng);
+                lock = std::unique_lock(*m_fileMutexes[fileId], std::defer_lock);
+
+                if (lock.try_lock_for(kMaxLockWaitTime)) {
+                    break;
+                }
+
+                m_timeout_count.fetch_add(1, std::memory_order_relaxed);
+
+                auto now = std::chrono::steady_clock::now().time_since_epoch();
+                int64_t now_sec = std::chrono::duration_cast<std::chrono::seconds>(now).count();
+                int64_t last_sec = m_last_warning_time.load(std::memory_order_relaxed);
+
+                if (now_sec - last_sec >= kWarningCooldownSeconds) {
+                    // Ensure only one thread evaluates this to true during the evaluation window
+                    if (m_last_warning_time.compare_exchange_strong(
+                            last_sec, now_sec, std::memory_order_relaxed
+                        )) {
+                        // Atomically retrieve the total count and reset it to 0 without dropping
+                        // concurrent increments
+                        uint64_t count_to_print =
+                            m_timeout_count.exchange(0, std::memory_order_relaxed);
+
+                        std::cerr << "[Warning] Dataloader mutex acquisition for file with ID "
+                                  << fileId << " timed out after " << kMaxLockWaitTime.count()
+                                  << "ms. Re-rolling file. "
+                                  << "(" << count_to_print << " timeouts since last warning)\n";
+                    }
+                }
+            }
+
+            auto& inputFile = m_inputFiles[fileId];
 
             auto seek_for_ddp_rank = [&](std::size_t rank) -> bool {
                 std::size_t skipped = 0;

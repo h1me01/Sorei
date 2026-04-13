@@ -135,7 +135,7 @@ class CPUMatrix : public MatrixBase<T, Storage> {
 };
 
 template <typename T>
-using PinnedCPUMatrix = CPUMatrix<T, PinnedCPUArray<T>>;
+using CPUPinnedMatrix = CPUMatrix<T, CPUPinnedArray<T>>;
 
 template <typename T>
 class GPUMatrix : public MatrixBase<T, GPUArray<T>> {

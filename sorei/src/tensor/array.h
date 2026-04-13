@@ -67,23 +67,23 @@ class CPUArray {
 };
 
 template <typename T>
-class PinnedCPUArray {
+class CPUPinnedArray {
   public:
-    PinnedCPUArray() = default;
+    CPUPinnedArray() = default;
 
-    explicit PinnedCPUArray(int size)
+    explicit CPUPinnedArray(int size)
         : size_(size) {
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, size * sizeof(T)));
         clear();
     }
 
-    ~PinnedCPUArray() {
+    ~CPUPinnedArray() {
         if (ptr_)
             cudaFreeHost(ptr_);
     }
 
-    PinnedCPUArray(const PinnedCPUArray& other)
+    CPUPinnedArray(const CPUPinnedArray& other)
         : size_(other.size_) {
         if (size_ > 0) {
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, bytes()));
@@ -91,22 +91,22 @@ class PinnedCPUArray {
         }
     }
 
-    PinnedCPUArray& operator=(const PinnedCPUArray& other) {
+    CPUPinnedArray& operator=(const CPUPinnedArray& other) {
         if (this != &other) {
-            PinnedCPUArray tmp(other);
+            CPUPinnedArray tmp(other);
             *this = std::move(tmp);
         }
         return *this;
     }
 
-    PinnedCPUArray(PinnedCPUArray&& other) noexcept
+    CPUPinnedArray(CPUPinnedArray&& other) noexcept
         : size_(other.size_),
           ptr_(other.ptr_) {
         other.size_ = 0;
         other.ptr_ = nullptr;
     }
 
-    PinnedCPUArray& operator=(PinnedCPUArray&& other) noexcept {
+    CPUPinnedArray& operator=(CPUPinnedArray&& other) noexcept {
         if (this != &other) {
             if (ptr_)
                 cudaFreeHost(ptr_);
@@ -228,7 +228,7 @@ class GPUArray {
     void upload(const Src& src) {
         SOREI_CHECK(src.size() == size_);
         SOREI_CHECK(src.bytes() == bytes());
-        SOREI_CUDA_CHECK(cudaMemcpy(ptr_, src.data(), bytes(), cudaMemcpyHostToDevice));
+        SOREI_CUDA_CHECK(cudaMemcpy(ptr_, src.data(), bytes(), cudaMemcpyDefault));
     }
 
     template <typename Dst>

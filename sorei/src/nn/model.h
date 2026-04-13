@@ -108,15 +108,28 @@ class Model {
         error("Model: input '{}' not found", name);
     }
 
+    template <typename T, typename Dst>
+    void upload_best(Dst& dst, const Tensor<T>& t) {
+        if (t.has_gpu_data())
+            dst.upload(t.gpu_data());
+        else if (t.has_cpu_pinned_data())
+            dst.upload(t.cpu_pinned_data());
+        else if (t.has_cpu_data())
+            dst.upload(t.cpu_data());
+        else
+            error("Tensor has no data to upload");
+    }
+
     void upload(const std::string& name, const Tensor<int>& t) {
         auto* layer = get_layer(name);
+
         if (auto* s = dynamic_cast<layer::InputInt*>(layer)) {
             s->resize(to_shape(t));
-            s->data().upload(t.data());
+            upload_best(s->data(), t);
         } else if (auto* b = dynamic_cast<layer::BucketIndex*>(layer)) {
             SOREI_CHECK(t.shape().size() == 1);
             b->resize(t.shape()[0]);
-            b->data().upload(t.data());
+            upload_best(b->data(), t);
         } else {
             error("Model: '{}' must map to InputInt or BucketIndex", name);
         }
@@ -124,13 +137,11 @@ class Model {
 
     void upload(const std::string& name, const Tensor<float>& t) {
         auto* layer = get_layer(name);
-
         auto* input = dynamic_cast<layer::InputFloat*>(layer);
         if (!input)
             error("Model: '{}' must map to InputFloat", name);
-
         input->resize(to_shape(t));
-        input->data().upload(t.data());
+        upload_best(input->data(), t);
     }
 
     template <typename T>

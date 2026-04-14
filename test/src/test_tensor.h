@@ -2,9 +2,8 @@
 
 #include <cuda_runtime.h>
 
-#include "sorei/nn.h"
-
 #include "framework.h"
+#include "sorei/nn.h"
 
 using namespace sorei::tensor;
 
@@ -109,7 +108,7 @@ TEST(Tensor, HostMatrix_DefaultConstruct) {
 }
 
 TEST(Tensor, HostMatrix_Construction) {
-    HostMatrix<float> m(Shape(3, 4));
+    HostMatrix<float> m({3, 4});
     EXPECT_EQ(m.rows(), 3);
     EXPECT_EQ(m.cols(), 4);
     EXPECT_EQ(m.size(), 12);
@@ -117,7 +116,7 @@ TEST(Tensor, HostMatrix_Construction) {
 }
 
 TEST(Tensor, HostMatrix_ColumnMajorLayout) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m(0, 0) = 1.0f;
     m(1, 0) = 2.0f;
     m(0, 1) = 3.0f;
@@ -134,14 +133,14 @@ TEST(Tensor, HostMatrix_ColumnMajorLayout) {
 }
 
 TEST(Tensor, HostMatrix_Fill) {
-    HostMatrix<float> m(Shape(3, 3));
+    HostMatrix<float> m({3, 3});
     m.fill(7.0f);
     for (int i = 0; i < 9; ++i)
         EXPECT_EQ(m(i), 7.0f);
 }
 
 TEST(Tensor, HostMatrix_ArithmeticAdd) {
-    HostMatrix<float> a(Shape(2, 2)), b(Shape(2, 2));
+    HostMatrix<float> a({2, 2}), b({2, 2});
     a.fill(3.0f);
     b.fill(2.0f);
     auto c = a + b;
@@ -150,7 +149,7 @@ TEST(Tensor, HostMatrix_ArithmeticAdd) {
 }
 
 TEST(Tensor, HostMatrix_ArithmeticSub) {
-    HostMatrix<float> a(Shape(2, 2)), b(Shape(2, 2));
+    HostMatrix<float> a({2, 2}), b({2, 2});
     a.fill(5.0f);
     b.fill(3.0f);
     auto c = a - b;
@@ -159,7 +158,7 @@ TEST(Tensor, HostMatrix_ArithmeticSub) {
 }
 
 TEST(Tensor, HostMatrix_ScalarMul) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m.fill(2.0f);
     auto s = m * 3.0f;
     for (int i = 0; i < 6; ++i)
@@ -167,7 +166,7 @@ TEST(Tensor, HostMatrix_ScalarMul) {
 }
 
 TEST(Tensor, HostMatrix_ScalarDiv) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m.fill(6.0f);
     auto s = m / 2.0f;
     for (int i = 0; i < 6; ++i)
@@ -175,10 +174,10 @@ TEST(Tensor, HostMatrix_ScalarDiv) {
 }
 
 TEST(Tensor, HostMatrix_Reshape) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     for (int i = 0; i < 6; ++i)
         m(i) = (float)i;
-    auto r = m.reshape(3, 2);
+    auto r = m.reshape({3, 2});
     EXPECT_EQ(r.rows(), 3);
     EXPECT_EQ(r.cols(), 2);
 
@@ -187,7 +186,7 @@ TEST(Tensor, HostMatrix_Reshape) {
 }
 
 TEST(Tensor, HostMatrix_Transpose) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m(0, 0) = 1;
     m(0, 1) = 2;
     m(0, 2) = 3;
@@ -207,17 +206,17 @@ TEST(Tensor, HostMatrix_Transpose) {
 }
 
 TEST(Tensor, HostMatrix_Resize_Noop) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m.fill(1.0f);
-    m.resize(Shape(2, 3));
+    m.resize({2, 3});
     for (int i = 0; i < 6; ++i)
         EXPECT_EQ(m(i), 1.0f);
 }
 
 TEST(Tensor, HostMatrix_Resize_Realloc) {
-    HostMatrix<float> m(Shape(2, 3));
+    HostMatrix<float> m({2, 3});
     m.fill(1.0f);
-    m.resize(Shape(4, 2));
+    m.resize({4, 2});
     EXPECT_EQ(m.rows(), 4);
     EXPECT_EQ(m.cols(), 2);
 }
@@ -225,7 +224,7 @@ TEST(Tensor, HostMatrix_Resize_Realloc) {
 // DeviceMatrix<float>
 
 TEST(Tensor, DeviceMatrix_Construction) {
-    DeviceMatrix<float> m(Shape(3, 4));
+    DeviceMatrix<float> m({3, 4});
     EXPECT_EQ(m.rows(), 3);
     EXPECT_EQ(m.cols(), 4);
     EXPECT_EQ(m.size(), 12);
@@ -233,14 +232,14 @@ TEST(Tensor, DeviceMatrix_Construction) {
 }
 
 TEST(Tensor, DeviceMatrix_UploadDownload_RoundTrip) {
-    HostMatrix<float> src(Shape(3, 4));
+    HostMatrix<float> src({3, 4});
     for (int i = 0; i < 12; ++i)
         src(i) = (float)i * 0.5f;
 
-    DeviceMatrix<float> dev(Shape(3, 4));
+    DeviceMatrix<float> dev({3, 4});
     dev.upload(src);
 
-    HostMatrix<float> dst(Shape(3, 4));
+    HostMatrix<float> dst({3, 4});
     dev.download(dst);
     cudaDeviceSynchronize();
 
@@ -249,7 +248,7 @@ TEST(Tensor, DeviceMatrix_UploadDownload_RoundTrip) {
 }
 
 TEST(Tensor, DeviceMatrix_ToCpu) {
-    HostMatrix<float> src(Shape(2, 5));
+    HostMatrix<float> src({2, 5});
     src.fill(42.0f);
     auto dev = DeviceMatrix<float>::from_host(src);
     auto host = dev.to_host();
@@ -259,13 +258,13 @@ TEST(Tensor, DeviceMatrix_ToCpu) {
 }
 
 TEST(Tensor, DeviceMatrix_Copy) {
-    HostMatrix<float> src(Shape(3, 3));
+    HostMatrix<float> src({3, 3});
     for (int i = 0; i < 9; ++i)
         src(i) = (float)i;
     auto a = DeviceMatrix<float>::from_host(src);
     DeviceMatrix<float> b(a);
 
-    auto zeros = HostMatrix<float>(Shape(3, 3));
+    auto zeros = HostMatrix<float>({3, 3});
     a.upload(zeros);
 
     auto b_cpu = b.to_host();
@@ -275,7 +274,7 @@ TEST(Tensor, DeviceMatrix_Copy) {
 }
 
 TEST(Tensor, DeviceMatrix_Clear) {
-    HostMatrix<float> src(Shape(2, 3));
+    HostMatrix<float> src({2, 3});
     src.fill(5.0f);
     auto dev = DeviceMatrix<float>::from_host(src);
     dev.clear();
@@ -286,10 +285,10 @@ TEST(Tensor, DeviceMatrix_Clear) {
 }
 
 TEST(Tensor, DeviceMatrix_Resize_Noop) {
-    HostMatrix<float> src(Shape(2, 3));
+    HostMatrix<float> src({2, 3});
     src.fill(7.0f);
     auto dev = DeviceMatrix<float>::from_host(src);
-    dev.resize(Shape(2, 3));
+    dev.resize({2, 3});
     auto host = dev.to_host();
     cudaDeviceSynchronize();
     for (int i = 0; i < 6; ++i)
@@ -297,10 +296,10 @@ TEST(Tensor, DeviceMatrix_Resize_Noop) {
 }
 
 TEST(Tensor, DeviceMatrix_Resize_Realloc) {
-    HostMatrix<float> src(Shape(2, 3));
+    HostMatrix<float> src({2, 3});
     src.fill(7.0f);
     auto dev = DeviceMatrix<float>::from_host(src);
-    dev.resize(Shape(4, 2));
+    dev.resize({4, 2});
     EXPECT_EQ(dev.rows(), 4);
     EXPECT_EQ(dev.cols(), 2);
 }

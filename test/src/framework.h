@@ -118,16 +118,11 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a == _b)) {                                                                         \
-            std::string _msg = std::format(                                                        \
-                "Expected equal: {} == {}\n"                                                       \
-                "          lhs = {}\n"                                                             \
-                "          rhs = {}",                                                              \
-                #a,                                                                                \
-                #b,                                                                                \
-                _a,                                                                                \
-                _b                                                                                 \
-            );                                                                                     \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected equal: " #a " == " #b "\n"                                           \
+                 << "          lhs = " << _a << "\n"                                               \
+                 << "          rhs = " << _b;                                                      \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -136,9 +131,9 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a != _b)) {                                                                         \
-            std::string _msg =                                                                     \
-                std::format("Expected not-equal: {} != {} (both = {})", #a, #b, _a);               \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected not-equal: " #a " != " #b " (both = " << _a << ")";                  \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -149,17 +144,10 @@ inline int run_all_tests() {
         double _d = std::abs(_a - _b);                                                             \
         double _tl = static_cast<double>(tol);                                                     \
         if (_d > _tl) {                                                                            \
-            std::string _msg = std::format(                                                        \
-                "Expected |{} - {}| <= {} Got |{:.6g} - {:.6g}| = {:.6g}  (tol = {:.6g})",         \
-                #a,                                                                                \
-                #b,                                                                                \
-                #tol,                                                                              \
-                _a,                                                                                \
-                _b,                                                                                \
-                _d,                                                                                \
-                _tl                                                                                \
-            );                                                                                     \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << std::setprecision(6) << "Expected |" #a " - " #b "| <= " #tol " " << "Got |"   \
+                 << _a << " - " << _b << "| = " << _d << "  (tol = " << _tl << ")";                \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -168,8 +156,9 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a < _b)) {                                                                          \
-            std::string _msg = std::format("Expected {} < {}: {} >= {}", #a, #b, _a, _b);          \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected " #a " < " #b ": " << _a << " >= " << _b;                            \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -178,8 +167,9 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a > _b)) {                                                                          \
-            std::string _msg = std::format("Expected {} > {}: {} <= {}", #a, #b, _a, _b);          \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected " #a " > " #b ": " << _a << " <= " << _b;                            \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -188,8 +178,9 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a <= _b)) {                                                                         \
-            std::string _msg = std::format("Expected {} <= {}: {} > {}", #a, #b, _a, _b);          \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected " #a " <= " #b ": " << _a << " > " << _b;                            \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -198,8 +189,9 @@ inline int run_all_tests() {
         auto _a = (a);                                                                             \
         auto _b = (b);                                                                             \
         if (!(_a >= _b)) {                                                                         \
-            std::string _msg = std::format("Expected {} >= {}: {} < {}", #a, #b, _a, _b);          \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected " #a " >= " #b ": " << _a << " < " << _b;                            \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
@@ -213,19 +205,20 @@ inline int run_all_tests() {
         } catch (...) {                                                                            \
         }                                                                                          \
         if (!_caught) {                                                                            \
-            std::string _msg = std::format("Expected {} from: {}", #ExcType, #expr);               \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Expected " #ExcType " from: " #expr;                                          \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)
 
-// check max relative error from a gradient check helper
 #define EXPECT_GRAD_OK(max_rel, tol)                                                               \
     do {                                                                                           \
         float _mr = (max_rel);                                                                     \
         float _t = (tol);                                                                          \
         if (_mr > _t) {                                                                            \
-            std::string _msg =                                                                     \
-                std::format("Gradient check failed: max-relative-error = {} (tol = {})", _mr, _t); \
-            ::sorei::test::test_fail(__FILE__, __LINE__, _msg);                                    \
+            std::ostringstream _oss;                                                               \
+            _oss << "Gradient check failed: max-relative-error = " << _mr << " (tol = " << _t      \
+                 << ")";                                                                           \
+            ::sorei::test::test_fail(__FILE__, __LINE__, _oss.str());                              \
         }                                                                                          \
     } while (0)

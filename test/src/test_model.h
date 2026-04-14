@@ -27,8 +27,8 @@ struct TinyMLP : public Model {
           n_classes(n_classes) {}
 
     GraphOutput build_graph(GraphBuilder& b) override {
-        auto x = b.input_float(Shape(in_dim, 0), "x");
-        auto lbls = b.input_int(Shape(1, 0), "labels");
+        auto x = b.input_float({in_dim, 0}, "x");
+        auto lbls = b.input_int({1, 0}, "labels");
         auto fc1 = b.affine_layer(in_dim, hidden, "fc1");
         auto fc2 = b.affine_layer(hidden, n_classes, "fc2");
         auto pred = fc2(fc1(x).relu());
@@ -39,8 +39,8 @@ struct TinyMLP : public Model {
 
 struct TinyReg : public Model {
     GraphOutput build_graph(GraphBuilder& b) override {
-        auto x = b.input_float(Shape(4, 0), "x");
-        auto lbls = b.input_int(Shape(1, 0), "labels");
+        auto x = b.input_float({4, 0}, "x");
+        auto lbls = b.input_int({1, 0}, "labels");
         auto fc = b.affine_layer(4, 2, "fc");
         auto pred = fc(x);
         auto loss = pred.softmax_cross_entropy(lbls).mean();
@@ -274,9 +274,9 @@ TEST(Model, GraphOptimizer_FoldSelfMul) {
 TEST(Model, MultipleInputs_BothUsed) {
     struct AddModel : public Model {
         GraphOutput build_graph(GraphBuilder& b) override {
-            auto x = b.input_float(Shape(4, 0), "x");
-            auto y = b.input_float(Shape(4, 0), "y");
-            auto lbl = b.input_int(Shape(1, 0), "lbl");
+            auto x = b.input_float({4, 0}, "x");
+            auto y = b.input_float({4, 0}, "y");
+            auto lbl = b.input_int({1, 0}, "lbl");
             auto out = (x + y);
             return {out};
         }

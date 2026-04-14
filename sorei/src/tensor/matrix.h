@@ -85,15 +85,15 @@ class HostMatrix : public MatrixBase<T, Storage> {
         return scaled([s](T x) { return x / s; });
     }
 
-    HostMatrix reshape(int r, int c) const {
-        SOREI_CHECK(r * c == this->size());
-        HostMatrix out(Shape(r, c));
+    HostMatrix reshape(const Shape& shape) const {
+        SOREI_CHECK(shape.size() == this->size());
+        HostMatrix out(shape);
         std::copy(this->begin(), this->end(), out.begin());
         return out;
     }
 
     HostMatrix transpose() const {
-        HostMatrix out(Shape(this->cols(), this->rows()));
+        HostMatrix out({this->cols(), this->rows()});
         for (int r = 0; r < this->rows(); r++)
             for (int c = 0; c < this->cols(); c++)
                 out(c, r) = (*this)(r, c);

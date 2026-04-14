@@ -14,7 +14,7 @@ using namespace sorei::nn::layer;
 // set
 
 TEST(Kernels, Set_FillsAllElements) {
-    DeviceMatrix<float> m(Shape(4, 3));
+    DeviceMatrix<float> m({4, 3});
     set(m, 7.5f);
     cudaDeviceSynchronize();
     auto host = m.to_host();
@@ -23,7 +23,7 @@ TEST(Kernels, Set_FillsAllElements) {
 }
 
 TEST(Kernels, Set_ZeroFill) {
-    DeviceMatrix<float> m(Shape(5, 5));
+    DeviceMatrix<float> m({5, 5});
     set(m, 1.0f);
     set(m, 0.0f);
     cudaDeviceSynchronize();
@@ -36,12 +36,12 @@ TEST(Kernels, Set_ZeroFill) {
 
 // build a DeviceMatrix from a flat row-major initializer
 static DeviceMatrix<float>
-make_device(int rows, int cols, std::initializer_list<float> row_major_vals) {
-    HostMatrix<float> m(Shape(rows, cols));
+make_device(const Shape& shape, std::initializer_list<float> row_major_vals) {
+    HostMatrix<float> m(shape);
     int idx = 0;
     for (float v : row_major_vals) {
-        int r = idx / cols;
-        int c = idx % cols;
+        int r = idx / shape.cols();
+        int c = idx % shape.cols();
         m(r, c) = v;
         ++idx;
     }
@@ -49,9 +49,9 @@ make_device(int rows, int cols, std::initializer_list<float> row_major_vals) {
 }
 
 TEST(Kernels, SGemm_Basic) {
-    auto A = make_device(2, 3, {1, 2, 3, 4, 5, 6});
-    auto B = make_device(3, 2, {7, 8, 9, 10, 11, 12});
-    DeviceMatrix<float> C(Shape(2, 2));
+    auto A = make_device({2, 3}, {1, 2, 3, 4, 5, 6});
+    auto B = make_device({3, 2}, {7, 8, 9, 10, 11, 12});
+    DeviceMatrix<float> C({2, 2});
 
     cublas::sgemm(false, false, 1.0f, A, B, 0.0f, C);
     cudaDeviceSynchronize();
@@ -64,9 +64,9 @@ TEST(Kernels, SGemm_Basic) {
 }
 
 TEST(Kernels, SGemm_AlphaBeta) {
-    auto A = make_device(2, 2, {1, 0, 0, 1});
-    auto B = make_device(2, 2, {3, 4, 5, 6});
-    DeviceMatrix<float> C(Shape(2, 2));
+    auto A = make_device({2, 2}, {1, 0, 0, 1});
+    auto B = make_device({2, 2}, {3, 4, 5, 6});
+    DeviceMatrix<float> C({2, 2});
 
     cublas::sgemm(false, false, 1.0f, A, B, 0.0f, C);
     cudaDeviceSynchronize();
@@ -82,9 +82,9 @@ TEST(Kernels, SGemm_AlphaBeta) {
 }
 
 TEST(Kernels, SGemm_TransposeA) {
-    auto A = make_device(3, 2, {1, 2, 3, 4, 5, 6});
-    auto B = make_device(3, 2, {7, 8, 9, 10, 11, 12});
-    DeviceMatrix<float> C(Shape(2, 2));
+    auto A = make_device({3, 2}, {1, 2, 3, 4, 5, 6});
+    auto B = make_device({3, 2}, {7, 8, 9, 10, 11, 12});
+    DeviceMatrix<float> C({2, 2});
 
     cublas::sgemm(true, false, 1.0f, A, B, 0.0f, C);
     cudaDeviceSynchronize();
@@ -101,13 +101,13 @@ TEST(Kernels, SGemm_TransposeA) {
 static DeviceMatrix<float>
 run_unary_fwd(std::initializer_list<float> vals, const ElemwiseUnary::Op& op) {
     int n = vals.size();
-    HostMatrix<float> host_in(Shape(n, 1));
+    HostMatrix<float> host_in({n, 1});
     int i = 0;
     for (float v : vals)
         host_in(i++, 0) = v;
 
     auto dev_in = DeviceMatrix<float>::from_host(host_in);
-    DeviceMatrix<float> dev_out(Shape(n, 1));
+    DeviceMatrix<float> dev_out({n, 1});
     ElemwiseUnary::forward(dev_in, dev_out, op);
     cudaDeviceSynchronize();
 
@@ -209,8 +209,8 @@ static HostMatrix<float> run_unary_bwd(
     const ElemwiseUnary::Op& op
 ) {
     int n = inputs.size();
-    HostMatrix<float> host_in(Shape(n, 1));
-    HostMatrix<float> host_og(Shape(n, 1));
+    HostMatrix<float> host_in({n, 1});
+    HostMatrix<float> host_og({n, 1});
     int i = 0;
     for (float v : inputs)
         host_in(i++, 0) = v;
@@ -219,7 +219,7 @@ static HostMatrix<float> run_unary_bwd(
         host_og(i++, 0) = v;
 
     auto dev_in = DeviceMatrix<float>::from_host(host_in);
-    DeviceMatrix<float> dev_in_g(Shape(n, 1));
+    DeviceMatrix<float> dev_in_g({n, 1});
     dev_in_g.clear();
     auto dev_og = DeviceMatrix<float>::from_host(host_og);
 
@@ -269,7 +269,7 @@ static HostMatrix<float> run_binary_fwd(
     int cols,
     const ElemwiseBinary::Op& op
 ) {
-    HostMatrix<float> ca(Shape(rows, cols)), cb(Shape(rows, cols));
+    HostMatrix<float> ca({rows, cols}), cb({rows, cols});
     int i = 0;
     for (float v : a_vals)
         ca(i++, 0) = v;
@@ -279,7 +279,7 @@ static HostMatrix<float> run_binary_fwd(
 
     auto ga = DeviceMatrix<float>::from_host(ca);
     auto gb = DeviceMatrix<float>::from_host(cb);
-    DeviceMatrix<float> gc(Shape(rows, cols));
+    DeviceMatrix<float> gc({rows, cols});
 
     ElemwiseBinary::forward(ga, gb, gc, op);
     cudaDeviceSynchronize();
@@ -323,7 +323,7 @@ static std::pair<HostMatrix<float>, HostMatrix<float>> run_binary_bwd(
     int cols,
     const ElemwiseBinary::Op& op
 ) {
-    HostMatrix<float> ca(Shape(rows, cols)), cb(Shape(rows, cols)), cg(Shape(rows, cols));
+    HostMatrix<float> ca({rows, cols}), cb({rows, cols}), cg({rows, cols});
     int i = 0;
     for (float v : a_vals)
         ca(i++, 0) = v;
@@ -337,9 +337,9 @@ static std::pair<HostMatrix<float>, HostMatrix<float>> run_binary_bwd(
     auto ga = DeviceMatrix<float>::from_host(ca);
     auto gb = DeviceMatrix<float>::from_host(cb);
     auto gg = DeviceMatrix<float>::from_host(cg);
-    DeviceMatrix<float> ga_g(Shape(rows, cols));
+    DeviceMatrix<float> ga_g({rows, cols});
     ga_g.clear();
-    DeviceMatrix<float> gb_g(Shape(rows, cols));
+    DeviceMatrix<float> gb_g({rows, cols});
     gb_g.clear();
 
     ElemwiseBinary::backward(ga, ga_g, gb, gb_g, gg, op);
@@ -374,8 +374,8 @@ TEST(Kernels, BinaryBwd_Div) {
 // ElemwiseBinary broadcast forward / backward
 
 TEST(Kernels, BinaryBroadcast_Fwd_Add) {
-    HostMatrix<float> bias(Shape(4, 1));
-    HostMatrix<float> data(Shape(4, 3));
+    HostMatrix<float> bias({4, 1});
+    HostMatrix<float> data({4, 3});
     for (int r = 0; r < 4; ++r) {
         bias(r, 0) = (float)(r + 1);
         for (int c = 0; c < 3; ++c)
@@ -383,7 +383,7 @@ TEST(Kernels, BinaryBroadcast_Fwd_Add) {
     }
     auto gb = DeviceMatrix<float>::from_host(bias);
     auto gd = DeviceMatrix<float>::from_host(data);
-    DeviceMatrix<float> gout(Shape(4, 3));
+    DeviceMatrix<float> gout({4, 3});
 
     ElemwiseBinary::broadcast_forward(gb, gd, gout, AddBinary{});
     cudaDeviceSynchronize();
@@ -395,9 +395,9 @@ TEST(Kernels, BinaryBroadcast_Fwd_Add) {
 }
 
 TEST(Kernels, BinaryBroadcast_Bwd_Add_BiasGrad) {
-    HostMatrix<float> bias(Shape(4, 1));
-    HostMatrix<float> data(Shape(4, 3));
-    HostMatrix<float> out_g(Shape(4, 3));
+    HostMatrix<float> bias({4, 1});
+    HostMatrix<float> data({4, 3});
+    HostMatrix<float> out_g({4, 3});
     bias.fill(0.0f);
     data.fill(1.0f);
     out_g.fill(1.0f);
@@ -405,9 +405,9 @@ TEST(Kernels, BinaryBroadcast_Bwd_Add_BiasGrad) {
     auto gb = DeviceMatrix<float>::from_host(bias);
     auto gd = DeviceMatrix<float>::from_host(data);
     auto go = DeviceMatrix<float>::from_host(out_g);
-    DeviceMatrix<float> gb_g(Shape(4, 1));
+    DeviceMatrix<float> gb_g({4, 1});
     gb_g.clear();
-    DeviceMatrix<float> gd_g(Shape(4, 3));
+    DeviceMatrix<float> gd_g({4, 3});
     gd_g.clear();
 
     ElemwiseBinary::broadcast_backward(gb, gb_g, gd, gd_g, go, AddBinary{});
@@ -425,13 +425,13 @@ TEST(Kernels, BinaryBroadcast_Bwd_Add_BiasGrad) {
 // MatMul forward / backward
 
 TEST(Kernels, MatMul_Forward) {
-    HostMatrix<float> w(Shape(2, 3));
+    HostMatrix<float> w({2, 3});
     w.fill(1.0f);
-    HostMatrix<float> x(Shape(3, 4));
+    HostMatrix<float> x({3, 4});
     x.fill(1.0f);
     auto gw = DeviceMatrix<float>::from_host(w);
     auto gx = DeviceMatrix<float>::from_host(x);
-    DeviceMatrix<float> gy(Shape(2, 4));
+    DeviceMatrix<float> gy({2, 4});
 
     MatMul::forward(gw, gx, gy);
     cudaDeviceSynchronize();
@@ -442,19 +442,19 @@ TEST(Kernels, MatMul_Forward) {
 }
 
 TEST(Kernels, MatMul_Backward_WeightGrad) {
-    HostMatrix<float> w(Shape(2, 3));
+    HostMatrix<float> w({2, 3});
     w.fill(0.0f);
-    HostMatrix<float> x(Shape(3, 4));
+    HostMatrix<float> x({3, 4});
     x.fill(1.0f);
-    HostMatrix<float> dy(Shape(2, 4));
+    HostMatrix<float> dy({2, 4});
     dy.fill(1.0f);
 
     auto gw = DeviceMatrix<float>::from_host(w);
     auto gx = DeviceMatrix<float>::from_host(x);
     auto gdy = DeviceMatrix<float>::from_host(dy);
-    DeviceMatrix<float> gw_g(Shape(2, 3));
+    DeviceMatrix<float> gw_g({2, 3});
     gw_g.clear();
-    DeviceMatrix<float> gx_g(Shape(3, 4));
+    DeviceMatrix<float> gx_g({3, 4});
     gx_g.clear();
 
     MatMul::backward(gw, gw_g, gx, gx_g, gdy);
@@ -471,19 +471,19 @@ TEST(Kernels, MatMul_Backward_WeightGrad) {
 }
 
 TEST(Kernels, MatMul_Backward_InputGrad) {
-    HostMatrix<float> w(Shape(2, 3));
+    HostMatrix<float> w({2, 3});
     w.fill(1.0f);
-    HostMatrix<float> x(Shape(3, 2));
+    HostMatrix<float> x({3, 2});
     x.fill(0.0f);
-    HostMatrix<float> dy(Shape(2, 2));
+    HostMatrix<float> dy({2, 2});
     dy.fill(1.0f);
 
     auto gw = DeviceMatrix<float>::from_host(w);
     auto gx = DeviceMatrix<float>::from_host(x);
     auto gdy = DeviceMatrix<float>::from_host(dy);
-    DeviceMatrix<float> gw_g(Shape(2, 3));
+    DeviceMatrix<float> gw_g({2, 3});
     gw_g.clear();
-    DeviceMatrix<float> gx_g(Shape(3, 2));
+    DeviceMatrix<float> gx_g({3, 2});
     gx_g.clear();
 
     MatMul::backward(gw, gw_g, gx, gx_g, gdy);

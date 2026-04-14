@@ -96,16 +96,16 @@ inline float grad_check(
 }
 
 inline std::unique_ptr<nn::layer::Param>
-make_param(int rows, int cols, float lo = -0.5f, float hi = 0.5f) {
-    auto p = std::make_unique<nn::layer::Param>(tensor::Shape(rows, cols));
+make_param(const tensor::Shape& shape, float lo = -0.5f, float hi = 0.5f) {
+    auto p = std::make_unique<nn::layer::Param>(shape);
     p->uniform_init(lo, hi);
     return p;
 }
 
-inline std::unique_ptr<nn::layer::Param> make_param_filled(int rows, int cols, float val) {
+inline std::unique_ptr<nn::layer::Param> make_param_filled(const tensor::Shape& shape, float val) {
     using namespace tensor;
-    auto p = std::make_unique<nn::layer::Param>(Shape(rows, cols));
-    HostMatrix<float> m(Shape(rows, cols));
+    auto p = std::make_unique<nn::layer::Param>(shape);
+    HostMatrix<float> m(shape);
     m.fill(val);
     p->data().upload(m);
     p->grad().clear();
@@ -114,8 +114,8 @@ inline std::unique_ptr<nn::layer::Param> make_param_filled(int rows, int cols, f
 
 inline std::unique_ptr<nn::layer::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
     using namespace tensor;
-    auto inp = std::make_unique<nn::layer::Input<int>>(Shape(1, cols));
-    HostMatrix<int> m(Shape(1, cols));
+    auto inp = std::make_unique<nn::layer::Input<int>>(tensor::Shape{1, cols});
+    HostMatrix<int> m({1, cols});
     for (int i = 0; i < cols; ++i)
         m(0, i) = vals[i];
     inp->data().upload(m);

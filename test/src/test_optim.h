@@ -24,9 +24,9 @@ struct SimpleSquareLoss {
     std::unique_ptr<ElemwiseUnary> sq;
     std::unique_ptr<Mean> loss;
 
-    explicit SimpleSquareLoss(int rows, int cols, float init_val = 0.5f) {
-        param = std::make_unique<layer::Param>(Shape(rows, cols));
-        HostMatrix<float> m(Shape(rows, cols));
+    explicit SimpleSquareLoss(const Shape& shape, float init_val = 0.5f) {
+        param = std::make_unique<layer::Param>(shape);
+        HostMatrix<float> m(shape);
         m.fill(init_val);
         param->data().upload(m);
         param->grad().clear();
@@ -56,7 +56,7 @@ struct SimpleSquareLoss {
 // Adam
 
 TEST(Optim, Adam_LossDecreases) {
-    SimpleSquareLoss net(6, 6, 1.0f);
+    SimpleSquareLoss net({6, 6}, 1.0f);
     Adam optim({net.param.get()});
 
     float initial_loss = -1.0f;
@@ -74,7 +74,7 @@ TEST(Optim, Adam_LossDecreases) {
 }
 
 TEST(Optim, Adam_ZeroLearningRate_ParamsUnchanged) {
-    SimpleSquareLoss net(4, 4, 0.5f);
+    SimpleSquareLoss net({4, 4}, 0.5f);
     Adam optim({net.param.get()});
 
     net.forward_backward();
@@ -90,8 +90,8 @@ TEST(Optim, Adam_ZeroLearningRate_ParamsUnchanged) {
 // AdamW
 
 TEST(Optim, AdamW_WeightDecay_MoreAggressive_Than_Adam) {
-    SimpleSquareLoss net_adam(4, 4, 1.0f);
-    SimpleSquareLoss net_adamw(4, 4, 1.0f);
+    SimpleSquareLoss net_adam({4, 4}, 1.0f);
+    SimpleSquareLoss net_adamw({4, 4}, 1.0f);
 
     Adam optim_adam({net_adam.param.get()});
     AdamW optim_adamw({net_adamw.param.get()}, 0.9f, 0.999f, 0.1f);
@@ -116,10 +116,10 @@ TEST(Optim, AdamW_WeightDecay_MoreAggressive_Than_Adam) {
 }
 
 TEST(Optim, AdamW_ParamBounds_Respected) {
-    auto p = test::make_param(8, 8, -2.0f, 2.0f);
+    auto p = test::make_param({8, 8}, -2.0f, 2.0f);
     p->set_bounds(-0.5f, 0.5f);
 
-    HostMatrix<float> grad_vals(Shape(8, 8));
+    HostMatrix<float> grad_vals({8, 8});
     grad_vals.fill(1.0f);
     p->grad().upload(grad_vals);
 
@@ -140,10 +140,10 @@ TEST(Optim, AdamW_ParamBounds_Respected) {
 TEST(Optim, AdamW_SaveLoadState) {
     const std::string state_dir = "/tmp/sorei_test_adamw_state";
 
-    auto p = test::make_param(4, 4);
+    auto p = test::make_param({4, 4});
     AdamW optim({p.get()}, 0.9f, 0.999f, 0.0f);
 
-    HostMatrix<float> g(Shape(4, 4));
+    HostMatrix<float> g({4, 4});
     g.fill(0.1f);
     for (int i = 0; i < 5; ++i) {
         p->grad().upload(g);
@@ -153,7 +153,7 @@ TEST(Optim, AdamW_SaveLoadState) {
 
     optim.save_state(state_dir);
 
-    auto p2 = test::make_param(4, 4);
+    auto p2 = test::make_param({4, 4});
     p2->data().upload(p->data().to_host());
     p2->grad().upload(p->grad().to_host());
 
@@ -175,12 +175,12 @@ TEST(Optim, AdamW_SaveLoadState) {
 }
 
 TEST(Optim, Adam_MultipleParms_AllUpdated) {
-    auto p1 = test::make_param(4, 4, 1.0f, 1.0f);
-    auto p2 = test::make_param(3, 3, 1.0f, 1.0f);
+    auto p1 = test::make_param({4, 4}, 1.0f, 1.0f);
+    auto p2 = test::make_param({3, 3}, 1.0f, 1.0f);
 
-    HostMatrix<float> g1(Shape(4, 4));
+    HostMatrix<float> g1({4, 4});
     g1.fill(0.5f);
-    HostMatrix<float> g2(Shape(3, 3));
+    HostMatrix<float> g2({3, 3});
     g2.fill(0.5f);
     p1->grad().upload(g1);
     p2->grad().upload(g2);

@@ -24,6 +24,8 @@ class AdamW : public Optimizer {
             int size = t->data().size();
             momentum_.emplace_back(size);
             velocity_.emplace_back(size);
+            momentum_.back().clear();
+            velocity_.back().clear();
         }
     }
 

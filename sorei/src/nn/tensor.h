@@ -35,11 +35,21 @@ class Tensor {
         allocate();
     }
 
-    T operator[](int i) const { return host_ref(flat1d(i)); }
-    T& operator[](int i) { return host_ref(flat1d(i)); }
+    T operator[](int i) const {
+        return has_host_data() ? host_data_[flat1d(i)] : host_pinned_data_[flat1d(i)];
+    }
 
-    T operator()(int r, int c) const { return host_ref(flat2d(r, c)); }
-    T& operator()(int r, int c) { return host_ref(flat2d(r, c)); }
+    T& operator[](int i) {
+        return has_host_data() ? host_data_[flat1d(i)] : host_pinned_data_[flat1d(i)];
+    }
+
+    T operator()(int r, int c) const {
+        return has_host_data() ? host_data_[flat2d(r, c)] : host_pinned_data_[flat2d(r, c)];
+    }
+
+    T& operator()(int r, int c) {
+        return has_host_data() ? host_data_[flat2d(r, c)] : host_pinned_data_[flat2d(r, c)];
+    }
 
     int size() const {
         if (shape_.empty())
@@ -113,12 +123,6 @@ class Tensor {
     }
 
     static bool has_flag(StorageType flags, StorageType bit) { return (flags & bit) != 0; }
-
-    T& host_ref(int idx) { return has_host_data() ? host_data_[idx] : host_pinned_data_[idx]; }
-
-    const T& host_ref(int idx) const {
-        return has_host_data() ? host_data_[idx] : host_pinned_data_[idx];
-    }
 
     std::vector<int> shape_;
     StorageType storage_{HOST};

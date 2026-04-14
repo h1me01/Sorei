@@ -246,10 +246,9 @@ TEST(Model, GetParam_ByName) {
 TEST(Model, GraphOptimizer_FoldSelfMul) {
     struct SquareModel : public Model {
         GraphOutput build_graph(GraphBuilder& b) override {
-            auto x = b.input_float(Shape(4, 0), "x");
+            auto x = b.input_float({4, 0}, "x");
             auto y = x * x;
-            auto loss = y.mean();
-            return {y, loss};
+            return {y};
         }
     };
 
@@ -279,8 +278,7 @@ TEST(Model, MultipleInputs_BothUsed) {
             auto y = b.input_float(Shape(4, 0), "y");
             auto lbl = b.input_int(Shape(1, 0), "lbl");
             auto out = (x + y);
-            auto loss = out.softmax_cross_entropy(lbl).mean();
-            return {out, loss};
+            return {out};
         }
     };
 

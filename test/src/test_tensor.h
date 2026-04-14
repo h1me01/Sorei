@@ -92,8 +92,6 @@ TEST(Tensor, HostArray_Resize_Realloc) {
     a.fill(1.0f);
     a.resize(8);
     EXPECT_EQ(a.size(), 8);
-    for (int i = 0; i < 8; ++i)
-        EXPECT_EQ(a[i], 0.0f);
 }
 
 TEST(Tensor, HostArray_Bytes) {
@@ -222,8 +220,6 @@ TEST(Tensor, HostMatrix_Resize_Realloc) {
     m.resize(Shape(4, 2));
     EXPECT_EQ(m.rows(), 4);
     EXPECT_EQ(m.cols(), 2);
-    for (int i = 0; i < 8; ++i)
-        EXPECT_EQ(m(i), 0.0f);
 }
 
 // DeviceMatrix<float>
@@ -234,14 +230,6 @@ TEST(Tensor, DeviceMatrix_Construction) {
     EXPECT_EQ(m.cols(), 4);
     EXPECT_EQ(m.size(), 12);
     EXPECT_FALSE(m.empty());
-}
-
-TEST(Tensor, DeviceMatrix_ZeroInit) {
-    DeviceMatrix<float> m(Shape(4, 4));
-    auto host = m.to_host();
-    cudaDeviceSynchronize();
-    for (int i = 0; i < 16; ++i)
-        EXPECT_EQ(host(i), 0.0f);
 }
 
 TEST(Tensor, DeviceMatrix_UploadDownload_RoundTrip) {
@@ -315,10 +303,6 @@ TEST(Tensor, DeviceMatrix_Resize_Realloc) {
     dev.resize(Shape(4, 2));
     EXPECT_EQ(dev.rows(), 4);
     EXPECT_EQ(dev.cols(), 2);
-    auto host = dev.to_host();
-    cudaDeviceSynchronize();
-    for (int i = 0; i < 8; ++i)
-        EXPECT_EQ(host(i), 0.0f);
 }
 
 // nn::Tensor<T>

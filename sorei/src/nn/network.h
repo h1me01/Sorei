@@ -24,8 +24,13 @@ class Network {
         SOREI_CHECK(contains(layers_, prediction_));
         SOREI_CHECK(!loss_ || contains(layers_, loss_));
 
-        if (loss_)
-            SOREI_CHECK(loss_->shape().rows() == 1);
+        if (loss_) {
+            SOREI_CHECK(loss_->requires_grad());
+            SOREI_CHECK(loss_->shape().size() == 1);
+            running_loss_.resize(loss_->shape());
+            running_loss_.clear();
+            cuda::set(loss_->grad(), 1.0f);
+        }
     }
 
     Network(const Network&) = delete;
@@ -38,7 +43,6 @@ class Network {
             layer->forward();
 
         if (loss_) {
-            running_loss_.resize(loss_->shape());
             layer::ElemwiseBinary::forward(
                 running_loss_, loss_->data(), running_loss_, cuda::AddBinary{}
             );
@@ -50,7 +54,6 @@ class Network {
 
         zero_grads();
 
-        cuda::set(loss_->grad(), 1.0f);
         for (int i = (int)layers_.size() - 1; i >= 0; --i)
             layers_[i]->backward();
     }

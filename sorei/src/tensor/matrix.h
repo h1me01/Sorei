@@ -74,7 +74,6 @@ class HostMatrix : public MatrixBase<T, Storage> {
             return;
         this->shape_ = shape;
         this->data_ = Storage(shape.size());
-        this->clear();
     }
 
     HostMatrix operator+(const HostMatrix& o) const { return elementwise(o, std::plus<T>{}); }
@@ -153,7 +152,6 @@ class DeviceMatrix : public MatrixBase<T, DeviceArray<T>> {
             return;
         this->shape_ = shape;
         this->data_ = DeviceArray<T>(shape.size());
-        this->clear();
     }
 
     template <typename Src>

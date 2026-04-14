@@ -13,7 +13,9 @@ class Param : public TypedLayer<float> {
   public:
     Param(const tensor::Shape& shape, const std::string& name = "Param")
         : TypedLayer<float>(name),
-          shape_(shape) {}
+          shape_(shape) {
+        data().clear();
+    }
 
     void uniform_init(float min_val, float max_val) {
         SOREI_CHECK(min_val <= max_val);
@@ -24,8 +26,6 @@ class Param : public TypedLayer<float> {
                 std::uniform_real_distribution<float>(min_val, max_val)(rng::thread_local_rng());
         }
         data().upload(result);
-
-        grad().clear();
     }
 
     void he_init(int input_dim) {
@@ -36,8 +36,6 @@ class Param : public TypedLayer<float> {
             );
         }
         data().upload(result);
-
-        grad().clear();
     }
 
     void set_bounds(float min_val, float max_val) {

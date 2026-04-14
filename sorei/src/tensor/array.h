@@ -14,9 +14,7 @@ class HostArray {
 
     explicit HostArray(int size)
         : size_(size),
-          data_(std::make_unique<T[]>(size)) {
-        clear();
-    }
+          data_(std::make_unique<T[]>(size)) {}
 
     HostArray(const HostArray& other)
         : size_(other.size_),
@@ -58,7 +56,6 @@ class HostArray {
             return;
         size_ = size;
         data_ = std::make_unique<T[]>(size);
-        clear();
     }
 
   private:
@@ -75,7 +72,6 @@ class HostPinnedArray {
         : size_(size) {
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, size * sizeof(T)));
-        clear();
     }
 
     ~HostPinnedArray() {
@@ -145,7 +141,6 @@ class HostPinnedArray {
         size_ = size;
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, bytes()));
-        clear();
     }
 
   private:
@@ -162,7 +157,6 @@ class DeviceArray {
         : size_(size) {
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMalloc(&ptr_, size * sizeof(T)));
-        clear();
     }
 
     ~DeviceArray() {
@@ -221,7 +215,6 @@ class DeviceArray {
         size_ = size;
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMalloc(&ptr_, bytes()));
-        clear();
     }
 
     template <typename Src>

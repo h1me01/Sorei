@@ -48,34 +48,34 @@ class ElemwiseBinary : public TypedLayer<float> {
     }
 
     static void forward(
-        const tensor::GPUMatrix<float>& a,
-        const tensor::GPUMatrix<float>& b,
-        tensor::GPUMatrix<float>& c,
+        const tensor::DeviceMatrix<float>& a,
+        const tensor::DeviceMatrix<float>& b,
+        tensor::DeviceMatrix<float>& c,
         const Op& op
     );
 
     static void backward(
-        const tensor::GPUMatrix<float>& a,
-        tensor::GPUMatrix<float>& a_g,
-        const tensor::GPUMatrix<float>& b,
-        tensor::GPUMatrix<float>& b_g,
-        const tensor::GPUMatrix<float>& c_g,
+        const tensor::DeviceMatrix<float>& a,
+        tensor::DeviceMatrix<float>& a_g,
+        const tensor::DeviceMatrix<float>& b,
+        tensor::DeviceMatrix<float>& b_g,
+        const tensor::DeviceMatrix<float>& c_g,
         const Op& op
     );
 
     static void broadcast_forward(
-        const tensor::GPUMatrix<float>& a,
-        const tensor::GPUMatrix<float>& b,
-        tensor::GPUMatrix<float>& c,
+        const tensor::DeviceMatrix<float>& a,
+        const tensor::DeviceMatrix<float>& b,
+        tensor::DeviceMatrix<float>& c,
         const Op& op
     );
 
     static void broadcast_backward(
-        const tensor::GPUMatrix<float>& a,
-        tensor::GPUMatrix<float>& a_g,
-        const tensor::GPUMatrix<float>& b,
-        tensor::GPUMatrix<float>& b_g,
-        const tensor::GPUMatrix<float>& c_g,
+        const tensor::DeviceMatrix<float>& a,
+        tensor::DeviceMatrix<float>& a_g,
+        const tensor::DeviceMatrix<float>& b,
+        tensor::DeviceMatrix<float>& b_g,
+        const tensor::DeviceMatrix<float>& c_g,
         const Op& op
     );
 

@@ -39,44 +39,44 @@ inline float grad_check(
     cudaDeviceSynchronize();
 
     struct ParamGrads {
-        CPUMatrix<float> data;
-        CPUMatrix<float> grad;
+        HostMatrix<float> data;
+        HostMatrix<float> grad;
     };
     std::vector<ParamGrads> saved;
     saved.reserve(params.size());
     for (auto* p : params)
-        saved.push_back({p->data().to_cpu(), p->grad().to_cpu()});
+        saved.push_back({p->data().to_host(), p->grad().to_host()});
 
     float max_abs = 0.0f;
     float max_rel = 0.0f;
 
     for (int pi = 0; pi < (int)params.size(); ++pi) {
         auto* p = params[pi];
-        auto& gpu_data = p->data();
-        const auto& cpu_data = saved[pi].data;
-        const auto& cpu_agrad = saved[pi].grad;
+        auto& dev_data = p->data();
+        const auto& host_data = saved[pi].data;
+        const auto& host_agrad = saved[pi].grad;
 
-        for (int i = 0; i < gpu_data.size(); ++i) {
-            auto cpu_p = cpu_data;
-            cpu_p(i) += eps;
-            gpu_data.upload(cpu_p);
+        for (int i = 0; i < dev_data.size(); ++i) {
+            auto host_p = host_data;
+            host_p(i) += eps;
+            dev_data.upload(host_p);
             layer->forward();
             cudaDeviceSynchronize();
-            const auto out_p = layer->data().to_cpu();
+            const auto out_p = layer->data().to_host();
 
-            auto cpu_m = cpu_data;
-            cpu_m(i) -= eps;
-            gpu_data.upload(cpu_m);
+            auto host_m = host_data;
+            host_m(i) -= eps;
+            dev_data.upload(host_m);
             layer->forward();
             cudaDeviceSynchronize();
-            const auto out_m = layer->data().to_cpu();
+            const auto out_m = layer->data().to_host();
 
             float num = 0.0f;
             for (int j = 0; j < out_p.size(); ++j)
                 num += out_p(j) - out_m(j);
             num /= 2.0f * eps;
 
-            const float ana = cpu_agrad(i);
+            const float ana = host_agrad(i);
             const float abs_err = std::abs(num - ana);
             const float rel_err = abs_err / (std::abs(num) + std::abs(ana) + 1e-8f);
 
@@ -84,7 +84,7 @@ inline float grad_check(
             max_rel = std::max(max_rel, rel_err);
         }
 
-        gpu_data.upload(cpu_data);
+        dev_data.upload(host_data);
     }
 
     layer->forward();
@@ -105,7 +105,7 @@ make_param(int rows, int cols, float lo = -0.5f, float hi = 0.5f) {
 inline std::unique_ptr<nn::layer::Param> make_param_filled(int rows, int cols, float val) {
     using namespace tensor;
     auto p = std::make_unique<nn::layer::Param>(Shape(rows, cols));
-    CPUMatrix<float> m(Shape(rows, cols));
+    HostMatrix<float> m(Shape(rows, cols));
     m.fill(val);
     p->data().upload(m);
     p->grad().clear();
@@ -115,7 +115,7 @@ inline std::unique_ptr<nn::layer::Param> make_param_filled(int rows, int cols, f
 inline std::unique_ptr<nn::layer::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
     using namespace tensor;
     auto inp = std::make_unique<nn::layer::Input<int>>(Shape(1, cols));
-    CPUMatrix<int> m(Shape(1, cols));
+    HostMatrix<int> m(Shape(1, cols));
     for (int i = 0; i < cols; ++i)
         m(0, i) = vals[i];
     inp->data().upload(m);

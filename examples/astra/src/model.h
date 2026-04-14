@@ -9,8 +9,8 @@ namespace {
 
 template <typename T = float>
 static void
-write_quantized(std::ostream& f, const sorei::tensor::CPUMatrix<float>& src, int scale = 1) {
-    sorei::tensor::CPUArray<T> dst(src.size());
+write_quantized(std::ostream& f, const sorei::tensor::HostMatrix<float>& src, int scale = 1) {
+    sorei::tensor::HostArray<T> dst(src.size());
 
     for (int i = 0; i < src.size(); i++) {
         if constexpr (std::is_same_v<T, float>) {
@@ -33,15 +33,12 @@ write_quantized(std::ostream& f, const sorei::tensor::CPUMatrix<float>& src, int
 } // namespace
 
 struct AstraModel : public sorei::nn::Model {
-    using AffineLayer = sorei::nn::graph::AffineLayer;
-    using TrainingDataEntry = binpack::TrainingDataEntry;
-
     static constexpr int FT_SIZE = 1024;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
     static constexpr int OUTPUT_BUCKETS = 8;
 
-    AffineLayer ft, l1, l2, l3;
+    sorei::nn::graph::AffineLayer ft, l1, l2, l3;
 
     sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
         // layers
@@ -88,7 +85,7 @@ struct AstraModel : public sorei::nn::Model {
             {"target", batch.targets()},
         });
 
-        return prediction().to_cpu()(0) * BatchData::EVAL_SCALE;
+        return prediction().to_host()(0) * BatchData::EVAL_SCALE;
     }
 
     void quantize_params(const std::string& path = "quantized_model.nnue") {
@@ -96,13 +93,13 @@ struct AstraModel : public sorei::nn::Model {
         if (!f.is_open())
             sorei::error("Failed writing quantized parameters to {}", path);
 
-        write_quantized<int16_t>(f, ft.weight.data().to_cpu(), 255);
-        write_quantized<int16_t>(f, ft.bias.data().to_cpu(), 255);
-        write_quantized<int8_t>(f, l1.weight.data().to_cpu().transpose(), 64);
-        write_quantized<float>(f, l1.bias.data().to_cpu());
-        write_quantized<float>(f, l2.weight.data().to_cpu().transpose());
-        write_quantized<float>(f, l2.bias.data().to_cpu());
-        write_quantized<float>(f, l3.weight.data().to_cpu().transpose());
-        write_quantized<float>(f, l3.bias.data().to_cpu());
+        write_quantized<int16_t>(f, ft.weight.data().to_host(), 255);
+        write_quantized<int16_t>(f, ft.bias.data().to_host(), 255);
+        write_quantized<int8_t>(f, l1.weight.data().to_host().transpose(), 64);
+        write_quantized<float>(f, l1.bias.data().to_host());
+        write_quantized<float>(f, l2.weight.data().to_host().transpose());
+        write_quantized<float>(f, l2.bias.data().to_host());
+        write_quantized<float>(f, l3.weight.data().to_host().transpose());
+        write_quantized<float>(f, l3.bias.data().to_host());
     }
 };

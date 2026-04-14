@@ -35,11 +35,11 @@ __global__ void binary_broadcast_backward_kernel(
 }
 
 void ElemwiseBinary::broadcast_backward(
-    const tensor::GPUMatrix<float>& a,
-    tensor::GPUMatrix<float>& a_g,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& b_g,
-    const tensor::GPUMatrix<float>& c_g,
+    const tensor::DeviceMatrix<float>& a,
+    tensor::DeviceMatrix<float>& a_g,
+    const tensor::DeviceMatrix<float>& b,
+    tensor::DeviceMatrix<float>& b_g,
+    const tensor::DeviceMatrix<float>& c_g,
     const Op& op
 ) {
     const bool repeat_a = (a.cols() == 1);

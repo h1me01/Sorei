@@ -203,7 +203,7 @@ TEST(Grad, Select) {
 
     nn::layer::BucketIndex bidx(count, batch);
     {
-        tensor::CPUMatrix<int> bdata(tensor::Shape(1, batch));
+        tensor::HostMatrix<int> bdata(tensor::Shape(1, batch));
         bdata(0, 0) = 0;
         bdata(0, 1) = 1;
         bdata(0, 2) = 0;

@@ -11,10 +11,10 @@ void sgemm(
     bool trans_a,
     bool trans_b,
     float alpha,
-    const tensor::GPUMatrix<float>& a,
-    const tensor::GPUMatrix<float>& b,
+    const tensor::DeviceMatrix<float>& a,
+    const tensor::DeviceMatrix<float>& b,
     float beta,
-    tensor::GPUMatrix<float>& c
+    tensor::DeviceMatrix<float>& c
 );
 
 } // namespace sorei::cuda::cublas

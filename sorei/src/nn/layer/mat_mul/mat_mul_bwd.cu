@@ -6,11 +6,11 @@ constexpr float alpha = 1.0f;
 constexpr float beta = 1.0f;
 
 void MatMul::backward(
-    const tensor::GPUMatrix<float>& weight,
-    tensor::GPUMatrix<float>& weight_g,
-    const tensor::GPUMatrix<float>& in,
-    tensor::GPUMatrix<float>& in_g,
-    const tensor::GPUMatrix<float>& out_g
+    const tensor::DeviceMatrix<float>& weight,
+    tensor::DeviceMatrix<float>& weight_g,
+    const tensor::DeviceMatrix<float>& in,
+    tensor::DeviceMatrix<float>& in_g,
+    const tensor::DeviceMatrix<float>& out_g
 ) {
     SOREI_CHECK(weight.rows() == out_g.rows());
 

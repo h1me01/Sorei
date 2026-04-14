@@ -18,7 +18,7 @@ class Param : public TypedLayer<float> {
     void uniform_init(float min_val, float max_val) {
         SOREI_CHECK(min_val <= max_val);
 
-        tensor::CPUMatrix<float> result(shape_);
+        tensor::HostMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
             result(i) =
                 std::uniform_real_distribution<float>(min_val, max_val)(rng::thread_local_rng());
@@ -29,7 +29,7 @@ class Param : public TypedLayer<float> {
     }
 
     void he_init(int input_dim) {
-        tensor::CPUMatrix<float> result(shape_);
+        tensor::HostMatrix<float> result(shape_);
         for (int i = 0; i < result.size(); i++) {
             result(i) = std::normal_distribution<float>(0.0, std::sqrt(2.0 / input_dim))(
                 rng::thread_local_rng()

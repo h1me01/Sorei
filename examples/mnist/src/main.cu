@@ -13,11 +13,11 @@ static float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int b
         auto [images, labels] = loader.next();
         model.feed(images, labels);
 
-        auto cpu_logits = model.prediction().to_cpu();
+        auto host_logits = model.prediction().to_host();
         for (int s = 0; s < batch_size; s++) {
             int pred = 0;
             for (int c = 1; c < MNISTModel::NUM_CLASSES; c++)
-                if (cpu_logits(c, s) > cpu_logits(pred, s))
+                if (host_logits(c, s) > host_logits(pred, s))
                     pred = c;
             if (pred == labels[s])
                 correct++;

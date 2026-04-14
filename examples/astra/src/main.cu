@@ -69,15 +69,15 @@ int main() {
         model.clear_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            auto* gpu_batch = prefetcher.next();
-            if (!gpu_batch)
+            auto* dev_batch = prefetcher.next();
+            if (!dev_batch)
                 break;
 
             model.forward(
-                {{"stm_in", gpu_batch->stm_indices},
-                 {"nstm_in", gpu_batch->nstm_indices},
-                 {"output_bucket", gpu_batch->bucket_indices},
-                 {"target", gpu_batch->targets}}
+                {{"stm_in", dev_batch->stm_indices},
+                 {"nstm_in", dev_batch->nstm_indices},
+                 {"output_bucket", dev_batch->bucket_indices},
+                 {"target", dev_batch->targets}}
             );
             model.backward();
             optim.step(lr_sched.get());

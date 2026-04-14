@@ -57,11 +57,11 @@ class SparseAffineBase : public TypedLayer<float> {
     TypedLayer<float>* weight_;
     TypedLayer<float>* bias_;
 
-    tensor::GPUMatrix<float>& effective_data() {
+    tensor::DeviceMatrix<float>& effective_data() {
         return concat_ ? concat_->data() : TypedLayer<float>::data();
     }
 
-    tensor::GPUMatrix<float>& effective_grad() {
+    tensor::DeviceMatrix<float>& effective_grad() {
         return concat_ ? concat_->grad() : TypedLayer<float>::grad();
     }
 };

@@ -29,9 +29,9 @@ binary_forward_kernel(const float* a, const float* b, float* c, const int n, Op 
 }
 
 void ElemwiseBinary::forward(
-    const tensor::GPUMatrix<float>& a,
-    const tensor::GPUMatrix<float>& b,
-    tensor::GPUMatrix<float>& c,
+    const tensor::DeviceMatrix<float>& a,
+    const tensor::DeviceMatrix<float>& b,
+    tensor::DeviceMatrix<float>& c,
     const Op& op
 ) {
     SOREI_CHECK(a.size() == b.size());

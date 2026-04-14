@@ -102,13 +102,13 @@ class TypedLayer : public Layer {
 
     virtual ~TypedLayer() = default;
 
-    tensor::GPUMatrix<T>& data() {
+    tensor::DeviceMatrix<T>& data() {
         if (!drop_buffers_)
             data_.resize(shape());
         return data_;
     }
 
-    tensor::GPUMatrix<T>& grad() {
+    tensor::DeviceMatrix<T>& grad() {
         if (requires_grad() && !drop_buffers_)
             grad_.resize(shape());
         return grad_;
@@ -116,15 +116,15 @@ class TypedLayer : public Layer {
 
   protected:
     void drop_buffers() {
-        data_ = tensor::GPUMatrix<T>();
-        grad_ = tensor::GPUMatrix<T>();
+        data_ = tensor::DeviceMatrix<T>();
+        grad_ = tensor::DeviceMatrix<T>();
         drop_buffers_ = true;
     }
 
   private:
     bool drop_buffers_ = false;
-    tensor::GPUMatrix<T> data_;
-    tensor::GPUMatrix<T> grad_;
+    tensor::DeviceMatrix<T> data_;
+    tensor::DeviceMatrix<T> grad_;
 };
 
 template <typename T>

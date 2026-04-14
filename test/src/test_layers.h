@@ -129,9 +129,9 @@ TEST(Layer, ElemwiseUnary_Forward_ReLU_Correct) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto cpu = layer.data().to_cpu();
+    auto host = layer.data().to_host();
     for (int i = 0; i < 4; ++i)
-        EXPECT_NEAR(cpu(i), 0.0f, 1e-6f);
+        EXPECT_NEAR(host(i), 0.0f, 1e-6f);
 }
 
 TEST(Layer, ElemwiseBinary_Forward_Add_Correct) {
@@ -142,9 +142,9 @@ TEST(Layer, ElemwiseBinary_Forward_Add_Correct) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto cpu = layer.data().to_cpu();
+    auto host = layer.data().to_host();
     for (int i = 0; i < 6; ++i)
-        EXPECT_NEAR(cpu(i), 3.0f, 1e-5f);
+        EXPECT_NEAR(host(i), 3.0f, 1e-5f);
 }
 
 TEST(Layer, MatMul_Forward_Correct) {
@@ -155,13 +155,13 @@ TEST(Layer, MatMul_Forward_Correct) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto cpu = layer.data().to_cpu();
+    auto host = layer.data().to_host();
     for (int i = 0; i < 8; ++i)
-        EXPECT_NEAR(cpu(i), 3.0f, 1e-4f);
+        EXPECT_NEAR(host(i), 3.0f, 1e-4f);
 }
 
 TEST(Layer, Mean_Forward_Correct) {
-    CPUMatrix<float> src(Shape(3, 4));
+    HostMatrix<float> src(Shape(3, 4));
     for (int i = 0; i < 12; ++i)
         src(i) = (float)i;
 
@@ -172,11 +172,11 @@ TEST(Layer, Mean_Forward_Correct) {
     Mean layer(&p);
     layer.forward();
     cudaDeviceSynchronize();
-    EXPECT_NEAR(layer.data().to_cpu()(0), 5.5f, 1e-4f);
+    EXPECT_NEAR(layer.data().to_host()(0), 5.5f, 1e-4f);
 }
 
 TEST(Layer, PairwiseMul_Forward_Correct) {
-    CPUMatrix<float> src(Shape(4, 1));
+    HostMatrix<float> src(Shape(4, 1));
     src(0, 0) = 1;
     src(1, 0) = 2;
     src(2, 0) = 3;
@@ -190,9 +190,9 @@ TEST(Layer, PairwiseMul_Forward_Correct) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto cpu = layer.data().to_cpu();
-    EXPECT_NEAR(cpu(0, 0), 3.0f, 1e-5f);
-    EXPECT_NEAR(cpu(1, 0), 8.0f, 1e-5f);
+    auto host = layer.data().to_host();
+    EXPECT_NEAR(host(0, 0), 3.0f, 1e-5f);
+    EXPECT_NEAR(host(1, 0), 8.0f, 1e-5f);
 }
 
 TEST(Layer, SoftmaxCrossEntropy_Forward_Outputs_Positive) {
@@ -204,14 +204,14 @@ TEST(Layer, SoftmaxCrossEntropy_Forward_Outputs_Positive) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto cpu = layer.data().to_cpu();
+    auto host = layer.data().to_host();
     for (int c = 0; c < B; ++c)
-        EXPECT_GT((double)cpu(0, c), 0.0);
+        EXPECT_GT((double)host(0, c), 0.0);
 }
 
 TEST(Layer, SoftmaxCrossEntropy_Forward_PerfectPrediction_SmallLoss) {
     const int C = 3, B = 1;
-    CPUMatrix<float> src(Shape(C, B));
+    HostMatrix<float> src(Shape(C, B));
     src(0, 0) = 100.0f;
     src(1, 0) = 0.0f;
     src(2, 0) = 0.0f;
@@ -225,7 +225,7 @@ TEST(Layer, SoftmaxCrossEntropy_Forward_PerfectPrediction_SmallLoss) {
     layer.forward();
     cudaDeviceSynchronize();
 
-    auto loss = layer.data().to_cpu()(0, 0);
+    auto loss = layer.data().to_host()(0, 0);
     EXPECT_LT((double)loss, 0.01);
 }
 
@@ -346,11 +346,11 @@ TEST(Network, ForwardBackward_NoNaN) {
     network::Network net(g.topological_sort(), y.get(), loss.get());
 
     {
-        CPUMatrix<float> xdata(Shape(4, 8));
+        HostMatrix<float> xdata(Shape(4, 8));
         xdata.fill(0.1f);
         auto* xinp = g.get<InputFloat>("x");
         xinp->data().upload(xdata);
-        CPUMatrix<int> ldata(Shape(1, 8));
+        HostMatrix<int> ldata(Shape(1, 8));
         for (int c = 0; c < 8; ++c)
             ldata(0, c) = 0;
         auto* linp = g.get<InputInt>("lbl");
@@ -362,7 +362,7 @@ TEST(Network, ForwardBackward_NoNaN) {
     net.backward();
     cudaDeviceSynchronize();
 
-    auto pred = net.prediction().to_cpu();
+    auto pred = net.prediction().to_host();
     EXPECT_TRUE(pred.shape() == Shape(1, 8));
     for (int i = 0; i < pred.size(); ++i)
         EXPECT_FALSE(std::isnan(pred(i)));
@@ -381,9 +381,9 @@ TEST(Network, RunningLoss_Accumulates) {
 
     auto* xinp = g.get<InputFloat>("x");
     auto* linp = g.get<InputInt>("lbl");
-    CPUMatrix<float> xdata(Shape(2, 4));
+    HostMatrix<float> xdata(Shape(2, 4));
     xdata.fill(0.1f);
-    CPUMatrix<int> ldata(Shape(1, 4));
+    HostMatrix<int> ldata(Shape(1, 4));
     for (int c = 0; c < 4; ++c)
         ldata(0, c) = 0;
     xinp->data().upload(xdata);
@@ -391,7 +391,7 @@ TEST(Network, RunningLoss_Accumulates) {
 
     net.forward();
     cudaDeviceSynchronize();
-    auto rl = net.running_loss().to_cpu();
+    auto rl = net.running_loss().to_host();
 
     EXPECT_EQ(rl.size(), 1);
     EXPECT_GT((double)rl(0), 0.0);
@@ -408,9 +408,9 @@ TEST(Network, GradsNonZeroAfterBackward) {
 
     network::Network net(g.topological_sort(), out.get(), loss.get());
 
-    CPUMatrix<float> xdata(Shape(3, 4));
+    HostMatrix<float> xdata(Shape(3, 4));
     xdata.fill(0.5f);
-    CPUMatrix<int> ldata(Shape(1, 4));
+    HostMatrix<int> ldata(Shape(1, 4));
     for (int c = 0; c < 4; ++c)
         ldata(0, c) = c % 2;
     g.get<InputFloat>("x")->data().upload(xdata);
@@ -421,10 +421,10 @@ TEST(Network, GradsNonZeroAfterBackward) {
     cudaDeviceSynchronize();
 
     for (auto* p : net.params()) {
-        auto grad_cpu = p->grad().to_cpu();
+        auto grad_host = p->grad().to_host();
         float abs_sum = 0.0f;
-        for (int i = 0; i < grad_cpu.size(); ++i)
-            abs_sum += std::abs(grad_cpu(i));
+        for (int i = 0; i < grad_host.size(); ++i)
+            abs_sum += std::abs(grad_host(i));
         if (abs_sum > 1e-8f)
             return;
     }

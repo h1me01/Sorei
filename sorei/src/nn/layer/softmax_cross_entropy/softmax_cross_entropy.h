@@ -29,7 +29,7 @@ class SoftmaxCrossEntropy : public TypedLayer<float> {
   private:
     TypedLayer<float>* input_;
     InputInt* labels_;
-    tensor::GPUMatrix<float> probs_;
+    tensor::DeviceMatrix<float> probs_;
 
     int get_block_size() const {
         unsigned int n = input_->shape().rows();

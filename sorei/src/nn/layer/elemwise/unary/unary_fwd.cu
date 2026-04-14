@@ -27,7 +27,7 @@ __global__ void unary_fwd_kernel(const float* in, float* out, const int size, Op
 }
 
 void ElemwiseUnary::forward(
-    const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const Op& op
+    const tensor::DeviceMatrix<float>& in, tensor::DeviceMatrix<float>& out, const Op& op
 ) {
     SOREI_CHECK(in.size() == out.size());
 

@@ -62,18 +62,18 @@ class AdamW : public Optimizer {
     float beta2_;
     float decay_;
 
-    std::vector<tensor::GPUArray<float>> momentum_;
-    std::vector<tensor::GPUArray<float>> velocity_;
+    std::vector<tensor::DeviceArray<float>> momentum_;
+    std::vector<tensor::DeviceArray<float>> velocity_;
 
     void save_buffers(
-        const std::string& file, const std::vector<tensor::GPUArray<float>>& buffers
+        const std::string& file, const std::vector<tensor::DeviceArray<float>>& buffers
     ) const {
         std::ofstream f(file, std::ios::binary);
         if (!f.is_open())
             error("Optimizer: failed to open state file for writing {}", file);
 
         for (const auto& buf : buffers) {
-            const auto host_data = buf.to_cpu();
+            const auto host_data = buf.to_host();
 
             const size_t element_count = static_cast<size_t>(host_data.size());
             const size_t bytes_to_write = element_count * sizeof(float);
@@ -90,18 +90,18 @@ class AdamW : public Optimizer {
         }
     }
 
-    void load_buffers(const std::string& file, std::vector<tensor::GPUArray<float>>& buffers) {
+    void load_buffers(const std::string& file, std::vector<tensor::DeviceArray<float>>& buffers) {
         std::ifstream f(file, std::ios::binary);
         if (!f.is_open())
             error("Optimizer: failed to open state file {}", file);
 
         for (auto& buf : buffers) {
-            tensor::CPUArray<float> cpu_buffer(buf.size());
+            tensor::HostArray<float> host_buffer(buf.size());
 
-            const size_t element_count = static_cast<size_t>(cpu_buffer.size());
+            const size_t element_count = static_cast<size_t>(host_buffer.size());
             const size_t bytes_to_read = element_count * sizeof(float);
 
-            f.read(reinterpret_cast<char*>(cpu_buffer.data()), bytes_to_read);
+            f.read(reinterpret_cast<char*>(host_buffer.data()), bytes_to_read);
 
             const size_t bytes_read = static_cast<size_t>(f.gcount());
             if (bytes_read != bytes_to_read) {
@@ -116,7 +116,7 @@ class AdamW : public Optimizer {
                 );
             }
 
-            buf.upload(cpu_buffer);
+            buf.upload(host_buffer);
         }
     }
 };

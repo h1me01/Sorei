@@ -56,14 +56,14 @@ class MatrixBase {
     bool in_bounds(int r, int c) const { return r >= 0 && r < rows() && c >= 0 && c < cols(); }
 };
 
-template <typename T, typename Storage = CPUArray<T>>
-class CPUMatrix : public MatrixBase<T, Storage> {
+template <typename T, typename Storage = HostArray<T>>
+class HostMatrix : public MatrixBase<T, Storage> {
     using Base = MatrixBase<T, Storage>;
 
   public:
-    CPUMatrix() = default;
+    HostMatrix() = default;
 
-    explicit CPUMatrix(const Shape& shape)
+    explicit HostMatrix(const Shape& shape)
         : Base(shape) {}
 
     void fill(T value) { this->data_.fill(value); }
@@ -77,31 +77,31 @@ class CPUMatrix : public MatrixBase<T, Storage> {
         this->clear();
     }
 
-    CPUMatrix operator+(const CPUMatrix& o) const { return elementwise(o, std::plus<T>{}); }
-    CPUMatrix operator-(const CPUMatrix& o) const { return elementwise(o, std::minus<T>{}); }
-    CPUMatrix operator*(T s) const {
+    HostMatrix operator+(const HostMatrix& o) const { return elementwise(o, std::plus<T>{}); }
+    HostMatrix operator-(const HostMatrix& o) const { return elementwise(o, std::minus<T>{}); }
+    HostMatrix operator*(T s) const {
         return scaled([s](T x) { return x * s; });
     }
-    CPUMatrix operator/(T s) const {
+    HostMatrix operator/(T s) const {
         return scaled([s](T x) { return x / s; });
     }
 
-    CPUMatrix reshape(int r, int c) const {
+    HostMatrix reshape(int r, int c) const {
         SOREI_CHECK(r * c == this->size());
-        CPUMatrix out(Shape(r, c));
+        HostMatrix out(Shape(r, c));
         std::copy(this->begin(), this->end(), out.begin());
         return out;
     }
 
-    CPUMatrix transpose() const {
-        CPUMatrix out(Shape(this->cols(), this->rows()));
+    HostMatrix transpose() const {
+        HostMatrix out(Shape(this->cols(), this->rows()));
         for (int r = 0; r < this->rows(); r++)
             for (int c = 0; c < this->cols(); c++)
                 out(c, r) = (*this)(r, c);
         return out;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const CPUMatrix& m) {
+    friend std::ostream& operator<<(std::ostream& os, const HostMatrix& m) {
         os << "Matrix " << m.shape().str() << "\n" << std::fixed << std::setprecision(4);
         for (int r = 0; r < m.rows(); r++) {
             os << "  [ ";
@@ -117,17 +117,17 @@ class CPUMatrix : public MatrixBase<T, Storage> {
 
   private:
     template <typename Op>
-    CPUMatrix elementwise(const CPUMatrix& o, Op op) const {
+    HostMatrix elementwise(const HostMatrix& o, Op op) const {
         SOREI_CHECK(this->shape_ == o.shape_);
-        CPUMatrix out(this->shape_);
+        HostMatrix out(this->shape_);
         for (int i = 0; i < this->size(); i++)
             out(i) = op((*this)(i), o(i));
         return out;
     }
 
     template <typename Op>
-    CPUMatrix scaled(Op op) const {
-        CPUMatrix out(this->shape_);
+    HostMatrix scaled(Op op) const {
+        HostMatrix out(this->shape_);
         for (int i = 0; i < this->size(); i++)
             out(i) = op((*this)(i));
         return out;
@@ -135,16 +135,16 @@ class CPUMatrix : public MatrixBase<T, Storage> {
 };
 
 template <typename T>
-using CPUPinnedMatrix = CPUMatrix<T, CPUPinnedArray<T>>;
+using HostPinnedMatrix = HostMatrix<T, HostPinnedArray<T>>;
 
 template <typename T>
-class GPUMatrix : public MatrixBase<T, GPUArray<T>> {
-    using Base = MatrixBase<T, GPUArray<T>>;
+class DeviceMatrix : public MatrixBase<T, DeviceArray<T>> {
+    using Base = MatrixBase<T, DeviceArray<T>>;
 
   public:
-    GPUMatrix() = default;
+    DeviceMatrix() = default;
 
-    explicit GPUMatrix(const Shape& shape)
+    explicit DeviceMatrix(const Shape& shape)
         : Base(shape) {}
 
     // no-op if shape = shape()
@@ -152,7 +152,7 @@ class GPUMatrix : public MatrixBase<T, GPUArray<T>> {
         if (shape == this->shape_)
             return;
         this->shape_ = shape;
-        this->data_ = GPUArray<T>(shape.size());
+        this->data_ = DeviceArray<T>(shape.size());
         this->clear();
     }
 
@@ -170,15 +170,15 @@ class GPUMatrix : public MatrixBase<T, GPUArray<T>> {
         this->data_.download(dst);
     }
 
-    CPUMatrix<T> to_cpu() const {
-        CPUMatrix<T> out(this->shape_);
+    HostMatrix<T> to_host() const {
+        HostMatrix<T> out(this->shape_);
         download(out);
         return out;
     }
 
     template <typename Src>
-    static GPUMatrix from_cpu(const Src& src) {
-        GPUMatrix out(src.shape());
+    static DeviceMatrix from_host(const Src& src) {
+        DeviceMatrix out(src.shape());
         out.upload(src);
         return out;
     }

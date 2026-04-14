@@ -609,8 +609,8 @@ struct EnumTraits<PieceType> {
             return static_cast<PieceType>(it / 2);
     }
 
-    [[nodiscard]] static constexpr std::optional<PieceType>
-    fromString(std::string_view sv) noexcept {
+    [[nodiscard]] static constexpr std::optional<PieceType> fromString(std::string_view sv
+    ) noexcept {
         if (sv.size() != 1)
             return {};
 
@@ -1205,16 +1205,14 @@ struct EnumTraits<Square> {
     [[nodiscard]] static constexpr std::string_view toString(Square sq) {
         assert(sq.isOk());
 
-        return std::string_view(
-                   "a1b1c1d1e1f1g1h1"
-                   "a2b2c2d2e2f2g2h2"
-                   "a3b3c3d3e3f3g3h3"
-                   "a4b4c4d4e4f4g4h4"
-                   "a5b5c5d5e5f5g5h5"
-                   "a6b6c6d6e6f6g6h6"
-                   "a7b7c7d7e7f7g7h7"
-                   "a8b8c8d8e8f8g8h8"
-        )
+        return std::string_view("a1b1c1d1e1f1g1h1"
+                                "a2b2c2d2e2f2g2h2"
+                                "a3b3c3d3e3f3g3h3"
+                                "a4b4c4d4e4f4g4h4"
+                                "a5b5c5d5e5f5g5h5"
+                                "a6b6c6d6e6f6g6h6"
+                                "a7b7c7d7e7f7g7h7"
+                                "a8b8c8d8e8f8g8h8")
             .substr(ordinal(sq) * 2, 2);
     }
 
@@ -4272,7 +4270,9 @@ inline void forEachLegalMove(const Position& pos, FuncT&& func) {
         // TODO: use iterators so we don't loop over all moves
         //       when we can avoid it.
         movegen::forEachPseudoLegalPawnMove(
-            *this, move.from, [&isValid, &move](const Move& genMove) {
+            *this,
+            move.from,
+            [&isValid, &move](const Move& genMove) {
                 if (move == genMove) {
                     isValid = true;
                 }
@@ -4435,11 +4435,9 @@ compressRook(const Position& position, Square sq, Piece piece) {
         ((sq == a1 && contains(castlingRights, CastlingRights::WhiteQueenSide)) ||
          (sq == h1 && contains(castlingRights, CastlingRights::WhiteKingSide)))) {
         return 13;
-    } else if (
-        color == Color::Black &&
-        ((sq == a8 && contains(castlingRights, CastlingRights::BlackQueenSide)) ||
-         (sq == h8 && contains(castlingRights, CastlingRights::BlackKingSide)))
-    ) {
+    } else if (color == Color::Black &&
+               ((sq == a8 && contains(castlingRights, CastlingRights::BlackQueenSide)) ||
+                (sq == h8 && contains(castlingRights, CastlingRights::BlackKingSide)))) {
         return 14;
     } else {
         return static_cast<std::uint8_t>(ordinal(piece));
@@ -4464,8 +4462,8 @@ compressKing(const Position& position, Square /* sq */, Piece piece) {
 namespace detail::lookup {
 static constexpr EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)>
     pieceCompressorFunc = []() {
-        EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)>
-            pieceCompressorFunc_{};
+        EnumArray<PieceType, std::uint8_t (*)(const Position&, Square, Piece)> pieceCompressorFunc_{
+        };
 
         pieceCompressorFunc_[PieceType::Knight] = detail::compressOrdinaryPiece;
         pieceCompressorFunc_[PieceType::Bishop] = detail::compressOrdinaryPiece;
@@ -6700,8 +6698,8 @@ struct CompressedTrainingDataEntryParallelReader {
 
                         std::cerr << "[Warning] Dataloader mutex acquisition for file with ID "
                                   << fileId << " timed out after " << kMaxLockWaitTime.count()
-                                  << "ms. Re-rolling file. "
-                                  << "(" << count_to_print << " timeouts since last warning)\n";
+                                  << "ms. Re-rolling file. " << "(" << count_to_print
+                                  << " timeouts since last warning)\n";
                     }
                 }
             }

@@ -204,47 +204,47 @@ class BinpackLoader {
     }
 };
 
-// GPUBatchData
+// DeviceBatchData
 
-struct GPUBatchData {
+struct DeviceBatchData {
     sorei::nn::Tensor<int> stm_indices;
     sorei::nn::Tensor<int> nstm_indices;
     sorei::nn::Tensor<int> bucket_indices;
     sorei::nn::Tensor<float> targets;
 
-    explicit GPUBatchData(int n) {
+    explicit DeviceBatchData(int n) {
         using TI = sorei::nn::Tensor<int>;
         using TF = sorei::nn::Tensor<float>;
 
-        stm_indices = TI({32, n}, TI::GPU);
-        nstm_indices = TI({32, n}, TI::GPU);
-        bucket_indices = TI({n}, TI::GPU);
-        targets = TF({n}, TF::GPU);
+        stm_indices = TI({32, n}, TI::DEVICE);
+        nstm_indices = TI({32, n}, TI::DEVICE);
+        bucket_indices = TI({n}, TI::DEVICE);
+        targets = TF({n}, TF::DEVICE);
 
-        stm_staging_ = TI({32, n}, TI::CPU_PINNED);
-        nstm_staging_ = TI({32, n}, TI::CPU_PINNED);
-        bucket_staging_ = TI({n}, TI::CPU_PINNED);
-        targets_staging_ = TF({n}, TF::CPU_PINNED);
+        stm_staging_ = TI({32, n}, TI::HOST_PINNED);
+        nstm_staging_ = TI({32, n}, TI::HOST_PINNED);
+        bucket_staging_ = TI({n}, TI::HOST_PINNED);
+        targets_staging_ = TF({n}, TF::HOST_PINNED);
     }
 
     void upload_async(const BatchData& src, cudaStream_t stream) {
-        auto stage = [](auto& pinned, const auto& cpu) {
-            std::memcpy(pinned.data(), cpu.data(), cpu.bytes());
+        auto stage = [](auto& pinned, const auto& host) {
+            std::memcpy(pinned.data(), host.data(), host.bytes());
         };
-        stage(stm_staging_.cpu_pinned_data(), src.stm_indices().cpu_data());
-        stage(nstm_staging_.cpu_pinned_data(), src.nstm_indices().cpu_data());
-        stage(bucket_staging_.cpu_pinned_data(), src.bucket_indices().cpu_data());
-        stage(targets_staging_.cpu_pinned_data(), src.targets().cpu_data());
+        stage(stm_staging_.host_pinned_data(), src.stm_indices().host_data());
+        stage(nstm_staging_.host_pinned_data(), src.nstm_indices().host_data());
+        stage(bucket_staging_.host_pinned_data(), src.bucket_indices().host_data());
+        stage(targets_staging_.host_pinned_data(), src.targets().host_data());
 
         auto dma = [&](auto& dst, const auto& pinned) {
             SOREI_CUDA_CHECK(cudaMemcpyAsync(
                 dst.data(), pinned.data(), pinned.bytes(), cudaMemcpyHostToDevice, stream
             ));
         };
-        dma(stm_indices.gpu_data(), stm_staging_.cpu_pinned_data());
-        dma(nstm_indices.gpu_data(), nstm_staging_.cpu_pinned_data());
-        dma(bucket_indices.gpu_data(), bucket_staging_.cpu_pinned_data());
-        dma(targets.gpu_data(), targets_staging_.cpu_pinned_data());
+        dma(stm_indices.device_data(), stm_staging_.host_pinned_data());
+        dma(nstm_indices.device_data(), nstm_staging_.host_pinned_data());
+        dma(bucket_indices.device_data(), bucket_staging_.host_pinned_data());
+        dma(targets.device_data(), targets_staging_.host_pinned_data());
     }
 
   private:
@@ -263,15 +263,15 @@ class BatchPrefetcher {
         SOREI_CUDA_CHECK(cudaStreamCreate(&stream_));
         SOREI_CUDA_CHECK(cudaEventCreate(&event_));
 
-        buf_[0] = new GPUBatchData(batch_size);
-        buf_[1] = new GPUBatchData(batch_size);
+        buf_[0] = new DeviceBatchData(batch_size);
+        buf_[1] = new DeviceBatchData(batch_size);
 
-        next_cpu_ = loader_.next();
-        if (next_cpu_) {
-            buf_[write_]->upload_async(*next_cpu_, stream_);
+        next_host_ = loader_.next();
+        if (next_host_) {
+            buf_[write_]->upload_async(*next_host_, stream_);
             SOREI_CUDA_CHECK(cudaEventRecord(event_, stream_));
-            delete next_cpu_;
-            next_cpu_ = loader_.next();
+            delete next_host_;
+            next_host_ = loader_.next();
             has_pending_ = true;
         }
     }
@@ -282,7 +282,7 @@ class BatchPrefetcher {
         SOREI_CUDA_CHECK(cudaStreamDestroy(stream_));
         delete buf_[0];
         delete buf_[1];
-        delete next_cpu_;
+        delete next_host_;
     }
 
     BatchPrefetcher(const BatchPrefetcher&) = delete;
@@ -290,7 +290,7 @@ class BatchPrefetcher {
     BatchPrefetcher(BatchPrefetcher&&) = delete;
     BatchPrefetcher& operator=(BatchPrefetcher&&) = delete;
 
-    GPUBatchData* next() {
+    DeviceBatchData* next() {
         if (!has_pending_)
             return nullptr;
 
@@ -298,11 +298,11 @@ class BatchPrefetcher {
         std::swap(read_, write_);
         has_pending_ = false;
 
-        if (next_cpu_) {
-            buf_[write_]->upload_async(*next_cpu_, stream_);
+        if (next_host_) {
+            buf_[write_]->upload_async(*next_host_, stream_);
             SOREI_CUDA_CHECK(cudaEventRecord(event_, stream_));
-            delete next_cpu_;
-            next_cpu_ = loader_.next();
+            delete next_host_;
+            next_host_ = loader_.next();
             has_pending_ = true;
         }
         return buf_[read_];
@@ -310,8 +310,8 @@ class BatchPrefetcher {
 
   private:
     BinpackLoader& loader_;
-    GPUBatchData* buf_[2] = {};
-    BatchData* next_cpu_ = nullptr;
+    DeviceBatchData* buf_[2] = {};
+    BatchData* next_host_ = nullptr;
     int read_ = 1;
     int write_ = 0;
     bool has_pending_ = false;

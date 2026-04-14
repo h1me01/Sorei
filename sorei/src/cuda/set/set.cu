@@ -10,7 +10,7 @@ __global__ void set_kernel(float* data, const float val, const int size) {
         data[idx] = val;
 }
 
-void set(tensor::GPUMatrix<float>& data, const float val) {
+void set(tensor::DeviceMatrix<float>& data, const float val) {
     SOREI_CHECK(data.data());
 
     const int grid = ceil_div(data.size(), BLOCK_SIZE);

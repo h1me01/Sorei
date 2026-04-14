@@ -30,12 +30,12 @@ class ElemwiseUnary : public TypedLayer<float> {
     void backward() override { backward(input_->data(), input_->grad(), grad(), op_); }
 
     static void
-    forward(const tensor::GPUMatrix<float>& in, tensor::GPUMatrix<float>& out, const Op& op);
+    forward(const tensor::DeviceMatrix<float>& in, tensor::DeviceMatrix<float>& out, const Op& op);
 
     static void backward(
-        tensor::GPUMatrix<float>& in,
-        tensor::GPUMatrix<float>& in_g,
-        const tensor::GPUMatrix<float>& out_g,
+        tensor::DeviceMatrix<float>& in,
+        tensor::DeviceMatrix<float>& in_g,
+        const tensor::DeviceMatrix<float>& out_g,
         const Op& op
     );
 

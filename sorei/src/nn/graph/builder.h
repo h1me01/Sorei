@@ -79,8 +79,8 @@ struct ParamNode : Node {
     void he_init(int input_dim) { get()->he_init(input_dim); }
     void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
 
-    tensor::GPUMatrix<float>& data() { return get()->data(); }
-    const tensor::GPUMatrix<float>& data() const { return get()->data(); }
+    tensor::DeviceMatrix<float>& data() { return get()->data(); }
+    const tensor::DeviceMatrix<float>& data() const { return get()->data(); }
 
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }

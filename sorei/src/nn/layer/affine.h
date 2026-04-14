@@ -25,7 +25,7 @@ class Affine : public TypedLayer<float> {
     }
 
     void backward() override {
-        tensor::GPUMatrix<float> tmp;
+        tensor::DeviceMatrix<float> tmp;
         ElemwiseBinary::broadcast_backward(
             bias_->data(), bias_->grad(), data(), tmp, grad(), ElemwiseBinary::Op{cuda::AddBinary{}}
         );

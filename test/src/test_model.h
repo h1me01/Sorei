@@ -81,9 +81,9 @@ TEST(Model, Forward_OutputNoNaN) {
     model.forward({{"x", x}, {"labels", lbl}});
     cudaDeviceSynchronize();
 
-    auto cpu = model.prediction().to_cpu();
-    for (int i = 0; i < cpu.size(); ++i)
-        EXPECT_FALSE(std::isnan(cpu(i)));
+    auto host = model.prediction().to_host();
+    for (int i = 0; i < host.size(); ++i)
+        EXPECT_FALSE(std::isnan(host(i)));
 }
 
 // Running loss
@@ -148,7 +148,7 @@ TEST(Model, Backward_ProducesNonZeroGradients) {
 
     bool found_nonzero = false;
     for (auto* p : model.params()) {
-        auto g = p->grad().to_cpu();
+        auto g = p->grad().to_host();
         for (int i = 0; i < g.size(); ++i) {
             if (std::abs(g(i)) > 1e-9f) {
                 found_nonzero = true;
@@ -206,14 +206,14 @@ TEST(Model, LoadedParams_ProduceSameOutput) {
         lbl(0, i) = i % 2;
 
     model_a.forward({{"x", x}, {"labels", lbl}});
-    auto pred_a = model_a.prediction().to_cpu();
+    auto pred_a = model_a.prediction().to_host();
     model_a.save_params(path);
 
     TinyMLP model_b(4, 8, 2);
     model_b.forward({{"x", x}, {"labels", lbl}});
     model_b.load_params(path);
     model_b.forward({{"x", x}, {"labels", lbl}});
-    auto pred_b = model_b.prediction().to_cpu();
+    auto pred_b = model_b.prediction().to_host();
 
     EXPECT_EQ(pred_a.size(), pred_b.size());
     for (int i = 0; i < pred_a.size(); ++i)
@@ -256,12 +256,12 @@ TEST(Model, GraphOptimizer_FoldSelfMul) {
     SquareModel model;
     Tensor<float> x({4, 3});
     for (int i = 0; i < 12; ++i)
-        x.data()[i] = (float)(i + 1) * 0.1f;
+        x.host_data()[i] = (float)(i + 1) * 0.1f;
 
     model.forward({{"x", x}});
     cudaDeviceSynchronize();
 
-    auto pred = model.prediction().to_cpu();
+    auto pred = model.prediction().to_host();
     for (int c = 0; c < 3; ++c) {
         for (int r = 0; r < 4; ++r) {
             float xi = (float)(4 * c + r + 1) * 0.1f;
@@ -296,7 +296,7 @@ TEST(Model, MultipleInputs_BothUsed) {
     model.forward({{"x", x}, {"y", y}, {"lbl", lbl}});
     cudaDeviceSynchronize();
 
-    auto pred = model.prediction().to_cpu();
+    auto pred = model.prediction().to_host();
     for (int i = 0; i < pred.size(); ++i)
         EXPECT_NEAR(pred(i), 3.0f, 1e-5f);
 }

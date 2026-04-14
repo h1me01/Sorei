@@ -8,32 +8,32 @@
 namespace sorei::tensor {
 
 template <typename T>
-class CPUArray {
+class HostArray {
   public:
-    CPUArray() = default;
+    HostArray() = default;
 
-    explicit CPUArray(int size)
+    explicit HostArray(int size)
         : size_(size),
           data_(std::make_unique<T[]>(size)) {
         clear();
     }
 
-    CPUArray(const CPUArray& other)
+    HostArray(const HostArray& other)
         : size_(other.size_),
           data_(std::make_unique<T[]>(other.size_)) {
         std::memcpy(data_.get(), other.data_.get(), bytes());
     }
 
-    CPUArray& operator=(const CPUArray& other) {
+    HostArray& operator=(const HostArray& other) {
         if (this != &other) {
-            CPUArray tmp(other);
+            HostArray tmp(other);
             *this = std::move(tmp);
         }
         return *this;
     }
 
-    CPUArray(CPUArray&&) noexcept = default;
-    CPUArray& operator=(CPUArray&&) noexcept = default;
+    HostArray(HostArray&&) noexcept = default;
+    HostArray& operator=(HostArray&&) noexcept = default;
 
     int size() const { return size_; }
     size_t bytes() const { return size_ * sizeof(T); }
@@ -67,23 +67,23 @@ class CPUArray {
 };
 
 template <typename T>
-class CPUPinnedArray {
+class HostPinnedArray {
   public:
-    CPUPinnedArray() = default;
+    HostPinnedArray() = default;
 
-    explicit CPUPinnedArray(int size)
+    explicit HostPinnedArray(int size)
         : size_(size) {
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, size * sizeof(T)));
         clear();
     }
 
-    ~CPUPinnedArray() {
+    ~HostPinnedArray() {
         if (ptr_)
             cudaFreeHost(ptr_);
     }
 
-    CPUPinnedArray(const CPUPinnedArray& other)
+    HostPinnedArray(const HostPinnedArray& other)
         : size_(other.size_) {
         if (size_ > 0) {
             SOREI_CUDA_CHECK(cudaMallocHost(&ptr_, bytes()));
@@ -91,22 +91,22 @@ class CPUPinnedArray {
         }
     }
 
-    CPUPinnedArray& operator=(const CPUPinnedArray& other) {
+    HostPinnedArray& operator=(const HostPinnedArray& other) {
         if (this != &other) {
-            CPUPinnedArray tmp(other);
+            HostPinnedArray tmp(other);
             *this = std::move(tmp);
         }
         return *this;
     }
 
-    CPUPinnedArray(CPUPinnedArray&& other) noexcept
+    HostPinnedArray(HostPinnedArray&& other) noexcept
         : size_(other.size_),
           ptr_(other.ptr_) {
         other.size_ = 0;
         other.ptr_ = nullptr;
     }
 
-    CPUPinnedArray& operator=(CPUPinnedArray&& other) noexcept {
+    HostPinnedArray& operator=(HostPinnedArray&& other) noexcept {
         if (this != &other) {
             if (ptr_)
                 cudaFreeHost(ptr_);
@@ -154,23 +154,23 @@ class CPUPinnedArray {
 };
 
 template <typename T>
-class GPUArray {
+class DeviceArray {
   public:
-    GPUArray() = default;
+    DeviceArray() = default;
 
-    explicit GPUArray(int size)
+    explicit DeviceArray(int size)
         : size_(size) {
         if (size > 0)
             SOREI_CUDA_CHECK(cudaMalloc(&ptr_, size * sizeof(T)));
         clear();
     }
 
-    ~GPUArray() {
+    ~DeviceArray() {
         if (ptr_)
             cudaFree(ptr_);
     }
 
-    GPUArray(const GPUArray& other)
+    DeviceArray(const DeviceArray& other)
         : size_(other.size_) {
         if (size_ > 0) {
             SOREI_CUDA_CHECK(cudaMalloc(&ptr_, bytes()));
@@ -178,22 +178,22 @@ class GPUArray {
         }
     }
 
-    GPUArray& operator=(const GPUArray& other) {
+    DeviceArray& operator=(const DeviceArray& other) {
         if (this != &other) {
-            GPUArray tmp(other);
+            DeviceArray tmp(other);
             *this = std::move(tmp);
         }
         return *this;
     }
 
-    GPUArray(GPUArray&& other) noexcept
+    DeviceArray(DeviceArray&& other) noexcept
         : size_(other.size_),
           ptr_(other.ptr_) {
         other.size_ = 0;
         other.ptr_ = nullptr;
     }
 
-    GPUArray& operator=(GPUArray&& other) noexcept {
+    DeviceArray& operator=(DeviceArray&& other) noexcept {
         if (this != &other) {
             if (ptr_)
                 cudaFree(ptr_);
@@ -238,15 +238,15 @@ class GPUArray {
         SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), ptr_, bytes(), cudaMemcpyDeviceToHost));
     }
 
-    CPUArray<T> to_cpu() const {
-        CPUArray<T> out(size_);
+    HostArray<T> to_host() const {
+        HostArray<T> out(size_);
         download(out);
         return out;
     }
 
     template <typename Src>
-    static GPUArray from_cpu(const Src& src) {
-        GPUArray buf(src.size());
+    static DeviceArray from_host(const Src& src) {
+        DeviceArray buf(src.size());
         buf.upload(src);
         return buf;
     }

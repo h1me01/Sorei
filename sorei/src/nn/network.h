@@ -67,12 +67,12 @@ class Network {
         return result;
     }
 
-    tensor::GPUMatrix<float>& prediction() { return prediction_->data(); }
-    tensor::GPUMatrix<float>& running_loss() { return running_loss_; }
+    tensor::DeviceMatrix<float>& prediction() { return prediction_->data(); }
+    tensor::DeviceMatrix<float>& running_loss() { return running_loss_; }
 
   private:
     std::vector<layer::Layer*> layers_;
-    tensor::GPUMatrix<float> running_loss_;
+    tensor::DeviceMatrix<float> running_loss_;
     layer::TypedLayer<float>* prediction_;
     layer::TypedLayer<float>* loss_;
 
@@ -81,7 +81,7 @@ class Network {
     }
 
     void zero_grads() {
-        std::unordered_set<tensor::GPUMatrix<float>*> seen;
+        std::unordered_set<tensor::DeviceMatrix<float>*> seen;
         for (auto* layer : layers_) {
             if (layer == loss_)
                 continue;

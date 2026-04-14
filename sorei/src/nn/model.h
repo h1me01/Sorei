@@ -56,10 +56,10 @@ class Model {
     }
 
     void clear_running_loss() { network().running_loss().clear(); }
-    float running_loss() { return network().running_loss().to_cpu()(0); }
+    float running_loss() { return network().running_loss().to_host()(0); }
 
     std::vector<layer::Param*> params() { return network().params(); }
-    tensor::GPUMatrix<float>& prediction() { return network().prediction(); }
+    tensor::DeviceMatrix<float>& prediction() { return network().prediction(); }
 
     layer::Param& get_param(const std::string& name) { return *graph_.get<layer::Param>(name); }
 
@@ -110,12 +110,12 @@ class Model {
 
     template <typename T, typename Dst>
     void upload_best(Dst& dst, const Tensor<T>& t) {
-        if (t.has_gpu_data())
-            dst.upload(t.gpu_data());
-        else if (t.has_cpu_pinned_data())
-            dst.upload(t.cpu_pinned_data());
-        else if (t.has_cpu_data())
-            dst.upload(t.cpu_data());
+        if (t.has_device_data())
+            dst.upload(t.device_data());
+        else if (t.has_host_pinned_data())
+            dst.upload(t.host_pinned_data());
+        else if (t.has_host_data())
+            dst.upload(t.host_data());
         else
             error("Tensor has no data to upload");
     }
@@ -154,16 +154,16 @@ class Model {
         error("to_shape: unsupported tensor dimension");
     }
 
-    static void save_param(const tensor::GPUMatrix<float>& data, std::ostream& f) {
-        auto host = data.to_cpu();
+    static void save_param(const tensor::DeviceMatrix<float>& data, std::ostream& f) {
+        auto host = data.to_host();
 
         f.write(reinterpret_cast<const char*>(host.data()), host.size() * sizeof(float));
         if (!f)
             error("Model: failed writing data to file");
     }
 
-    static void load_param(tensor::GPUMatrix<float>& data, std::istream& f) {
-        tensor::CPUMatrix<float> host(data.shape());
+    static void load_param(tensor::DeviceMatrix<float>& data, std::istream& f) {
+        tensor::HostMatrix<float> host(data.shape());
 
         const size_t expected = host.size() * sizeof(float);
 

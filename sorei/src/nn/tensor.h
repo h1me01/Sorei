@@ -11,15 +11,15 @@ template <typename T>
 class Tensor {
   public:
     enum StorageType : unsigned {
-        CPU = 1 << 0,
-        CPU_PINNED = 1 << 1,
-        GPU = 1 << 2,
+        HOST = 1 << 0,
+        HOST_PINNED = 1 << 1,
+        DEVICE = 1 << 2,
     };
 
   public:
     Tensor() = default;
 
-    explicit Tensor(std::vector<int> shape, StorageType storage = CPU)
+    explicit Tensor(std::vector<int> shape, StorageType storage = HOST)
         : shape_(std::move(shape)),
           storage_(storage) {
 
@@ -29,8 +29,8 @@ class Tensor {
             if (d <= 0)
                 error("Tensor: all dimensions must be > 0");
 
-        if (has_flag(storage_, CPU) && has_flag(storage_, CPU_PINNED))
-            error("Tensor: CPU and CPU_PINNED are mutually exclusive");
+        if (has_flag(storage_, HOST) && has_flag(storage_, HOST_PINNED))
+            error("Tensor: HOST and HOST_PINNED are mutually exclusive");
 
         allocate();
     }
@@ -50,14 +50,14 @@ class Tensor {
     bool empty() const { return size() == 0; }
     std::vector<int> shape() const { return shape_; }
 
-    bool has_cpu_data() const { return !cpu_data_.empty(); }
-    bool has_cpu_pinned_data() const { return !cpu_pinned_data_.empty(); }
-    bool has_gpu_data() const { return !gpu_data_.empty(); }
+    bool has_host_data() const { return !host_data_.empty(); }
+    bool has_host_pinned_data() const { return !host_pinned_data_.empty(); }
+    bool has_device_data() const { return !device_data_.empty(); }
 
     // fills only host storage
     void fill(T value) {
-        cpu_data_.fill(value);
-        cpu_pinned_data_.fill(value);
+        host_data_.fill(value);
+        host_pinned_data_.fill(value);
     }
 
     void resize(std::vector<int> shape) {
@@ -68,35 +68,35 @@ class Tensor {
     }
 
     void host_to_device() {
-        if (has_cpu_data())
-            gpu_data_.upload(cpu_data_);
-        else if (has_cpu_pinned_data())
-            gpu_data_.upload(cpu_pinned_data_);
+        if (has_host_data())
+            device_data_.upload(host_data_);
+        else if (has_host_pinned_data())
+            device_data_.upload(host_pinned_data_);
     }
 
     void device_to_host() {
-        if (has_cpu_data())
-            gpu_data_.download(cpu_data_);
-        else if (has_cpu_pinned_data())
-            gpu_data_.download(cpu_pinned_data_);
+        if (has_host_data())
+            device_data_.download(host_data_);
+        else if (has_host_pinned_data())
+            device_data_.download(host_pinned_data_);
     }
 
-    tensor::CPUArray<T>& cpu_data() { return cpu_data_; }
-    const tensor::CPUArray<T>& cpu_data() const { return cpu_data_; }
-    tensor::CPUPinnedArray<T>& cpu_pinned_data() { return cpu_pinned_data_; }
-    const tensor::CPUPinnedArray<T>& cpu_pinned_data() const { return cpu_pinned_data_; }
-    tensor::GPUArray<T>& gpu_data() { return gpu_data_; }
-    const tensor::GPUArray<T>& gpu_data() const { return gpu_data_; }
+    tensor::HostArray<T>& host_data() { return host_data_; }
+    const tensor::HostArray<T>& host_data() const { return host_data_; }
+    tensor::HostPinnedArray<T>& host_pinned_data() { return host_pinned_data_; }
+    const tensor::HostPinnedArray<T>& host_pinned_data() const { return host_pinned_data_; }
+    tensor::DeviceArray<T>& device_data() { return device_data_; }
+    const tensor::DeviceArray<T>& device_data() const { return device_data_; }
 
   private:
     void allocate() {
         int n = size();
-        if (has_flag(storage_, CPU))
-            cpu_data_.resize(n);
-        if (has_flag(storage_, CPU_PINNED))
-            cpu_pinned_data_.resize(n);
-        if (has_flag(storage_, GPU))
-            gpu_data_.resize(n);
+        if (has_flag(storage_, HOST))
+            host_data_.resize(n);
+        if (has_flag(storage_, HOST_PINNED))
+            host_pinned_data_.resize(n);
+        if (has_flag(storage_, DEVICE))
+            device_data_.resize(n);
     }
 
     int flat1d(int i) const {
@@ -114,17 +114,17 @@ class Tensor {
 
     static bool has_flag(StorageType flags, StorageType bit) { return (flags & bit) != 0; }
 
-    T& host_ref(int idx) { return has_cpu_data() ? cpu_data_[idx] : cpu_pinned_data_[idx]; }
+    T& host_ref(int idx) { return has_host_data() ? host_data_[idx] : host_pinned_data_[idx]; }
 
     const T& host_ref(int idx) const {
-        return has_cpu_data() ? cpu_data_[idx] : cpu_pinned_data_[idx];
+        return has_host_data() ? host_data_[idx] : host_pinned_data_[idx];
     }
 
     std::vector<int> shape_;
-    StorageType storage_{CPU};
-    tensor::CPUArray<T> cpu_data_;
-    tensor::CPUPinnedArray<T> cpu_pinned_data_;
-    tensor::GPUArray<T> gpu_data_;
+    StorageType storage_{HOST};
+    tensor::HostArray<T> host_data_;
+    tensor::HostPinnedArray<T> host_pinned_data_;
+    tensor::DeviceArray<T> device_data_;
 };
 
 } // namespace sorei::nn

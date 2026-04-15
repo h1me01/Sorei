@@ -1,4 +1,5 @@
 #pragma once
 
-#include "cosine_annealing.h"
-#include "step_decay.h"
+#include "cosine_annealing_lr.h"
+#include "exponential_lr.h"
+#include "step_lr.h"

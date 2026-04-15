@@ -43,7 +43,7 @@ int main() {
 
     MNISTModel model;
     auto optim = sorei::nn::optim::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
-    auto lr_sched = sorei::nn::lr_sched::CosineAnnealing(lr, lr * 0.1f, epochs);
+    auto lr_sched = sorei::nn::lr_sched::CosineAnnealingLR(lr, lr * 0.1f, epochs);
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
         model.clear_running_loss();
@@ -52,7 +52,7 @@ int main() {
             auto [images, labels] = train_loader.next();
             model.feed(images, labels);
             model.backward();
-            optim.step(lr_sched.get());
+            optim.step(lr_sched.get_lr());
         }
 
         sorei::print(
@@ -64,6 +64,7 @@ int main() {
         );
 
         lr_sched.step();
+        std::cout << lr_sched.get_lr() << std::endl;
     }
 
     return 0;

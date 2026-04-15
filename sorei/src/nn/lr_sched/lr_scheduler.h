@@ -14,7 +14,7 @@ class LRScheduler {
     virtual ~LRScheduler() = default;
 
     void step() { lr_ = lr_update(++step_count_); }
-    float get() const { return lr_; }
+    float get_lr() const { return lr_; }
     virtual std::string info() const = 0;
 
   protected:

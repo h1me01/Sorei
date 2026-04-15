@@ -136,7 +136,6 @@ struct ReLU {
 
     __device__ float forward(float x) const { return max(0.0f, x); }
     __device__ float backward(float x) const { return (x > 0.0f) ? 1.0f : 0.0f; }
-    __device__ float backward_from_output(float y) const { return backward(y); }
 };
 
 // ReLU clamped to [0, 1]
@@ -145,7 +144,6 @@ struct ClampedReLU {
 
     __device__ float forward(float x) const { return clamp(x, 0.0f, 1.0f); }
     __device__ float backward(float x) const { return (x > 0.0f && x < 1.0f) ? 1.0f : 0.0f; }
-    __device__ float backward_from_output(float y) const { return backward(y); }
 };
 
 // ReLU clamped to [0, 1] and squared
@@ -157,7 +155,6 @@ struct SquaredClampedReLU {
         return x * x;
     }
     __device__ float backward(float x) const { return (x > 0.0f && x < 1.0f) ? 2.0f * x : 0.0f; }
-    __device__ float backward_from_output(float y) const { return backward(sqrtf(y)); }
 };
 
 struct Sigmoid {

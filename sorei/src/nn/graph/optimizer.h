@@ -89,8 +89,6 @@ class GraphOptimizer {
             return layer::ActOp{std::get<cuda::ClampedReLU>(op)};
         if (std::holds_alternative<cuda::SquaredClampedReLU>(op))
             return layer::ActOp{std::get<cuda::SquaredClampedReLU>(op)};
-        if (std::holds_alternative<cuda::Sigmoid>(op))
-            return layer::ActOp{std::get<cuda::Sigmoid>(op)};
         return std::nullopt;
     }
 

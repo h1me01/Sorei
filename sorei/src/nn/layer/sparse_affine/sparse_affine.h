@@ -8,8 +8,7 @@
 
 namespace sorei::nn::layer {
 
-using ActOp = std::
-    variant<cuda::Identity, cuda::ReLU, cuda::ClampedReLU, cuda::SquaredClampedReLU, cuda::Sigmoid>;
+using ActOp = std::variant<cuda::Identity, cuda::ReLU, cuda::ClampedReLU, cuda::SquaredClampedReLU>;
 
 class SparseAffineBase : public TypedLayer<float> {
   public:

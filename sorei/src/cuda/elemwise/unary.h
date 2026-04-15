@@ -168,7 +168,6 @@ struct Sigmoid {
         x = forward(x);
         return x * (1.0f - x);
     }
-    __device__ float backward_from_output(float y) const { return y * (1.0f - y); }
 };
 
 } // namespace sorei::cuda

@@ -70,6 +70,9 @@ class Model {
 
         for (auto* p : net_->params())
             load_param(p->data(), f);
+
+        if (f.peek() != EOF)
+            error("Model: file {} has extra data after expected parameters", file);
     }
 
     void save_params(const std::string& file) {

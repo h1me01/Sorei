@@ -214,14 +214,11 @@ class GraphBuilder {
     }
 
     Node affine(const Node& input, const Node& weight, const Node& bias) {
-        return {this, make<layer::Affine>(input.get(), weight.get(), bias.get())};
-    }
-
-    Node sparse_affine(const Node& input, const Node& weight, const Node& bias) {
         auto* ii = dynamic_cast<layer::InputInt*>(input.get());
-        if (!ii)
-            error("GraphBuilder: sparse_affine requires InputInt as input");
-        return {this, make<layer::SparseAffine>(ii, weight.get(), bias.get())};
+        if (ii)
+            return {this, make<layer::SparseAffine>(ii, weight.get(), bias.get())};
+        else
+            return {this, make<layer::Affine>(input.get(), weight.get(), bias.get())};
     }
 
     Node select(const Node& input, layer::BucketIndex* index) {

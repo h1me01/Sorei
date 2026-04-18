@@ -76,7 +76,7 @@ class HostPinnedArray {
 
     ~HostPinnedArray() {
         if (ptr_)
-            cudaFreeHost(ptr_);
+            SOREI_CUDA_CHECK(cudaFreeHost(ptr_));
     }
 
     HostPinnedArray(const HostPinnedArray& other)
@@ -105,7 +105,7 @@ class HostPinnedArray {
     HostPinnedArray& operator=(HostPinnedArray&& other) noexcept {
         if (this != &other) {
             if (ptr_)
-                cudaFreeHost(ptr_);
+                SOREI_CUDA_CHECK(cudaFreeHost(ptr_));
             size_ = other.size_;
             ptr_ = other.ptr_;
             other.size_ = 0;
@@ -136,7 +136,7 @@ class HostPinnedArray {
         if (size == size_)
             return;
         if (ptr_)
-            cudaFreeHost(ptr_);
+            SOREI_CUDA_CHECK(cudaFreeHost(ptr_));
         ptr_ = nullptr;
         size_ = size;
         if (size > 0)
@@ -161,7 +161,7 @@ class DeviceArray {
 
     ~DeviceArray() {
         if (ptr_)
-            cudaFree(ptr_);
+            SOREI_CUDA_CHECK(cudaFree(ptr_));
     }
 
     DeviceArray(const DeviceArray& other)
@@ -190,7 +190,7 @@ class DeviceArray {
     DeviceArray& operator=(DeviceArray&& other) noexcept {
         if (this != &other) {
             if (ptr_)
-                cudaFree(ptr_);
+                SOREI_CUDA_CHECK(cudaFree(ptr_));
             size_ = other.size_;
             ptr_ = other.ptr_;
             other.size_ = 0;
@@ -210,7 +210,7 @@ class DeviceArray {
         if (size == size_)
             return;
         if (ptr_)
-            cudaFree(ptr_);
+            SOREI_CUDA_CHECK(cudaFree(ptr_));
         ptr_ = nullptr;
         size_ = size;
         if (size > 0)

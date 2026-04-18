@@ -19,6 +19,34 @@ class Timer {
     Clock::time_point start_;
 };
 
+class WDLScheduler {
+  public:
+    WDLScheduler(float start_wdl, float end_wdl, int max_epochs)
+        : start_wdl_(start_wdl),
+          end_wdl_(end_wdl),
+          max_epochs_(max_epochs - 1) {
+
+        SOREI_CHECK(start_wdl >= 0.0f && start_wdl <= 1.0f);
+        SOREI_CHECK(end_wdl >= 0.0f && end_wdl <= 1.0f);
+        SOREI_CHECK(max_epochs > 1);
+    }
+
+    float get_wdl() const {
+        if (step_count_ >= max_epochs_)
+            return end_wdl_;
+        float t = static_cast<float>(step_count_) / max_epochs_;
+        return start_wdl_ + t * (end_wdl_ - start_wdl_);
+    }
+
+    void step() { step_count_++; }
+
+  private:
+    float start_wdl_;
+    float end_wdl_;
+    int max_epochs_;
+    int step_count_ = 0;
+};
+
 int main() {
     const float lr = 0.001f;
     const int epochs = 400;
@@ -34,6 +62,7 @@ int main() {
 
     auto optim = sorei::nn::optim::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
     auto lr_sched = sorei::nn::lr_sched::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
+    auto wdl_sched = WDLScheduler(0.2f, 0.6f, epochs);
 
     auto binpack_loader = BinpackLoader(
         batch_size,
@@ -65,6 +94,8 @@ int main() {
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
         Timer timer;
+
+        AstraInputs::WDL_WEIGHT = wdl_sched.get_wdl();
 
         model.clear_running_loss();
 
@@ -109,6 +140,7 @@ int main() {
         }
 
         lr_sched.step();
+        wdl_sched.step();
     }
 
     model.quantize_params();

@@ -15,65 +15,8 @@
 #include <vector>
 
 #include "../sf_binpack/training_data_format.h"
+#include "model.h"
 #include "sorei/nn.h"
-
-// BatchData
-
-class BatchData {
-  public:
-    static constexpr float EVAL_SCALE = 400.0f;
-    static constexpr float WDL_WEIGHT = 0.7f;
-
-    explicit BatchData(const std::vector<binpack::TrainingDataEntry>& entries) {
-        const int n = static_cast<int>(entries.size());
-
-        stm_indices_.resize({32, n});
-        nstm_indices_.resize({32, n});
-        bucket_indices_.resize({n});
-        targets_.resize({n});
-
-        stm_indices_.fill(-1);
-        nstm_indices_.fill(-1);
-
-        for (int i = 0; i < n; ++i) {
-            const auto& e = entries[i];
-            const auto stm = e.pos.sideToMove();
-
-            int j = 0;
-            for (auto sq : e.pos.piecesBB()) {
-                const auto pc = e.pos.pieceAt(sq);
-                stm_indices_(j, i) = feature_index(pc, sq, stm);
-                nstm_indices_(j, i) = feature_index(pc, sq, !stm);
-                ++j;
-            }
-
-            const float score_target = sigmoid(e.score / EVAL_SCALE);
-            const float wdl_target = (e.result + 1) / 2.0f;
-            targets_[i] = WDL_WEIGHT * wdl_target + (1.0f - WDL_WEIGHT) * score_target;
-            bucket_indices_[i] = (e.pos.pieceCount() - 2) / 4;
-        }
-    }
-
-    const sorei::nn::Tensor<int>& stm_indices() const { return stm_indices_; }
-    const sorei::nn::Tensor<int>& nstm_indices() const { return nstm_indices_; }
-    const sorei::nn::Tensor<int>& bucket_indices() const { return bucket_indices_; }
-    const sorei::nn::Tensor<float>& targets() const { return targets_; }
-
-  private:
-    sorei::nn::Tensor<int> stm_indices_;
-    sorei::nn::Tensor<int> nstm_indices_;
-    sorei::nn::Tensor<int> bucket_indices_;
-    sorei::nn::Tensor<float> targets_;
-
-    static float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
-
-    static int feature_index(chess::Piece pc, chess::Square sq, chess::Color view) {
-        if (view == chess::Color::Black)
-            sq.flipVertically();
-        return static_cast<int>(sq) + static_cast<int>(pc.type()) * 64 +
-               (pc.color() != view) * 64 * 6;
-    }
-};
 
 // BinpackLoader
 
@@ -119,7 +62,7 @@ class BinpackLoader {
                         break;
                 }
 
-                auto batch = new BatchData(entries);
+                auto batch = new AstraInputs(entries);
 
                 {
                     std::unique_lock lock(batch_mutex_);
@@ -154,7 +97,7 @@ class BinpackLoader {
             delete b;
     }
 
-    BatchData* next() {
+    AstraInputs* next() {
         std::unique_lock lock(batch_mutex_);
         batches_any_.wait(lock, [this] { return !batches_.empty() || num_workers_.load() == 0; });
         if (batches_.empty())
@@ -173,7 +116,7 @@ class BinpackLoader {
     int batch_size_;
     int thread_count_;
     std::vector<std::string> filenames_;
-    std::deque<BatchData*> batches_;
+    std::deque<AstraInputs*> batches_;
     std::mutex batch_mutex_;
     std::condition_variable batches_not_full_;
     std::condition_variable batches_any_;
@@ -227,7 +170,7 @@ struct DeviceBatchData {
         targets_staging_ = TF({n}, TF::HOST_PINNED);
     }
 
-    void upload_async(const BatchData& src, cudaStream_t stream) {
+    void upload_async(const AstraInputs& src, cudaStream_t stream) {
         auto stage = [](auto& pinned, const auto& host) {
             std::memcpy(pinned.data(), host.data(), host.bytes());
         };
@@ -311,7 +254,7 @@ class BatchPrefetcher {
   private:
     BinpackLoader& loader_;
     DeviceBatchData* buf_[2] = {};
-    BatchData* next_host_ = nullptr;
+    AstraInputs* next_host_ = nullptr;
     int read_ = 1;
     int write_ = 0;
     bool has_pending_ = false;

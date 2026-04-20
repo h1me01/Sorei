@@ -1,6 +1,6 @@
-#include "../../../cuda/util.h"
+#include "../../cuda/util.h"
 
-#include "adamw.h"
+#include "adam.h"
 
 namespace sorei::nn::optim {
 

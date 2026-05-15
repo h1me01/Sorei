@@ -6,4 +6,3 @@
 #include "model.h"
 #include "network.h"
 #include "optim/include.h"
-#include "tensor.h"

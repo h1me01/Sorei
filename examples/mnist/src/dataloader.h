@@ -76,7 +76,7 @@ class MNISTLoader {
           batch_size_(batch_size),
           perm_(dataset.size()),
           images_buf_({dataset.dim(), batch_size}),
-          labels_buf_({batch_size}),
+          labels_buf_({1, batch_size}),
           rng_(seed) {
 
         std::iota(perm_.begin(), perm_.end(), 0);
@@ -84,8 +84,8 @@ class MNISTLoader {
     }
 
     struct Batch {
-        const sorei::nn::Tensor<float>& images;
-        const sorei::nn::Tensor<int>& labels;
+        const sorei::matrix::HostMatrix<float>& images;
+        const sorei::matrix::HostMatrix<int>& labels;
     };
 
     Batch next() {
@@ -97,7 +97,7 @@ class MNISTLoader {
             const int idx = perm_[pos_ + b];
             for (int p = 0; p < dim; p++)
                 images_buf_(p, b) = dataset_.pixel(idx, p);
-            labels_buf_[b] = dataset_.label(idx);
+            labels_buf_(b) = dataset_.label(idx);
         }
         pos_ += batch_size_;
 
@@ -112,8 +112,8 @@ class MNISTLoader {
     int batch_size_;
     int pos_ = 0;
     std::vector<int> perm_;
-    sorei::nn::Tensor<float> images_buf_;
-    sorei::nn::Tensor<int> labels_buf_;
+    sorei::matrix::HostMatrix<float> images_buf_;
+    sorei::matrix::HostMatrix<int> labels_buf_;
     std::mt19937 rng_;
 
     void shuffle() {

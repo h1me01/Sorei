@@ -4,6 +4,6 @@
 
 namespace sorei::cuda {
 
-void set(tensor::DeviceMatrix<float>& data, const float val);
+void set(matrix::DeviceMatrix<float>& data, const float val);
 
 } // namespace sorei::cuda

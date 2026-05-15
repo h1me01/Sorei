@@ -97,7 +97,7 @@ int main() {
 
         AstraInputs::WDL_WEIGHT = wdl_sched.get_wdl();
 
-        model.clear_running_loss();
+        model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
             auto* dev_batch = prefetcher.next();

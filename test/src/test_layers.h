@@ -8,10 +8,23 @@
 #include "grad_check.h"
 
 using namespace sorei;
-using namespace sorei::tensor;
+using namespace sorei::matrix;
 using namespace sorei::nn;
 using namespace sorei::nn::layer;
 using namespace sorei::cuda;
+
+// Helper
+
+namespace {
+
+template <typename T>
+T* cast_layer(Layer* layer) {
+    auto* typed = dynamic_cast<T*>(layer);
+    SOREI_CHECK(typed != nullptr);
+    return typed;
+}
+
+} // namespace
 
 // Layer shape inference
 
@@ -234,8 +247,8 @@ TEST(Layer, SoftmaxCrossEntropy_Forward_PerfectPrediction_SmallLoss) {
 TEST(Graph, Builder_BasicInputs) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({8, 4}, "x");
-    auto lbl = b.input_int({1, 4}, "labels");
+    auto x = b.input_float("x", {8, 4});
+    auto lbl = b.input_int("labels", {1, 4});
     EXPECT_TRUE((bool)x);
     EXPECT_TRUE((bool)lbl);
     EXPECT_EQ(x.get()->shape().rows(), 8);
@@ -244,7 +257,7 @@ TEST(Graph, Builder_BasicInputs) {
 TEST(Graph, Builder_AffineLayer_Shape) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({6, 8}, "x");
+    auto x = b.input_float("x", {6, 8});
     auto fc = b.affine_layer(6, 4, "fc1");
     auto y = fc(x);
     EXPECT_EQ(y.get()->shape().rows(), 4);
@@ -254,7 +267,7 @@ TEST(Graph, Builder_AffineLayer_Shape) {
 TEST(Graph, Builder_FluentActivations) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({4, 2}, "x");
+    auto x = b.input_float("x", {4, 2});
     auto r = x.relu();
     auto s = x.sigmoid();
     auto c = x.clamped_relu();
@@ -266,8 +279,8 @@ TEST(Graph, Builder_FluentActivations) {
 TEST(Graph, Builder_FluentArithmetic) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({4, 2}, "x");
-    auto y = b.input_float({4, 2}, "y");
+    auto x = b.input_float("x", {4, 2});
+    auto y = b.input_float("y", {4, 2});
     EXPECT_TRUE((bool)(x + y));
     EXPECT_TRUE((bool)(x - y));
     EXPECT_TRUE((bool)(x * y));
@@ -279,8 +292,8 @@ TEST(Graph, Builder_FluentArithmetic) {
 TEST(Graph, Builder_Concat) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({4, 3}, "x");
-    auto y = b.input_float({5, 3}, "y");
+    auto x = b.input_float("x", {4, 3});
+    auto y = b.input_float("y", {5, 3});
     auto c = b.concat({x, y}, layer::ConcatAxis::Rows);
     EXPECT_EQ(c.get()->shape().rows(), 9);
     EXPECT_EQ(c.get()->shape().cols(), 3);
@@ -289,8 +302,8 @@ TEST(Graph, Builder_Concat) {
 TEST(Graph, Builder_SoftmaxCrossEntropy) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto logits = b.input_float({10, 4}, "logits");
-    auto labels = b.input_int({1, 4}, "labels");
+    auto logits = b.input_float("logits", {10, 4});
+    auto labels = b.input_int("labels", {1, 4});
     auto loss = logits.softmax_cross_entropy(labels);
     auto mean = loss.mean();
     EXPECT_EQ(mean.get()->shape().rows(), 1);
@@ -301,7 +314,7 @@ TEST(Graph, TopologicalSort_Correctness) {
     graph::Graph g;
     graph::GraphBuilder b(g);
 
-    auto x = b.input_float({4, 2}, "x");
+    auto x = b.input_float("x", {4, 2});
     auto r = x.relu();
     auto s = r.sigmoid();
     auto sorted = g.topological_sort();
@@ -321,26 +334,17 @@ TEST(Graph, TopologicalSort_Correctness) {
     }
 }
 
-TEST(Graph, NamedLookup) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float({4, 2}, "my_input");
-    auto* found = g.get<InputFloat>("my_input");
-    EXPECT_TRUE(found != nullptr);
-    EXPECT_EQ(found->shape().rows(), 4);
-}
-
 // Network forward / backward / parameters
 
 TEST(Network, ForwardBackward_NoNaN) {
     graph::Graph g;
     graph::GraphBuilder b(g);
 
-    auto x = b.input_float({4, 8}, "x");
+    auto x = b.input_float("x", {4, 8});
     auto fc1 = b.affine_layer(4, 3, "fc1");
     auto fc2 = b.affine_layer(3, 1, "fc2");
     auto y = fc2(fc1(x).relu());
-    auto lbl = b.input_int({1, 8}, "lbl");
+    auto lbl = b.input_int("lbl", {1, 8});
     auto loss = y.softmax_cross_entropy(lbl).mean();
 
     network::Network net(g.topological_sort(), y.get(), loss.get());
@@ -348,13 +352,11 @@ TEST(Network, ForwardBackward_NoNaN) {
     {
         HostMatrix<float> xdata({4, 8});
         xdata.fill(0.1f);
-        auto* xinp = g.get<InputFloat>("x");
-        xinp->data().upload(xdata);
+        cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
         HostMatrix<int> ldata({1, 8});
         for (int c = 0; c < 8; ++c)
             ldata(0, c) = 0;
-        auto* linp = g.get<InputInt>("lbl");
-        linp->data().upload(ldata);
+        cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
     }
 
     net.forward();
@@ -371,23 +373,21 @@ TEST(Network, ForwardBackward_NoNaN) {
 TEST(Network, RunningLoss_Accumulates) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({2, 4}, "x");
-    auto lbl = b.input_int({1, 4}, "lbl");
-    auto fc = b.affine_layer(2, 2, "fc");
+    auto x = b.input_float("x", {2, 4});
+    auto lbl = b.input_int("lbl", {1, 4});
+    auto fc = b.affine_layer(2, 2);
     auto pred = fc(x);
     auto loss = pred.softmax_cross_entropy(lbl).mean();
 
     network::Network net(g.topological_sort(), pred.get(), loss.get());
 
-    auto* xinp = g.get<InputFloat>("x");
-    auto* linp = g.get<InputInt>("lbl");
     HostMatrix<float> xdata({2, 4});
     xdata.fill(0.1f);
     HostMatrix<int> ldata({1, 4});
     for (int c = 0; c < 4; ++c)
         ldata(0, c) = 0;
-    xinp->data().upload(xdata);
-    linp->data().upload(ldata);
+    cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
+    cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
 
     net.forward();
     cudaDeviceSynchronize();
@@ -400,9 +400,9 @@ TEST(Network, RunningLoss_Accumulates) {
 TEST(Network, GradsNonZeroAfterBackward) {
     graph::Graph g;
     graph::GraphBuilder b(g);
-    auto x = b.input_float({3, 4}, "x");
-    auto lbl = b.input_int({1, 4}, "lbl");
-    auto fc = b.affine_layer(3, 2, "fc");
+    auto x = b.input_float("x", {3, 4});
+    auto lbl = b.input_int("lbl", {1, 4});
+    auto fc = b.affine_layer(3, 2);
     auto out = fc(x);
     auto loss = out.softmax_cross_entropy(lbl).mean();
 
@@ -413,8 +413,8 @@ TEST(Network, GradsNonZeroAfterBackward) {
     HostMatrix<int> ldata({1, 4});
     for (int c = 0; c < 4; ++c)
         ldata(0, c) = c % 2;
-    g.get<InputFloat>("x")->data().upload(xdata);
-    g.get<InputInt>("lbl")->data().upload(ldata);
+    cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
+    cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
 
     net.forward();
     net.backward();

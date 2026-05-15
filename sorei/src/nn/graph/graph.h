@@ -77,41 +77,12 @@ class Graph {
     const std::vector<std::unique_ptr<layer::Layer>>& nodes() const { return nodes_; }
     std::size_t size() const { return nodes_.size(); }
 
-    template <typename T>
-    T* get(const std::string& name) const {
-        auto it = named_ops_.find(name);
-        SOREI_CHECK(it != named_ops_.end());
-
-        T* p = dynamic_cast<T*>(it->second);
-        SOREI_CHECK(p);
-
-        return p;
-    }
-
   private:
     std::vector<std::unique_ptr<layer::Layer>> nodes_;
     std::unordered_map<std::string, layer::Layer*> named_ops_;
 
     friend class GraphBuilder;
     friend class GraphOptimizer;
-
-    int next_id(const std::string& prefix) {
-        int id = 0;
-        for (const auto& [name, op] : named_ops_) {
-            if (name.size() <= prefix.size())
-                continue;
-
-            if (name.substr(0, prefix.size()) == prefix) {
-                try {
-                    int n = std::stoi(name.substr(prefix.size()));
-                    if (n >= id)
-                        id = n + 1;
-                } catch (...) {
-                }
-            }
-        }
-        return id;
-    }
 
     template <typename T, typename... Args>
     layer::Layer* emplace(Args&&... args) {
@@ -121,10 +92,7 @@ class Graph {
     }
 
     template <typename T, typename... Args>
-    T* emplace_named(std::string name, const std::string& prefix, Args&&... args) {
-        if (name.empty())
-            name = prefix + std::to_string(next_id(prefix));
-
+    T* emplace_named(const std::string& name, Args&&... args) {
         auto [it, inserted] = named_ops_.try_emplace(name, nullptr);
         if (!inserted)
             error("Graph: duplicate name '{}'", name);

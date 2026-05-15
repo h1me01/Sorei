@@ -4,7 +4,7 @@
 #include "dataloader.h"
 #include "model.h"
 
-static float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int batch_size) {
+float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int batch_size) {
     MNISTLoader loader(dataset, batch_size, /*seed=*/0);
     const int num_batches = dataset.size() / batch_size;
     int correct = 0;
@@ -19,7 +19,7 @@ static float eval_accuracy(MNISTModel& model, const MNISTDataset& dataset, int b
             for (int c = 1; c < MNISTModel::NUM_CLASSES; c++)
                 if (host_logits(c, s) > host_logits(pred, s))
                     pred = c;
-            if (pred == labels[s])
+            if (pred == labels(s))
                 correct++;
         }
     }
@@ -46,7 +46,7 @@ int main() {
     auto lr_sched = sorei::nn::lr_sched::CosineAnnealingLR(lr, lr * 0.1f, epochs);
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
-        model.clear_running_loss();
+        model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
             auto [images, labels] = train_loader.next();
@@ -64,7 +64,6 @@ int main() {
         );
 
         lr_sched.step();
-        std::cout << lr_sched.get_lr() << std::endl;
     }
 
     return 0;

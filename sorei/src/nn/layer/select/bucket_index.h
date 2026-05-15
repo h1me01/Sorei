@@ -16,15 +16,15 @@ class BucketIndex : public TypedLayer<int> {
 
     void resize(int size) {
         SOREI_CHECK(size > 0);
-        shape_ = tensor::Shape(1, size);
+        shape_ = matrix::Shape(1, size);
     }
 
     int count() const { return count_; }
-    tensor::Shape shape() const override { return shape_; }
+    matrix::Shape shape() const override { return shape_; }
 
   private:
     int count_;
-    tensor::Shape shape_;
+    matrix::Shape shape_;
 };
 
 } // namespace sorei::nn::layer

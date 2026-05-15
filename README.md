@@ -1,6 +1,6 @@
 # Sorei
 
-A CUDA-accelerated neural network training library for C++20. Sorei provides a fluent graph-builder API for defining computation graphs with automatic differentiation.
+A lightweight CUDA-accelerated neural network training library for C++20. Sorei provides a fluent graph-builder API for defining computation graphs with automatic differentiation.
 
 ## Requirements
 
@@ -33,8 +33,8 @@ Define a model by subclassing `sorei::nn::Model` and implementing `build_graph`:
 
 struct MyModel : public sorei::nn::Model {
     sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
-        auto x      = b.input_float({INPUT_DIM, 0}, "x");
-        auto labels = b.input_int({1, 0}, "labels");
+        auto x      = b.input_float("x", {INPUT_DIM, 0});
+        auto labels = b.input_int("labels", {1, 0});
 
         auto l1 = b.affine_layer(INPUT_DIM, HIDDEN_DIM);
         auto l2 = b.affine_layer(HIDDEN_DIM, NUM_CLASSES);

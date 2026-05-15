@@ -21,24 +21,24 @@ class MatMul : public TypedLayer<float> {
     }
 
     static void forward(
-        const tensor::DeviceMatrix<float>& weight,
-        const tensor::DeviceMatrix<float>& in,
-        tensor::DeviceMatrix<float>& out
+        const matrix::DeviceMatrix<float>& weight,
+        const matrix::DeviceMatrix<float>& in,
+        matrix::DeviceMatrix<float>& out
     );
 
     static void backward(
-        const tensor::DeviceMatrix<float>& weight,
-        tensor::DeviceMatrix<float>& weight_g,
-        const tensor::DeviceMatrix<float>& in,
-        tensor::DeviceMatrix<float>& in_g,
-        const tensor::DeviceMatrix<float>& out_g
+        const matrix::DeviceMatrix<float>& weight,
+        matrix::DeviceMatrix<float>& weight_g,
+        const matrix::DeviceMatrix<float>& in,
+        matrix::DeviceMatrix<float>& in_g,
+        const matrix::DeviceMatrix<float>& out_g
     );
 
     std::vector<LayerInputSlot> mutable_inputs() override {
         return {LayerInputSlot::from(weight_), LayerInputSlot::from(input_)};
     }
 
-    tensor::Shape shape() const override {
+    matrix::Shape shape() const override {
         return {weight_->shape().rows(), input_->shape().cols()};
     }
 

@@ -48,34 +48,34 @@ class ElemwiseBinary : public TypedLayer<float> {
     }
 
     static void forward(
-        const tensor::DeviceMatrix<float>& a,
-        const tensor::DeviceMatrix<float>& b,
-        tensor::DeviceMatrix<float>& c,
+        const matrix::DeviceMatrix<float>& a,
+        const matrix::DeviceMatrix<float>& b,
+        matrix::DeviceMatrix<float>& c,
         const Op& op
     );
 
     static void backward(
-        const tensor::DeviceMatrix<float>& a,
-        tensor::DeviceMatrix<float>& a_g,
-        const tensor::DeviceMatrix<float>& b,
-        tensor::DeviceMatrix<float>& b_g,
-        const tensor::DeviceMatrix<float>& c_g,
+        const matrix::DeviceMatrix<float>& a,
+        matrix::DeviceMatrix<float>& a_g,
+        const matrix::DeviceMatrix<float>& b,
+        matrix::DeviceMatrix<float>& b_g,
+        const matrix::DeviceMatrix<float>& c_g,
         const Op& op
     );
 
     static void broadcast_forward(
-        const tensor::DeviceMatrix<float>& a,
-        const tensor::DeviceMatrix<float>& b,
-        tensor::DeviceMatrix<float>& c,
+        const matrix::DeviceMatrix<float>& a,
+        const matrix::DeviceMatrix<float>& b,
+        matrix::DeviceMatrix<float>& c,
         const Op& op
     );
 
     static void broadcast_backward(
-        const tensor::DeviceMatrix<float>& a,
-        tensor::DeviceMatrix<float>& a_g,
-        const tensor::DeviceMatrix<float>& b,
-        tensor::DeviceMatrix<float>& b_g,
-        const tensor::DeviceMatrix<float>& c_g,
+        const matrix::DeviceMatrix<float>& a,
+        matrix::DeviceMatrix<float>& a_g,
+        const matrix::DeviceMatrix<float>& b,
+        matrix::DeviceMatrix<float>& b_g,
+        const matrix::DeviceMatrix<float>& c_g,
         const Op& op
     );
 
@@ -83,7 +83,7 @@ class ElemwiseBinary : public TypedLayer<float> {
         return {LayerInputSlot::from(input1_), LayerInputSlot::from(input2_)};
     }
 
-    tensor::Shape shape() const override {
+    matrix::Shape shape() const override {
         return input1_->shape().cols() == 1 ? input2_->shape() : input1_->shape();
     }
 

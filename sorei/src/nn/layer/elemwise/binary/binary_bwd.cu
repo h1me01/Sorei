@@ -52,11 +52,11 @@ __global__ void binary_backward_kernel(
 }
 
 void ElemwiseBinary::backward(
-    const tensor::DeviceMatrix<float>& a,
-    tensor::DeviceMatrix<float>& a_g,
-    const tensor::DeviceMatrix<float>& b,
-    tensor::DeviceMatrix<float>& b_g,
-    const tensor::DeviceMatrix<float>& c_g,
+    const matrix::DeviceMatrix<float>& a,
+    matrix::DeviceMatrix<float>& a_g,
+    const matrix::DeviceMatrix<float>& b,
+    matrix::DeviceMatrix<float>& b_g,
+    const matrix::DeviceMatrix<float>& c_g,
     const Op& op
 ) {
     SOREI_CHECK(a.size() == b.size());

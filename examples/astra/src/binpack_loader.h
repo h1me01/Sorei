@@ -36,15 +36,13 @@ class BinpackLoader {
           thread_count_(thread_count),
           filenames_(std::move(filenames)),
           num_workers_(num_worker_threads(thread_count)),
-          stream_(
-              std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
-                  num_reader_threads(thread_count_),
-                  filenames_,
-                  std::ios::in | std::ios::binary,
-                  true,
-                  std::move(skip_predicate)
-              )
-          ) {
+          stream_(std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
+              num_reader_threads(thread_count_),
+              filenames_,
+              std::ios::in | std::ios::binary,
+              true,
+              std::move(skip_predicate)
+          )) {
 
         validate_files(filenames_);
 
@@ -150,51 +148,48 @@ class BinpackLoader {
 // DeviceBatchData
 
 struct DeviceBatchData {
-    sorei::nn::Tensor<int> stm_indices;
-    sorei::nn::Tensor<int> nstm_indices;
-    sorei::nn::Tensor<int> bucket_indices;
-    sorei::nn::Tensor<float> targets;
+    sorei::matrix::DeviceMatrix<int> stm_indices;
+    sorei::matrix::DeviceMatrix<int> nstm_indices;
+    sorei::matrix::DeviceMatrix<int> bucket_indices;
+    sorei::matrix::DeviceMatrix<float> targets;
 
     explicit DeviceBatchData(int n) {
-        using TI = sorei::nn::Tensor<int>;
-        using TF = sorei::nn::Tensor<float>;
+        stm_indices.resize({32, n});
+        nstm_indices.resize({32, n});
+        bucket_indices.resize({1, n});
+        targets.resize({1, n});
 
-        stm_indices = TI({32, n}, TI::DEVICE);
-        nstm_indices = TI({32, n}, TI::DEVICE);
-        bucket_indices = TI({n}, TI::DEVICE);
-        targets = TF({n}, TF::DEVICE);
-
-        stm_staging_ = TI({32, n}, TI::HOST_PINNED);
-        nstm_staging_ = TI({32, n}, TI::HOST_PINNED);
-        bucket_staging_ = TI({n}, TI::HOST_PINNED);
-        targets_staging_ = TF({n}, TF::HOST_PINNED);
+        stm_staging_.resize({32, n});
+        nstm_staging_.resize({32, n});
+        bucket_staging_.resize({1, n});
+        targets_staging_.resize({1, n});
     }
 
     void upload_async(const AstraInputs& src, cudaStream_t stream) {
         auto stage = [](auto& pinned, const auto& host) {
             std::memcpy(pinned.data(), host.data(), host.bytes());
         };
-        stage(stm_staging_.host_pinned_data(), src.stm_indices().host_data());
-        stage(nstm_staging_.host_pinned_data(), src.nstm_indices().host_data());
-        stage(bucket_staging_.host_pinned_data(), src.bucket_indices().host_data());
-        stage(targets_staging_.host_pinned_data(), src.targets().host_data());
+        stage(stm_staging_, src.stm_indices());
+        stage(nstm_staging_, src.nstm_indices());
+        stage(bucket_staging_, src.bucket_indices());
+        stage(targets_staging_, src.targets());
 
         auto dma = [&](auto& dst, const auto& pinned) {
             SOREI_CUDA_CHECK(cudaMemcpyAsync(
                 dst.data(), pinned.data(), pinned.bytes(), cudaMemcpyHostToDevice, stream
             ));
         };
-        dma(stm_indices.device_data(), stm_staging_.host_pinned_data());
-        dma(nstm_indices.device_data(), nstm_staging_.host_pinned_data());
-        dma(bucket_indices.device_data(), bucket_staging_.host_pinned_data());
-        dma(targets.device_data(), targets_staging_.host_pinned_data());
+        dma(stm_indices, stm_staging_);
+        dma(nstm_indices, nstm_staging_);
+        dma(bucket_indices, bucket_staging_);
+        dma(targets, targets_staging_);
     }
 
   private:
-    sorei::nn::Tensor<int> stm_staging_;
-    sorei::nn::Tensor<int> nstm_staging_;
-    sorei::nn::Tensor<int> bucket_staging_;
-    sorei::nn::Tensor<float> targets_staging_;
+    sorei::matrix::HostPinnedMatrix<int> stm_staging_;
+    sorei::matrix::HostPinnedMatrix<int> nstm_staging_;
+    sorei::matrix::HostPinnedMatrix<int> bucket_staging_;
+    sorei::matrix::HostPinnedMatrix<float> targets_staging_;
 };
 
 // BatchPrefetcher

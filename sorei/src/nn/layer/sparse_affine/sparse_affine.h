@@ -43,7 +43,7 @@ class SparseAffineBase : public TypedLayer<float> {
         };
     }
 
-    tensor::Shape shape() const override {
+    matrix::Shape shape() const override {
         return {weight_->shape().rows(), input_->shape().cols()};
     }
 
@@ -56,11 +56,11 @@ class SparseAffineBase : public TypedLayer<float> {
     TypedLayer<float>* weight_;
     TypedLayer<float>* bias_;
 
-    tensor::DeviceMatrix<float>& effective_data() {
+    matrix::DeviceMatrix<float>& effective_data() {
         return concat_ ? concat_->data() : TypedLayer<float>::data();
     }
 
-    tensor::DeviceMatrix<float>& effective_grad() {
+    matrix::DeviceMatrix<float>& effective_grad() {
         return concat_ ? concat_->grad() : TypedLayer<float>::grad();
     }
 };
@@ -80,7 +80,7 @@ struct SparseAffinePairwiseMul : SparseAffineBase {
     void forward() override;
     void backward() override;
 
-    tensor::Shape shape() const override {
+    matrix::Shape shape() const override {
         return {weight_->shape().rows() / 2, input_->shape().cols()};
     }
 };

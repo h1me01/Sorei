@@ -8,13 +8,15 @@ struct MNISTModel : public sorei::nn::Model {
     static constexpr int L2_SIZE = 128;
     static constexpr int NUM_CLASSES = 10;
 
-    void feed(const sorei::nn::Tensor<float>& images, const sorei::nn::Tensor<int>& labels) {
+    void feed(
+        const sorei::matrix::HostMatrix<float>& images, const sorei::matrix::HostMatrix<int>& labels
+    ) {
         forward({{"images", images}, {"labels", labels}});
     }
 
     sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
-        auto images = b.input_float({INPUT_DIM, 0}, "images");
-        auto labels = b.input_int({1, 0}, "labels");
+        auto images = b.input_float("images", {INPUT_DIM, 0});
+        auto labels = b.input_int("labels", {1, 0});
 
         // layers
         auto l1 = b.affine_layer(INPUT_DIM, L1_SIZE);

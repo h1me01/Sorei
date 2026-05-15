@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "../../cuda/include.h"
-#include "../../tensor/include.h"
+#include "../../matrix/include.h"
 
 namespace sorei::nn::layer {
 
@@ -82,7 +82,7 @@ class Layer {
         return false;
     }
 
-    virtual tensor::Shape shape() const = 0;
+    virtual matrix::Shape shape() const = 0;
     std::string name() const { return name_; }
 
   private:
@@ -102,13 +102,13 @@ class TypedLayer : public Layer {
 
     virtual ~TypedLayer() = default;
 
-    tensor::DeviceMatrix<T>& data() {
+    matrix::DeviceMatrix<T>& data() {
         if (!drop_buffers_)
             data_.resize(shape());
         return data_;
     }
 
-    tensor::DeviceMatrix<T>& grad() {
+    matrix::DeviceMatrix<T>& grad() {
         if (requires_grad() && !drop_buffers_)
             grad_.resize(shape());
         return grad_;
@@ -116,15 +116,15 @@ class TypedLayer : public Layer {
 
   protected:
     void drop_buffers() {
-        data_ = tensor::DeviceMatrix<T>();
-        grad_ = tensor::DeviceMatrix<T>();
+        data_ = matrix::DeviceMatrix<T>();
+        grad_ = matrix::DeviceMatrix<T>();
         drop_buffers_ = true;
     }
 
   private:
     bool drop_buffers_ = false;
-    tensor::DeviceMatrix<T> data_;
-    tensor::DeviceMatrix<T> grad_;
+    matrix::DeviceMatrix<T> data_;
+    matrix::DeviceMatrix<T> grad_;
 };
 
 template <typename T>

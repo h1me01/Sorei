@@ -32,10 +32,10 @@ void sgemm(
     bool trans_a,
     bool trans_b,
     float alpha,
-    const tensor::DeviceMatrix<float>& a,
-    const tensor::DeviceMatrix<float>& b,
+    const matrix::DeviceMatrix<float>& a,
+    const matrix::DeviceMatrix<float>& b,
     float beta,
-    tensor::DeviceMatrix<float>& c
+    matrix::DeviceMatrix<float>& c
 ) {
     int m = trans_a ? a.cols() : a.rows();
     int k = trans_a ? a.rows() : a.cols();

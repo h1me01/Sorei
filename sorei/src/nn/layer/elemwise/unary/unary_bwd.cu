@@ -31,9 +31,9 @@ unary_bwd_kernel(const float* in_d, float* in_g, const float* out_g, const int s
 }
 
 void ElemwiseUnary::backward(
-    tensor::DeviceMatrix<float>& in,
-    tensor::DeviceMatrix<float>& in_g,
-    const tensor::DeviceMatrix<float>& out_g,
+    matrix::DeviceMatrix<float>& in,
+    matrix::DeviceMatrix<float>& in_g,
+    const matrix::DeviceMatrix<float>& out_g,
     const Op& op
 ) {
     if (in_g.empty())

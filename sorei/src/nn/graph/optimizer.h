@@ -1,6 +1,5 @@
 #pragma once
 
-#include <functional>
 #include <optional>
 #include <vector>
 
@@ -10,7 +9,7 @@ namespace sorei::nn::graph {
 
 class GraphOptimizer {
   public:
-    void optimize(Graph& graph, layer::Layer*& prediction, layer::Layer*& loss) {
+    GraphOptimizer(Graph& graph, layer::Layer*& prediction, layer::Layer*& loss) {
         prediction_ = prediction;
         loss_ = loss;
 
@@ -62,18 +61,19 @@ class GraphOptimizer {
         graph.erase(removed);
     }
 
-    template <typename T>
-    void fixed_point(Graph& graph, const std::function<bool(Graph&, T*)>& action) {
+    template <typename T, typename Action>
+    void fixed_point(Graph& graph, Action action) {
         bool changed = true;
         while (changed) {
             changed = false;
+            const auto consumers = build_consumers(graph);
             std::vector<layer::Layer*> snapshot;
             for (const auto& n : graph.nodes())
                 snapshot.push_back(n.get());
 
             for (auto* raw : snapshot) {
                 if (auto* t = dynamic_cast<T*>(raw)) {
-                    if (action(graph, t)) {
+                    if (action(graph, *t, consumers)) {
                         changed = true;
                         break;
                     }
@@ -97,16 +97,16 @@ class GraphOptimizer {
     void fold_self_mul(Graph& graph) {
         fixed_point<layer::ElemwiseBinary>(
             graph,
-            [this](Graph& g, layer::ElemwiseBinary* eb) -> bool {
-                if (eb->name() != "Mul")
+            [this](Graph& g, layer::ElemwiseBinary& eb, const ConsumerMap&) -> bool {
+                if (eb.name() != "Mul")
                     return false;
 
-                auto ins = eb->inputs();
+                auto ins = eb.inputs();
                 if (ins[0] != ins[1])
                     return false;
 
                 auto* replacement = g.emplace<layer::ElemwiseUnary>(ins[0], cuda::PowInt{2});
-                redirect_and_remove(g, eb, replacement);
+                redirect_and_remove(g, &eb, replacement);
                 return true;
             }
         );
@@ -116,91 +116,94 @@ class GraphOptimizer {
 
     void fuse_sparse_affine(Graph& graph) {
         // fuse activation into SparseAffine
-        fixed_point<layer::SparseAffine>(graph, [this](Graph& g, layer::SparseAffine* sa) -> bool {
-            auto consumers = build_consumers(g);
+        fixed_point<layer::SparseAffine>(
+            graph,
+            [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
+                auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(&sa, consumers));
+                if (!unary)
+                    return false;
 
-            auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(sa, consumers));
-            if (!unary)
-                return false;
+                auto act = as_activation(unary->op());
+                if (!act)
+                    return false;
 
-            auto act = as_activation(unary->op());
-            if (!act)
-                return false;
-
-            sa->set_activation(*act);
-            redirect_and_remove(g, unary, sa);
-
-            return true;
-        });
+                sa.set_activation(*act);
+                redirect_and_remove(g, unary, &sa);
+                return true;
+            }
+        );
 
         // fuse pairwise-mul into SparseAffinePairwiseMul
-        fixed_point<layer::SparseAffine>(graph, [this](Graph& g, layer::SparseAffine* sa) -> bool {
-            auto consumers = build_consumers(g);
+        fixed_point<layer::SparseAffine>(
+            graph,
+            [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
+                auto* pw = dynamic_cast<layer::PairwiseMul*>(sole_consumer(&sa, consumers));
+                if (!pw)
+                    return false;
 
-            auto* pw = dynamic_cast<layer::PairwiseMul*>(sole_consumer(sa, consumers));
-            if (!pw)
-                return false;
+                auto* fused = static_cast<layer::SparseAffinePairwiseMul*>(
+                    g.emplace<layer::SparseAffinePairwiseMul>(sa.input(), sa.weight(), sa.bias())
+                );
+                fused->set_activation(sa.activation());
 
-            auto* fused = static_cast<layer::SparseAffinePairwiseMul*>(
-                g.emplace<layer::SparseAffinePairwiseMul>(sa->input(), sa->weight(), sa->bias())
-            );
-            fused->set_activation(sa->activation());
-
-            redirect_and_remove(g, sa, fused);
-            redirect_and_remove(g, pw, fused);
-
-            return true;
-        });
+                redirect_and_remove(g, &sa, fused);
+                redirect_and_remove(g, pw, fused);
+                return true;
+            }
+        );
     }
 
     void fuse_concat(Graph& graph) {
         // fuse SparseAffineBase with row-wise FusedConcat
-        fixed_point<layer::Concat>(graph, [this](Graph& g, layer::Concat* cn) -> bool {
-            if (cn->axis() != layer::ConcatAxis::Rows)
-                return false;
+        fixed_point<layer::Concat>(
+            graph,
+            [this](Graph& g, layer::Concat& cn, const ConsumerMap& consumers) -> bool {
+                if (cn.axis() != layer::ConcatAxis::Rows)
+                    return false;
 
-            auto consumers = build_consumers(g);
-            bool ok = std::ranges::all_of(cn->inputs(), [&](layer::Layer* inp) {
-                return sole_consumer(inp, consumers) == cn &&
-                       dynamic_cast<layer::SparseAffineBase*>(inp);
-            });
-            if (!ok)
-                return false;
+                bool ok = std::ranges::all_of(cn.inputs(), [&](layer::Layer* inp) {
+                    return sole_consumer(inp, consumers) == &cn &&
+                           dynamic_cast<layer::SparseAffineBase*>(inp);
+                });
+                if (!ok)
+                    return false;
 
-            auto* fused =
-                static_cast<layer::FusedConcat*>(g.emplace<layer::FusedConcat>(cn->inputs()));
-            for (auto* inp : fused->inputs())
-                static_cast<layer::SparseAffineBase*>(inp)->fuse_with_concat(fused);
+                auto* fused =
+                    static_cast<layer::FusedConcat*>(g.emplace<layer::FusedConcat>(cn.inputs()));
+                for (auto* inp : fused->inputs())
+                    static_cast<layer::SparseAffineBase*>(inp)->fuse_with_concat(fused);
 
-            redirect_and_remove(g, cn, fused);
-            return true;
-        });
+                redirect_and_remove(g, &cn, fused);
+                return true;
+            }
+        );
 
         // fuse activation following FusedConcat into each SparseAffineBase input
-        fixed_point<layer::FusedConcat>(graph, [this](Graph& g, layer::FusedConcat* cn) -> bool {
-            auto consumers = build_consumers(g);
+        fixed_point<layer::FusedConcat>(
+            graph,
+            [this](Graph& g, layer::FusedConcat& cn, const ConsumerMap& consumers) -> bool {
+                auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(&cn, consumers));
+                if (!unary)
+                    return false;
 
-            auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(cn, consumers));
-            if (!unary)
-                return false;
+                auto act = as_activation(unary->op());
+                if (!act)
+                    return false;
 
-            auto act = as_activation(unary->op());
-            if (!act)
-                return false;
+                bool valid = std::ranges::all_of(cn.inputs(), [&](layer::Layer* inp) {
+                    auto* sa = dynamic_cast<layer::SparseAffineBase*>(inp);
+                    return sole_consumer(inp, consumers) == &cn && sa && !sa->has_activation();
+                });
+                if (!valid)
+                    return false;
 
-            bool valid = std::ranges::all_of(cn->inputs(), [&](layer::Layer* inp) {
-                auto* sa = dynamic_cast<layer::SparseAffineBase*>(inp);
-                return sole_consumer(inp, consumers) == cn && sa && !sa->has_activation();
-            });
-            if (!valid)
-                return false;
+                for (auto* inp : cn.inputs())
+                    static_cast<layer::SparseAffineBase*>(inp)->set_activation(*act);
 
-            for (auto* inp : cn->inputs())
-                static_cast<layer::SparseAffineBase*>(inp)->set_activation(*act);
-
-            redirect_and_remove(g, unary, cn);
-            return true;
-        });
+                redirect_and_remove(g, unary, &cn);
+                return true;
+            }
+        );
     }
 };
 

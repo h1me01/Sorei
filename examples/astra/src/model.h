@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <fstream>
 #include <ranges>
 
@@ -10,19 +11,19 @@ namespace {
 
 template <typename T = float>
 static void
-write_quantized(std::ostream& f, const sorei::tensor::HostMatrix<float>& src, int scale = 1) {
-    sorei::tensor::HostArray<T> dst(src.size());
+write_quantized(std::ostream& f, const sorei::matrix::HostMatrix<float>& src, int scale = 1) {
+    sorei::matrix::HostMatrix<T> dst(src.shape());
 
     for (int i = 0; i < src.size(); i++) {
         if constexpr (std::is_same_v<T, float>) {
-            dst[i] = src(i);
+            dst(i) = src(i);
         } else {
             constexpr T lo = std::numeric_limits<T>::min();
             constexpr T hi = std::numeric_limits<T>::max();
             const T qv = static_cast<T>(std::round(src(i) * scale));
             if (qv < lo || qv > hi)
                 sorei::println("Warning: value {} out of range, clamping", src(i));
-            dst[i] = std::clamp(qv, lo, hi);
+            dst(i) = std::clamp(qv, lo, hi);
         }
     }
 
@@ -35,7 +36,7 @@ write_quantized(std::ostream& f, const sorei::tensor::HostMatrix<float>& src, in
 
 class AstraInputs {
   public:
-    static constexpr int INPUT_BUCKET[64] = {
+    static constexpr std::array<int, 64> INPUT_BUCKET = {
         0, 0, 1, 1, 1, 1, 0, 0, //
         2, 2, 2, 2, 2, 2, 2, 2, //
         3, 3, 3, 3, 3, 3, 3, 3, //
@@ -46,7 +47,7 @@ class AstraInputs {
         3, 3, 3, 3, 3, 3, 3, 3, //
     };
 
-    static constexpr int NUM_INPUT_BUCKETS = *std::ranges::max_element(INPUT_BUCKET) + 1;
+    static constexpr int NUM_INPUT_BUCKETS = std::ranges::max(INPUT_BUCKET) + 1;
 
     static constexpr int FEATURE_SIZE = 768;
     static constexpr float EVAL_SCALE = 400.0f;
@@ -57,8 +58,8 @@ class AstraInputs {
 
         stm_indices_.resize({32, n});
         nstm_indices_.resize({32, n});
-        bucket_indices_.resize({n});
-        targets_.resize({n});
+        bucket_indices_.resize({1, n});
+        targets_.resize({1, n});
 
         stm_indices_.fill(-1);
         nstm_indices_.fill(-1);
@@ -79,21 +80,21 @@ class AstraInputs {
 
             const float score_target = sigmoid(entries[i].score / EVAL_SCALE);
             const float wdl_target = (entries[i].result + 1) / 2.0f;
-            targets_[i] = WDL_WEIGHT * wdl_target + (1.0f - WDL_WEIGHT) * score_target;
-            bucket_indices_[i] = (pos.pieceCount() - 2) / 4;
+            targets_(i) = WDL_WEIGHT * wdl_target + (1.0f - WDL_WEIGHT) * score_target;
+            bucket_indices_(i) = (pos.pieceCount() - 2) / 4;
         }
     }
 
-    const sorei::nn::Tensor<int>& stm_indices() const { return stm_indices_; }
-    const sorei::nn::Tensor<int>& nstm_indices() const { return nstm_indices_; }
-    const sorei::nn::Tensor<int>& bucket_indices() const { return bucket_indices_; }
-    const sorei::nn::Tensor<float>& targets() const { return targets_; }
+    const sorei::matrix::HostMatrix<int>& stm_indices() const { return stm_indices_; }
+    const sorei::matrix::HostMatrix<int>& nstm_indices() const { return nstm_indices_; }
+    const sorei::matrix::HostMatrix<int>& bucket_indices() const { return bucket_indices_; }
+    const sorei::matrix::HostMatrix<float>& targets() const { return targets_; }
 
   private:
-    sorei::nn::Tensor<int> stm_indices_;
-    sorei::nn::Tensor<int> nstm_indices_;
-    sorei::nn::Tensor<int> bucket_indices_;
-    sorei::nn::Tensor<float> targets_;
+    sorei::matrix::HostMatrix<int> stm_indices_;
+    sorei::matrix::HostMatrix<int> nstm_indices_;
+    sorei::matrix::HostMatrix<int> bucket_indices_;
+    sorei::matrix::HostMatrix<float> targets_;
 
     static float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
@@ -140,10 +141,10 @@ struct AstraModel : sorei::nn::Model {
         l3 = b.affine_layer(L2_SIZE, OUTPUT_BUCKETS);
 
         // inputs
-        auto stm_in = b.input_int({32, 0}, "stm_in");
-        auto nstm_in = b.input_int({32, 0}, "nstm_in");
-        auto output_bucket = b.bucket_index(OUTPUT_BUCKETS, 0, "output_bucket");
-        auto target = b.input_float({1, 0}, "target");
+        auto stm_in = b.input_int("stm_in", {32, 0});
+        auto nstm_in = b.input_int("nstm_in", {32, 0});
+        auto output_bucket = b.bucket_index("output_bucket", OUTPUT_BUCKETS, 0);
+        auto target = b.input_float("target", {1, 0});
 
         // forward pass
         auto repeated_factorizer = b.concat(
@@ -193,7 +194,7 @@ struct AstraModel : sorei::nn::Model {
         auto facto = factorizer.data().to_host();
         auto ftw = ft.weight.data().to_host();
 
-        sorei::tensor::HostMatrix<float> factorized_ftw(ftw.shape());
+        sorei::matrix::HostMatrix<float> factorized_ftw(ftw.shape());
         for (int r = 0; r < ftw.rows(); r++)
             for (int c = 0; c < ftw.cols(); c++)
                 factorized_ftw(r, c) = ftw(r, c) + facto(r, c % AstraInputs::FEATURE_SIZE);

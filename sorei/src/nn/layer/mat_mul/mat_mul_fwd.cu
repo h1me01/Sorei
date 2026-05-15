@@ -6,9 +6,9 @@ constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
 
 void MatMul::forward(
-    const tensor::DeviceMatrix<float>& weight,
-    const tensor::DeviceMatrix<float>& in,
-    tensor::DeviceMatrix<float>& out
+    const matrix::DeviceMatrix<float>& weight,
+    const matrix::DeviceMatrix<float>& in,
+    matrix::DeviceMatrix<float>& out
 ) {
     SOREI_CHECK(in.cols() == out.cols());
     SOREI_CHECK(weight.rows() == out.rows());

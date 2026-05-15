@@ -79,8 +79,8 @@ struct ParamNode : Node {
     void he_init(int input_dim) { get()->he_init(input_dim); }
     void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
 
-    tensor::DeviceMatrix<float>& data() { return get()->data(); }
-    const tensor::DeviceMatrix<float>& data() const { return get()->data(); }
+    matrix::DeviceMatrix<float>& data() { return get()->data(); }
+    const matrix::DeviceMatrix<float>& data() const { return get()->data(); }
 
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }
@@ -115,33 +115,26 @@ class GraphBuilder {
     GraphBuilder(GraphBuilder&&) = delete;
     GraphBuilder& operator=(GraphBuilder&&) = delete;
 
-    Node input_int(const tensor::Shape& shape, const std::string& name = "") {
-        return {this, graph_.emplace_named<layer::InputInt>(name, "InputInt", shape)};
+    Node input_int(const std::string& name, const matrix::Shape& shape) {
+        return {this, graph_.emplace_named<layer::InputInt>(name, shape)};
     }
 
-    Node input_float(const tensor::Shape& shape, const std::string& name = "") {
-        return {this, graph_.emplace_named<layer::InputFloat>(name, "InputFloat", shape)};
+    Node input_float(const std::string& name, const matrix::Shape& shape) {
+        return {this, graph_.emplace_named<layer::InputFloat>(name, shape)};
     }
 
-    layer::BucketIndex* bucket_index(int count, int size, const std::string& name = "") {
-        return graph_.emplace_named<layer::BucketIndex>(name, "BucketIndex", count, size);
+    layer::BucketIndex* bucket_index(const std::string& name, int count, int size) {
+        return graph_.emplace_named<layer::BucketIndex>(name, count, size);
     }
 
-    ParamNode param(int input_dim, int output_dim, const std::string& name = "") {
-        return {
-            this,
-            graph_.emplace_named<layer::Param>(name, "Param", tensor::Shape{output_dim, input_dim})
-        };
+    ParamNode param(int input_dim, int output_dim) {
+        return {this, make<layer::Param>(matrix::Shape{output_dim, input_dim})};
     }
 
     AffineLayer affine_layer(int input_dim, int output_dim, const std::string& name_prefix = "") {
-        const std::string prefix = name_prefix.empty()
-                                       ? ("Affine" + std::to_string(affine_param_group_count_++))
-                                       : name_prefix;
-
-        auto w = param(input_dim, output_dim, prefix + ".W");
+        auto w = param(input_dim, output_dim);
         w.he_init(input_dim);
-        auto b = param(1, output_dim, prefix + ".B");
+        auto b = param(1, output_dim);
         return {w, b};
     }
 
@@ -249,7 +242,6 @@ class GraphBuilder {
 
   private:
     Graph& graph_;
-    int affine_param_group_count_ = 0;
 
     template <typename T, typename... Args>
     layer::Layer* make(Args&&... args) {

@@ -12,7 +12,7 @@
 
 using namespace sorei;
 using namespace sorei::cuda;
-using namespace sorei::tensor;
+using namespace sorei::matrix;
 using namespace sorei::nn;
 using namespace sorei::nn::layer;
 using namespace sorei::nn::optim;

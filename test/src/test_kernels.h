@@ -7,7 +7,7 @@
 
 #include "framework.h"
 
-using namespace sorei::tensor;
+using namespace sorei::matrix;
 using namespace sorei::cuda;
 using namespace sorei::nn::layer;
 

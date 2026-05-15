@@ -1,14 +1,19 @@
 #pragma once
 
+#include <format>
 #include <iostream>
 #include <string>
 
 #include "../misc.h"
 
-namespace sorei::tensor {
+namespace sorei::matrix {
 
 class Shape {
   public:
+    Shape()
+        : rows_(0),
+          cols_(0) {}
+
     Shape(int rows, int cols)
         : rows_(rows),
           cols_(cols) {
@@ -25,10 +30,7 @@ class Shape {
     int rows() const { return rows_; }
     int cols() const { return cols_; }
     int size() const { return rows_ * cols_; }
-
-    std::string str() const {
-        return "(" + std::to_string(rows()) + " x " + std::to_string(cols()) + ")";
-    }
+    std::string str() const { return std::format("[{}x{}]", rows(), cols()); }
 
   private:
     int rows_, cols_;
@@ -39,4 +41,4 @@ inline std::ostream& operator<<(std::ostream& os, const Shape& shape) {
     return os;
 }
 
-} // namespace sorei::tensor
+} // namespace sorei::matrix

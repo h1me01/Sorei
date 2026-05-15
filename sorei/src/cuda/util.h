@@ -3,7 +3,7 @@
 #include <cuda/cmath>
 #include <cuda_runtime.h>
 
-#include "../tensor/include.h"
+#include "../matrix/include.h"
 
 #define SOREI_DEFINE_T4_OP(name, op)                                                               \
     template <typename T>                                                                          \

@@ -14,9 +14,9 @@ __global__ void binary_broadcast_forward_kernel(
 }
 
 void ElemwiseBinary::broadcast_forward(
-    const tensor::DeviceMatrix<float>& a,
-    const tensor::DeviceMatrix<float>& b,
-    tensor::DeviceMatrix<float>& c,
+    const matrix::DeviceMatrix<float>& a,
+    const matrix::DeviceMatrix<float>& b,
+    matrix::DeviceMatrix<float>& c,
     const Op& op
 ) {
     const bool repeat_a = (a.cols() == 1);

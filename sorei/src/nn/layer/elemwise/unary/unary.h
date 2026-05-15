@@ -30,18 +30,18 @@ class ElemwiseUnary : public TypedLayer<float> {
     void backward() override { backward(input_->data(), input_->grad(), grad(), op_); }
 
     static void
-    forward(const tensor::DeviceMatrix<float>& in, tensor::DeviceMatrix<float>& out, const Op& op);
+    forward(const matrix::DeviceMatrix<float>& in, matrix::DeviceMatrix<float>& out, const Op& op);
 
     static void backward(
-        tensor::DeviceMatrix<float>& in,
-        tensor::DeviceMatrix<float>& in_g,
-        const tensor::DeviceMatrix<float>& out_g,
+        matrix::DeviceMatrix<float>& in,
+        matrix::DeviceMatrix<float>& in_g,
+        const matrix::DeviceMatrix<float>& out_g,
         const Op& op
     );
 
     Op op() const { return op_; }
     std::vector<LayerInputSlot> mutable_inputs() override { return {LayerInputSlot::from(input_)}; }
-    tensor::Shape shape() const override { return input_->shape(); }
+    matrix::Shape shape() const override { return input_->shape(); }
 
   private:
     TypedLayer<float>* input_;

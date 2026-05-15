@@ -11,7 +11,6 @@ struct Identity {
 
     __device__ float forward(float x) const { return x; }
     __device__ float backward(float x) const { return 1.0f; }
-    __device__ float backward_from_output(float y) const { return backward(y); }
 };
 
 struct AddScaleUnary {

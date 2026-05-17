@@ -2,7 +2,7 @@
 
 #include "layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 template <typename T>
 class Input : public TypedLayer<T> {
@@ -21,4 +21,4 @@ class Input : public TypedLayer<T> {
 using InputInt = Input<int>;
 using InputFloat = Input<float>;
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

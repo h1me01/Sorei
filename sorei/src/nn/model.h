@@ -14,8 +14,8 @@
 namespace sorei::nn {
 
 struct GraphOutput {
-    graph::Node prediction;
-    graph::Node loss;
+    Node prediction;
+    Node loss;
 };
 
 class Model {
@@ -45,7 +45,7 @@ class Model {
     Model& operator=(Model&&) = delete;
     virtual ~Model() = default;
 
-    virtual GraphOutput build_graph(graph::GraphBuilder&) = 0;
+    virtual GraphOutput build_graph(GraphBuilder&) = 0;
 
     void forward(std::initializer_list<InputBinding> inputs) {
         auto& net = network();
@@ -57,13 +57,13 @@ class Model {
                         error("Model: input '{}' not found", input.name);
                     auto* layer = it->second;
 
-                    if (auto* in = dynamic_cast<layer::InputInt*>(layer)) {
+                    if (auto* in = dynamic_cast<InputInt*>(layer)) {
                         in->resize(t->shape());
                         in->data().upload(*t);
-                    } else if (auto* in = dynamic_cast<layer::InputFloat*>(layer)) {
+                    } else if (auto* in = dynamic_cast<InputFloat*>(layer)) {
                         in->resize(t->shape());
                         in->data().upload(*t);
-                    } else if (auto* b = dynamic_cast<layer::BucketIndex*>(layer)) {
+                    } else if (auto* b = dynamic_cast<BucketIndex*>(layer)) {
                         SOREI_CHECK(t->shape().rows() == 1);
                         b->resize(t->size());
                         b->data().upload(*t);
@@ -85,7 +85,7 @@ class Model {
     void zero_running_loss() { network().running_loss().clear(); }
     float running_loss() { return network().running_loss().to_host()(0); }
 
-    std::vector<layer::Param*> params() { return network().params(); }
+    std::vector<Param*> params() { return network().params(); }
     matrix::DeviceMatrix<float>& prediction() { return network().prediction(); }
 
     void load_params(const std::string& file) {
@@ -120,13 +120,13 @@ class Model {
     }
 
   private:
-    graph::Graph graph_;
+    Graph graph_;
     std::unique_ptr<network::Network> net_;
-    std::unordered_map<std::string, layer::Layer*> layer_map_;
+    std::unordered_map<std::string, Layer*> layer_map_;
 
     network::Network& network() {
         if (!net_) {
-            graph::GraphBuilder b{graph_};
+            GraphBuilder b{graph_};
             auto [pred_node, loss_node] = build_graph(b);
             auto* pred = pred_node.get();
             auto* loss = loss_node.get();
@@ -134,8 +134,8 @@ class Model {
             if (loss && loss->shape().rows() != 1)
                 error("Model: loss output must be a scalar");
 
-            graph::GraphOptimizer{graph_, pred, loss};
-            auto sorted = graph_.topological_sort();
+            GraphOptimizer{graph_, pred, loss};
+            auto sorted = graph_.topological_sort({pred, loss});
 
             for (const auto& node : sorted)
                 layer_map_[node->name()] = node;

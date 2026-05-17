@@ -42,8 +42,8 @@ int main() {
     const int batches_per_epoch = train_loader.batches_per_epoch();
 
     MNISTModel model;
-    auto optim = sorei::nn::optim::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
-    auto lr_sched = sorei::nn::lr_sched::CosineAnnealingLR(lr, lr * 0.1f, epochs);
+    auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
+    auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * 0.1f, epochs);
 
     for (int epoch = 1; epoch <= epochs; epoch++) {
         model.zero_running_loss();

@@ -13,16 +13,14 @@
 
 namespace sorei::test {
 
-// Numerically verifies backward() for `layer` w.r.t. `params`.
-// Returns the max relative error across all parameters and elements.
+// numerically verifies backward
 inline float grad_check(
-    nn::layer::TypedLayer<float>* layer,
-    std::vector<nn::layer::Param*> params,
+    nn::TypedLayer<float>* layer,
+    std::vector<nn::Param*> params,
     float eps = 1e-3f,
     float* out_abs = nullptr
 ) {
     using namespace matrix;
-    using namespace nn::layer;
 
     layer->forward();
     cudaDeviceSynchronize();
@@ -95,16 +93,16 @@ inline float grad_check(
     return max_rel;
 }
 
-inline std::unique_ptr<nn::layer::Param>
+inline std::unique_ptr<nn::Param>
 make_param(const matrix::Shape& shape, float lo = -0.5f, float hi = 0.5f) {
-    auto p = std::make_unique<nn::layer::Param>(shape);
+    auto p = std::make_unique<nn::Param>(shape);
     p->uniform_init(lo, hi);
     return p;
 }
 
-inline std::unique_ptr<nn::layer::Param> make_param_filled(const matrix::Shape& shape, float val) {
+inline std::unique_ptr<nn::Param> make_param_filled(const matrix::Shape& shape, float val) {
     using namespace matrix;
-    auto p = std::make_unique<nn::layer::Param>(shape);
+    auto p = std::make_unique<nn::Param>(shape);
     HostMatrix<float> m(shape);
     m.fill(val);
     p->data().upload(m);
@@ -112,9 +110,9 @@ inline std::unique_ptr<nn::layer::Param> make_param_filled(const matrix::Shape& 
     return p;
 }
 
-inline std::unique_ptr<nn::layer::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
+inline std::unique_ptr<nn::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
     using namespace matrix;
-    auto inp = std::make_unique<nn::layer::Input<int>>(matrix::Shape{1, cols});
+    auto inp = std::make_unique<nn::Input<int>>(matrix::Shape{1, cols});
     HostMatrix<int> m({1, cols});
     for (int i = 0; i < cols; ++i)
         m(0, i) = vals[i];

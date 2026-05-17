@@ -60,8 +60,8 @@ int main() {
     for (auto p : model.params())
         p->set_bounds(-0.99f, 0.99f);
 
-    auto optim = sorei::nn::optim::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
-    auto lr_sched = sorei::nn::lr_sched::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
+    auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
+    auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
     auto wdl_sched = WDLScheduler(0.2f, 0.6f, epochs);
 
     auto binpack_loader = BinpackLoader(

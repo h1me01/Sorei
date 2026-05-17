@@ -4,7 +4,7 @@
 #include "layer.h"
 #include "mat_mul/mat_mul.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class Affine : public TypedLayer<float> {
   public:
@@ -48,4 +48,4 @@ class Affine : public TypedLayer<float> {
     TypedLayer<float>* bias_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

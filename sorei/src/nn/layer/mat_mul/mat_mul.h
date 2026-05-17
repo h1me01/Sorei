@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class MatMul : public TypedLayer<float> {
   public:
@@ -47,4 +47,4 @@ class MatMul : public TypedLayer<float> {
     TypedLayer<float>* input_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

@@ -9,32 +9,10 @@
 
 using namespace sorei::matrix;
 using namespace sorei::cuda;
-using namespace sorei::nn::layer;
+using namespace sorei::nn;
 
-// set
+namespace {
 
-TEST(Kernels, Set_FillsAllElements) {
-    DeviceMatrix<float> m({4, 3});
-    set(m, 7.5f);
-    cudaDeviceSynchronize();
-    auto host = m.to_host();
-    for (int i = 0; i < 12; ++i)
-        EXPECT_NEAR(host(i), 7.5f, 1e-6f);
-}
-
-TEST(Kernels, Set_ZeroFill) {
-    DeviceMatrix<float> m({5, 5});
-    set(m, 1.0f);
-    set(m, 0.0f);
-    cudaDeviceSynchronize();
-    auto host = m.to_host();
-    for (int i = 0; i < 25; ++i)
-        EXPECT_EQ(host(i), 0.0f);
-}
-
-// cublas::sgemm
-
-// build a DeviceMatrix from a flat row-major initializer
 static DeviceMatrix<float>
 make_device(const Shape& shape, std::initializer_list<float> row_major_vals) {
     HostMatrix<float> m(shape);
@@ -46,6 +24,114 @@ make_device(const Shape& shape, std::initializer_list<float> row_major_vals) {
         ++idx;
     }
     return DeviceMatrix<float>::from_host(m);
+}
+
+static DeviceMatrix<float>
+run_unary_fwd(std::initializer_list<float> vals, const ElemwiseUnary::Op& op) {
+    int n = vals.size();
+    HostMatrix<float> host_in({n, 1});
+    int i = 0;
+    for (float v : vals)
+        host_in(i++, 0) = v;
+
+    auto dev_in = DeviceMatrix<float>::from_host(host_in);
+    DeviceMatrix<float> dev_out({n, 1});
+    ElemwiseUnary::forward(dev_in, dev_out, op);
+    cudaDeviceSynchronize();
+
+    return dev_out;
+}
+
+static HostMatrix<float> run_unary_bwd(
+    std::initializer_list<float> inputs,
+    std::initializer_list<float> out_grads,
+    const ElemwiseUnary::Op& op
+) {
+    int n = inputs.size();
+    HostMatrix<float> host_in({n, 1});
+    HostMatrix<float> host_og({n, 1});
+    int i = 0;
+    for (float v : inputs)
+        host_in(i++, 0) = v;
+    i = 0;
+    for (float v : out_grads)
+        host_og(i++, 0) = v;
+
+    auto dev_in = DeviceMatrix<float>::from_host(host_in);
+    DeviceMatrix<float> dev_in_g({n, 1});
+    dev_in_g.clear();
+    auto dev_og = DeviceMatrix<float>::from_host(host_og);
+
+    ElemwiseUnary::backward(dev_in, dev_in_g, dev_og, op);
+    cudaDeviceSynchronize();
+    return dev_in_g.to_host();
+}
+
+static HostMatrix<float> run_binary_fwd(
+    std::initializer_list<float> a_vals,
+    std::initializer_list<float> b_vals,
+    int rows,
+    int cols,
+    const ElemwiseBinary::Op& op
+) {
+    HostMatrix<float> ca({rows, cols}), cb({rows, cols});
+    int i = 0;
+    for (float v : a_vals)
+        ca(i++, 0) = v;
+    i = 0;
+    for (float v : b_vals)
+        cb(i++, 0) = v;
+
+    auto ga = DeviceMatrix<float>::from_host(ca);
+    auto gb = DeviceMatrix<float>::from_host(cb);
+    DeviceMatrix<float> gc({rows, cols});
+
+    ElemwiseBinary::forward(ga, gb, gc, op);
+    cudaDeviceSynchronize();
+    return gc.to_host();
+}
+
+static std::pair<HostMatrix<float>, HostMatrix<float>> run_binary_bwd(
+    std::initializer_list<float> a_vals,
+    std::initializer_list<float> b_vals,
+    std::initializer_list<float> g_vals,
+    int rows,
+    int cols,
+    const ElemwiseBinary::Op& op
+) {
+    HostMatrix<float> ca({rows, cols}), cb({rows, cols}), cg({rows, cols});
+    int i = 0;
+    for (float v : a_vals)
+        ca(i++, 0) = v;
+    i = 0;
+    for (float v : b_vals)
+        cb(i++, 0) = v;
+    i = 0;
+    for (float v : g_vals)
+        cg(i++, 0) = v;
+
+    auto ga = DeviceMatrix<float>::from_host(ca);
+    auto gb = DeviceMatrix<float>::from_host(cb);
+    auto gg = DeviceMatrix<float>::from_host(cg);
+    DeviceMatrix<float> ga_g({rows, cols});
+    ga_g.clear();
+    DeviceMatrix<float> gb_g({rows, cols});
+    gb_g.clear();
+
+    ElemwiseBinary::backward(ga, ga_g, gb, gb_g, gg, op);
+    cudaDeviceSynchronize();
+    return {ga_g.to_host(), gb_g.to_host()};
+}
+
+} // namespace
+
+TEST(Kernels, Set) {
+    DeviceMatrix<float> m({4, 3});
+    set(m, 7.5f);
+    cudaDeviceSynchronize();
+    auto host = m.to_host();
+    for (int i = 0; i < 12; ++i)
+        EXPECT_NEAR(host(i), 7.5f, 1e-6f);
 }
 
 TEST(Kernels, SGemm_Basic) {
@@ -94,24 +180,6 @@ TEST(Kernels, SGemm_TransposeA) {
     EXPECT_NEAR(host(1, 0), 116.0f, 1e-3f);
     EXPECT_NEAR(host(0, 1), 98.0f, 1e-3f);
     EXPECT_NEAR(host(1, 1), 128.0f, 1e-3f);
-}
-
-// ElemwiseUnary
-
-static DeviceMatrix<float>
-run_unary_fwd(std::initializer_list<float> vals, const ElemwiseUnary::Op& op) {
-    int n = vals.size();
-    HostMatrix<float> host_in({n, 1});
-    int i = 0;
-    for (float v : vals)
-        host_in(i++, 0) = v;
-
-    auto dev_in = DeviceMatrix<float>::from_host(host_in);
-    DeviceMatrix<float> dev_out({n, 1});
-    ElemwiseUnary::forward(dev_in, dev_out, op);
-    cudaDeviceSynchronize();
-
-    return dev_out;
 }
 
 TEST(Kernels, UnaryFwd_Identity) {
@@ -187,33 +255,6 @@ TEST(Kernels, UnaryFwd_DivLeftUnary) {
     EXPECT_NEAR(host(1), 2.0f, 1e-5f);
 }
 
-// ElemwiseUnary backward
-
-static HostMatrix<float> run_unary_bwd(
-    std::initializer_list<float> inputs,
-    std::initializer_list<float> out_grads,
-    const ElemwiseUnary::Op& op
-) {
-    int n = inputs.size();
-    HostMatrix<float> host_in({n, 1});
-    HostMatrix<float> host_og({n, 1});
-    int i = 0;
-    for (float v : inputs)
-        host_in(i++, 0) = v;
-    i = 0;
-    for (float v : out_grads)
-        host_og(i++, 0) = v;
-
-    auto dev_in = DeviceMatrix<float>::from_host(host_in);
-    DeviceMatrix<float> dev_in_g({n, 1});
-    dev_in_g.clear();
-    auto dev_og = DeviceMatrix<float>::from_host(host_og);
-
-    ElemwiseUnary::backward(dev_in, dev_in_g, dev_og, op);
-    cudaDeviceSynchronize();
-    return dev_in_g.to_host();
-}
-
 TEST(Kernels, UnaryBwd_ReLU_Positive) {
     auto g = run_unary_bwd({2.0f}, {3.0f}, ReLU{});
     EXPECT_NEAR(g(0), 3.0f, 1e-5f);
@@ -241,30 +282,38 @@ TEST(Kernels, UnaryBwd_AddScale) {
     EXPECT_NEAR(g(0), 4.0f, 1e-5f);
 }
 
-// ElemwiseBinary forward
+TEST(Kernels, UnaryBwd_ClampedReLU) {
+    auto g_in = run_unary_bwd({0.5f}, {2.0f}, ClampedReLU{});
+    EXPECT_NEAR(g_in(0), 2.0f, 1e-5f);
+    auto g_lo = run_unary_bwd({-0.5f}, {2.0f}, ClampedReLU{});
+    EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
+    auto g_hi = run_unary_bwd({1.5f}, {2.0f}, ClampedReLU{});
+    EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
+}
 
-static HostMatrix<float> run_binary_fwd(
-    std::initializer_list<float> a_vals,
-    std::initializer_list<float> b_vals,
-    int rows,
-    int cols,
-    const ElemwiseBinary::Op& op
-) {
-    HostMatrix<float> ca({rows, cols}), cb({rows, cols});
-    int i = 0;
-    for (float v : a_vals)
-        ca(i++, 0) = v;
-    i = 0;
-    for (float v : b_vals)
-        cb(i++, 0) = v;
+TEST(Kernels, UnaryBwd_SquaredClampedReLU) {
+    auto g_in = run_unary_bwd({0.5f}, {1.0f}, SquaredClampedReLU{});
+    EXPECT_NEAR(g_in(0), 1.0f, 1e-5f);
+    auto g_lo = run_unary_bwd({-1.0f}, {1.0f}, SquaredClampedReLU{});
+    EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
+    auto g_hi = run_unary_bwd({2.0f}, {1.0f}, SquaredClampedReLU{});
+    EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
+}
 
-    auto ga = DeviceMatrix<float>::from_host(ca);
-    auto gb = DeviceMatrix<float>::from_host(cb);
-    DeviceMatrix<float> gc({rows, cols});
+TEST(Kernels, UnaryBwd_Clamp) {
+    auto g_in = run_unary_bwd({0.5f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    EXPECT_NEAR(g_in(0), 2.0f, 1e-5f);
+    auto g_hi = run_unary_bwd({2.0f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
+    auto g_lo = run_unary_bwd({-2.0f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
+}
 
-    ElemwiseBinary::forward(ga, gb, gc, op);
-    cudaDeviceSynchronize();
-    return gc.to_host();
+TEST(Kernels, UnaryBwd_DivLeft) {
+    auto g0 = run_unary_bwd({2.0f}, {1.0f}, DivLeftUnary{6.0f});
+    EXPECT_NEAR(g0(0), -1.5f, 1e-4f);
+    auto g1 = run_unary_bwd({3.0f}, {1.0f}, DivLeftUnary{6.0f});
+    EXPECT_NEAR(g1(0), -6.0f / 9.0f, 1e-4f);
 }
 
 TEST(Kernels, BinaryFwd_Add) {
@@ -294,40 +343,6 @@ TEST(Kernels, BinaryFwd_Div) {
     EXPECT_NEAR(c(1), 3.0f, 1e-5f);
 }
 
-// ElemwiseBinary backward
-
-static std::pair<HostMatrix<float>, HostMatrix<float>> run_binary_bwd(
-    std::initializer_list<float> a_vals,
-    std::initializer_list<float> b_vals,
-    std::initializer_list<float> g_vals,
-    int rows,
-    int cols,
-    const ElemwiseBinary::Op& op
-) {
-    HostMatrix<float> ca({rows, cols}), cb({rows, cols}), cg({rows, cols});
-    int i = 0;
-    for (float v : a_vals)
-        ca(i++, 0) = v;
-    i = 0;
-    for (float v : b_vals)
-        cb(i++, 0) = v;
-    i = 0;
-    for (float v : g_vals)
-        cg(i++, 0) = v;
-
-    auto ga = DeviceMatrix<float>::from_host(ca);
-    auto gb = DeviceMatrix<float>::from_host(cb);
-    auto gg = DeviceMatrix<float>::from_host(cg);
-    DeviceMatrix<float> ga_g({rows, cols});
-    ga_g.clear();
-    DeviceMatrix<float> gb_g({rows, cols});
-    gb_g.clear();
-
-    ElemwiseBinary::backward(ga, ga_g, gb, gb_g, gg, op);
-    cudaDeviceSynchronize();
-    return {ga_g.to_host(), gb_g.to_host()};
-}
-
 TEST(Kernels, BinaryBwd_Add) {
     auto [ga, gb] = run_binary_bwd({1}, {2}, {3}, 1, 1, AddBinary{});
     EXPECT_NEAR(ga(0), 3.0f, 1e-5f);
@@ -351,8 +366,6 @@ TEST(Kernels, BinaryBwd_Div) {
     EXPECT_NEAR(ga(0), 1.0f / 3.0f, 1e-5f);
     EXPECT_NEAR(gb(0), -6.0f / (3.0f * 3.0f), 1e-5f);
 }
-
-// ElemwiseBinary broadcast forward / backward
 
 TEST(Kernels, BinaryBroadcast_Fwd_Add) {
     HostMatrix<float> bias({4, 1});
@@ -402,8 +415,6 @@ TEST(Kernels, BinaryBroadcast_Bwd_Add_BiasGrad) {
     for (int i = 0; i < 12; ++i)
         EXPECT_NEAR(data_grad(i), 1.0f, 1e-5f);
 }
-
-// MatMul forward / backward
 
 TEST(Kernels, MatMul_Forward) {
     HostMatrix<float> w({2, 3});

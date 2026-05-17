@@ -118,11 +118,10 @@ class AstraInputs {
 inline float AstraInputs::WDL_WEIGHT = 0.5f;
 
 struct AstraModel : sorei::nn::Model {
-    using GraphBuilder = sorei::nn::graph::GraphBuilder;
-    using AffineLayer = sorei::nn::graph::AffineLayer;
-    using ParamNode = sorei::nn::graph::ParamNode;
-    using Node = sorei::nn::graph::Node;
-    using ConcatAxis = sorei::nn::layer::ConcatAxis;
+    using AffineLayer = sorei::nn::AffineLayer;
+    using ParamNode = sorei::nn::ParamNode;
+    using Node = sorei::nn::Node;
+    using ConcatAxis = sorei::nn::ConcatAxis;
 
     static constexpr int FT_SIZE = 1024;
     static constexpr int L1_SIZE = 16;
@@ -132,7 +131,7 @@ struct AstraModel : sorei::nn::Model {
     ParamNode factorizer;
     AffineLayer ft, l1, l2, l3;
 
-    sorei::nn::GraphOutput build_graph(GraphBuilder& b) override {
+    sorei::nn::GraphOutput build_graph(sorei::nn::GraphBuilder& b) override {
         // params
         factorizer = b.param(AstraInputs::FEATURE_SIZE, FT_SIZE);
         ft = b.affine_layer(AstraInputs::NUM_INPUT_BUCKETS * AstraInputs::FEATURE_SIZE, FT_SIZE);

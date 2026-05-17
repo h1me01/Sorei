@@ -1,6 +1,6 @@
 #include "concat.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 256;
 
@@ -53,4 +53,4 @@ void Concat::forward() {
     }
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

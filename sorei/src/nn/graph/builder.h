@@ -1,108 +1,12 @@
 #pragma once
 
-#include <cmath>
 #include <string>
 #include <vector>
 
 #include "graph.h"
+#include "node.h"
 
-namespace sorei::nn::graph {
-
-class GraphBuilder;
-
-// Node
-
-class Node {
-  public:
-    Node() = default;
-
-    Node(GraphBuilder* gb, layer::Layer* op)
-        : gb_(gb),
-          layer_(op) {
-        SOREI_CHECK(layer_);
-    }
-
-    Node relu() const;
-    // relu clamped to [0, 1]
-    Node clamped_relu() const;
-    // relu clamped to [0, 1] and squared
-    Node squared_clamped_relu() const;
-    Node sigmoid() const;
-    Node abs() const;
-    Node neg() const;
-
-    Node pairwise_mul() const;
-    Node mean() const;
-    Node clamp(float lo, float hi) const;
-    Node select(layer::BucketIndex* index) const;
-    Node repeat(int count) const;
-    Node softmax_cross_entropy(const Node& labels) const;
-
-    Node operator+(const Node& rhs) const;
-    Node operator-(const Node& rhs) const;
-    Node operator*(const Node& rhs) const;
-    Node operator/(const Node& rhs) const;
-
-    Node operator+(float s) const;
-    Node operator-(float s) const;
-    Node operator*(float s) const;
-    Node operator/(float s) const;
-
-    GraphBuilder& gb() const {
-        SOREI_CHECK(gb_);
-        return *gb_;
-    }
-
-    virtual layer::Layer* get() const { return layer_; }
-    explicit operator bool() const { return layer_ != nullptr; }
-
-  protected:
-    GraphBuilder* gb_ = nullptr;
-    layer::Layer* layer_ = nullptr;
-};
-
-Node operator+(float s, const Node& n);
-Node operator-(float s, const Node& n);
-Node operator*(float s, const Node& n);
-Node operator/(float s, const Node& n);
-
-// Param
-
-struct ParamNode : Node {
-    ParamNode() = default;
-
-    ParamNode(GraphBuilder* gb, layer::Layer* op)
-        : Node(gb, op) {}
-
-    void uniform_init(float lo, float hi) { get()->uniform_init(lo, hi); }
-    void he_init(int input_dim) { get()->he_init(input_dim); }
-    void set_bounds(float lo, float hi) { get()->set_bounds(lo, hi); }
-
-    matrix::DeviceMatrix<float>& data() { return get()->data(); }
-    const matrix::DeviceMatrix<float>& data() const { return get()->data(); }
-
-    int input_dim() const { return get()->data().shape().cols(); }
-    int output_dim() const { return get()->data().shape().rows(); }
-
-    layer::Param* get() const { return dynamic_cast<layer::Param*>(Node::get()); }
-};
-
-// AffineLayer
-
-struct AffineLayer {
-    ParamNode weight;
-    ParamNode bias;
-
-    AffineLayer() = default;
-
-    AffineLayer(ParamNode w, ParamNode b)
-        : weight(std::move(w)),
-          bias(std::move(b)) {}
-
-    Node operator()(const Node& input) const;
-};
-
-// GraphBuilder
+namespace sorei::nn {
 
 class GraphBuilder {
   public:
@@ -115,50 +19,48 @@ class GraphBuilder {
     GraphBuilder& operator=(GraphBuilder&&) = delete;
 
     Node input_int(const std::string& name, const matrix::Shape& shape) {
-        return {this, graph_.emplace_named<layer::InputInt>(name, shape)};
+        return {this, graph_.emplace_named<InputInt>(name, shape)};
     }
 
     Node input_float(const std::string& name, const matrix::Shape& shape) {
-        return {this, graph_.emplace_named<layer::InputFloat>(name, shape)};
+        return {this, graph_.emplace_named<InputFloat>(name, shape)};
     }
 
-    layer::BucketIndex* bucket_index(const std::string& name, int count, int size) {
-        return graph_.emplace_named<layer::BucketIndex>(name, count, size);
+    BucketIndex* bucket_index(const std::string& name, int count, int size) {
+        return graph_.emplace_named<BucketIndex>(name, count, size);
     }
 
     ParamNode param(int input_dim, int output_dim) {
-        return {this, make<layer::Param>(matrix::Shape{output_dim, input_dim})};
+        return {this, make<Param>(matrix::Shape{output_dim, input_dim})};
     }
 
-    AffineLayer affine_layer(int input_dim, int output_dim, const std::string& name_prefix = "") {
+    AffineLayer affine_layer(int input_dim, int output_dim) {
         auto w = param(input_dim, output_dim);
         w.he_init(input_dim);
         auto b = param(1, output_dim);
         return {w, b};
     }
 
-    Node relu(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), cuda::ReLU{})}; }
+    Node relu(const Node& x) { return {this, make<ElemwiseUnary>(x.get(), cuda::ReLU{})}; }
 
     // relu clamped to [0, 1]
     Node clamped_relu(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::ClampedReLU{})};
+        return {this, make<ElemwiseUnary>(x.get(), cuda::ClampedReLU{})};
     }
 
     // relu clamped to [0, 1] and squared
     Node squared_clamped_relu(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::SquaredClampedReLU{})};
+        return {this, make<ElemwiseUnary>(x.get(), cuda::SquaredClampedReLU{})};
     }
 
-    Node sigmoid(const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Sigmoid{})};
-    }
+    Node sigmoid(const Node& x) { return {this, make<ElemwiseUnary>(x.get(), cuda::Sigmoid{})}; }
 
-    Node abs(const Node& x) { return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Abs{})}; }
+    Node abs(const Node& x) { return {this, make<ElemwiseUnary>(x.get(), cuda::Abs{})}; }
 
     Node neg(const Node& x) { return affine_unary(x, -1.0f, 0.0f); }
 
     Node clamp(const Node& x, float lo, float hi) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Clamp{lo, hi})};
+        return {this, make<ElemwiseUnary>(x.get(), cuda::Clamp{lo, hi})};
     }
 
     Node add(const Node& x, float s) { return affine_unary(x, 1.0f, s); }
@@ -173,74 +75,74 @@ class GraphBuilder {
     }
 
     Node div(float s, const Node& x) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::DivLeftUnary{s})};
+        return {this, make<ElemwiseUnary>(x.get(), cuda::DivLeftUnary{s})};
     }
 
     Node add(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::AddBinary{})};
+        return {this, make<ElemwiseBinary>(a.get(), b.get(), cuda::AddBinary{})};
     }
 
     Node sub(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::SubBinary{})};
+        return {this, make<ElemwiseBinary>(a.get(), b.get(), cuda::SubBinary{})};
     }
 
     Node mul(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::MulBinary{})};
+        return {this, make<ElemwiseBinary>(a.get(), b.get(), cuda::MulBinary{})};
     }
 
     Node div(const Node& a, const Node& b) {
-        return {this, make<layer::ElemwiseBinary>(a.get(), b.get(), cuda::DivBinary{})};
+        return {this, make<ElemwiseBinary>(a.get(), b.get(), cuda::DivBinary{})};
     }
 
     Node mat_mul(const Node& weight, const Node& input) {
-        return {this, make<layer::MatMul>(weight.get(), input.get())};
+        return {this, make<MatMul>(weight.get(), input.get())};
     }
 
     Node affine(const Node& input, const Node& weight, const Node& bias) {
-        auto* ii = dynamic_cast<layer::InputInt*>(input.get());
+        auto* ii = dynamic_cast<InputInt*>(input.get());
         if (ii)
-            return {this, make<layer::SparseAffine>(ii, weight.get(), bias.get())};
+            return {this, make<SparseAffine>(ii, weight.get(), bias.get())};
         else
-            return {this, make<layer::Affine>(input.get(), weight.get(), bias.get())};
+            return {this, make<Affine>(input.get(), weight.get(), bias.get())};
     }
 
-    Node select(const Node& input, layer::BucketIndex* index) {
-        return {this, make<layer::Select>(input.get(), index)};
+    Node select(const Node& input, BucketIndex* index) {
+        return {this, make<Select>(input.get(), index)};
     }
 
-    Node pairwise_mul(const Node& input) { return {this, make<layer::PairwiseMul>(input.get())}; }
+    Node pairwise_mul(const Node& input) { return {this, make<PairwiseMul>(input.get())}; }
 
-    Node concat(std::vector<Node> inputs, layer::ConcatAxis axis = layer::ConcatAxis::Rows) {
-        std::vector<layer::Layer*> layers;
+    Node concat(std::vector<Node> inputs, ConcatAxis axis = ConcatAxis::Rows) {
+        std::vector<Layer*> layers;
         for (const auto& n : inputs)
             layers.push_back(n.get());
-        return {this, make<layer::Concat>(std::move(layers), axis)};
+        return {this, make<Concat>(std::move(layers), axis)};
     }
 
     Node repeat(const Node& input, int count) {
-        return concat(std::vector<Node>(count, input), layer::ConcatAxis::Cols);
+        return concat(std::vector<Node>(count, input), ConcatAxis::Cols);
     }
 
-    Node mean(const Node& input) { return {this, make<layer::Mean>(input.get())}; }
+    Node mean(const Node& input) { return {this, make<Mean>(input.get())}; }
 
     Node softmax_cross_entropy(const Node& logits, const Node& labels) {
-        auto* li = dynamic_cast<layer::InputInt*>(labels.get());
+        auto* li = dynamic_cast<InputInt*>(labels.get());
         if (!li)
             error("GraphBuilder: softmax_cross_entropy requires InputInt as labels");
-        return {this, make<layer::SoftmaxCrossEntropy>(logits.get(), li)};
+        return {this, make<SoftmaxCrossEntropy>(logits.get(), li)};
     }
 
   private:
     Graph& graph_;
 
     template <typename T, typename... Args>
-    layer::Layer* make(Args&&... args) {
+    Layer* make(Args&&... args) {
         return graph_.emplace<T>(std::forward<Args>(args)...);
     }
 
     Node affine_unary(const Node& x, float scale, float bias) {
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::AddScaleUnary{scale, bias})};
+        return {this, make<ElemwiseUnary>(x.get(), cuda::AddScaleUnary{scale, bias})};
     }
 };
 
-} // namespace sorei::nn::graph
+} // namespace sorei::nn

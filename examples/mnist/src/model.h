@@ -14,7 +14,7 @@ struct MNISTModel : public sorei::nn::Model {
         forward({{"images", images}, {"labels", labels}});
     }
 
-    sorei::nn::GraphOutput build_graph(sorei::nn::graph::GraphBuilder& b) override {
+    sorei::nn::GraphOutput build_graph(sorei::nn::GraphBuilder& b) override {
         auto images = b.input_float("images", {INPUT_DIM, 0});
         auto labels = b.input_int("labels", {1, 0});
 

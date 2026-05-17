@@ -1,6 +1,6 @@
 #include "unary.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -46,4 +46,4 @@ void ElemwiseUnary::forward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

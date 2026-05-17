@@ -2,7 +2,7 @@
 
 #include "adam.h"
 
-namespace sorei::nn::optim {
+namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -104,4 +104,4 @@ void AdamW::step(float lr) {
     }
 }
 
-} // namespace sorei::nn::optim
+} // namespace sorei::nn

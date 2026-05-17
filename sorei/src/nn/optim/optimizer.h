@@ -6,11 +6,11 @@
 #include "../../cuda/include.h"
 #include "../layer/param.h"
 
-namespace sorei::nn::optim {
+namespace sorei::nn {
 
 class Optimizer {
   public:
-    Optimizer(std::vector<layer::Param*> params)
+    Optimizer(std::vector<Param*> params)
         : params_(std::move(params)) {}
 
     Optimizer(const Optimizer&) = delete;
@@ -26,7 +26,7 @@ class Optimizer {
     virtual void step(float lr) = 0;
 
   protected:
-    std::vector<layer::Param*> params_;
+    std::vector<Param*> params_;
 };
 
-} // namespace sorei::nn::optim
+} // namespace sorei::nn

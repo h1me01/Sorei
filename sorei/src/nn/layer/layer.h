@@ -7,7 +7,7 @@
 #include "../../cuda/include.h"
 #include "../../matrix/include.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class Layer;
 
@@ -135,4 +135,4 @@ T* layer_cast(Layer* layer) {
     return typed;
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

@@ -75,8 +75,6 @@ inline int run_all_tests() {
     return failed > 0 ? 1 : 0;
 }
 
-// Assertion helpers
-
 [[noreturn]] inline void test_fail(const char* file, int line, const std::string& msg) {
     std::ostringstream os;
     // strip directory prefix for brevity
@@ -90,16 +88,12 @@ inline int run_all_tests() {
 
 } // namespace sorei::test
 
-// Registration macro
-
 #define TEST(suite, name)                                                                          \
     static void _test_fn_##suite##_##name();                                                       \
     static ::sorei::test::AutoRegister _reg_##suite##_##name{                                      \
         #suite, #name, _test_fn_##suite##_##name                                                   \
     };                                                                                             \
     static void _test_fn_##suite##_##name()
-
-// Assertion macros
 
 #define EXPECT_TRUE(cond)                                                                          \
     do {                                                                                           \

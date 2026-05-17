@@ -1,6 +1,6 @@
 #include "binary.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 1024;
 
@@ -92,4 +92,4 @@ void ElemwiseBinary::broadcast_backward(
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

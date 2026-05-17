@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class PairwiseMul : public TypedLayer<float> {
   public:
@@ -27,4 +27,4 @@ class PairwiseMul : public TypedLayer<float> {
     TypedLayer<float>* input_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

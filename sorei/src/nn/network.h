@@ -10,12 +10,10 @@ namespace sorei::nn::network {
 
 class Network {
   public:
-    Network(
-        std::vector<layer::Layer*> layers, layer::Layer* prediction, layer::Layer* loss = nullptr
-    )
+    Network(std::vector<Layer*> layers, Layer* prediction, Layer* loss = nullptr)
         : layers_(layers),
-          prediction_(dynamic_cast<layer::TypedLayer<float>*>(prediction)),
-          loss_(dynamic_cast<layer::TypedLayer<float>*>(loss)) {
+          prediction_(dynamic_cast<TypedLayer<float>*>(prediction)),
+          loss_(dynamic_cast<TypedLayer<float>*>(loss)) {
 
         for (auto* layer : layers_)
             SOREI_CHECK(layer);
@@ -43,9 +41,7 @@ class Network {
             layer->forward();
 
         if (loss_) {
-            layer::ElemwiseBinary::forward(
-                running_loss_, loss_->data(), running_loss_, cuda::AddBinary{}
-            );
+            ElemwiseBinary::forward(running_loss_, loss_->data(), running_loss_, cuda::AddBinary{});
         }
     }
 
@@ -58,12 +54,12 @@ class Network {
             layers_[i]->backward();
     }
 
-    const std::vector<layer::Param*> params() const {
-        std::vector<layer::Param*> result;
+    const std::vector<Param*> params() const {
+        std::vector<Param*> result;
 
-        std::unordered_set<layer::Param*> seen;
+        std::unordered_set<Param*> seen;
         for (auto* layer : layers_)
-            if (auto* t = dynamic_cast<layer::Param*>(layer))
+            if (auto* t = dynamic_cast<Param*>(layer))
                 if (seen.insert(t).second)
                     result.push_back(t);
 
@@ -74,12 +70,12 @@ class Network {
     matrix::DeviceMatrix<float>& running_loss() { return running_loss_; }
 
   private:
-    std::vector<layer::Layer*> layers_;
+    std::vector<Layer*> layers_;
     matrix::DeviceMatrix<float> running_loss_;
-    layer::TypedLayer<float>* prediction_;
-    layer::TypedLayer<float>* loss_;
+    TypedLayer<float>* prediction_;
+    TypedLayer<float>* loss_;
 
-    static bool contains(const std::vector<layer::Layer*>& layers, layer::Layer* target) {
+    static bool contains(const std::vector<Layer*>& layers, Layer* target) {
         return std::find(layers.begin(), layers.end(), target) != layers.end();
     }
 
@@ -89,7 +85,7 @@ class Network {
             if (layer == loss_)
                 continue;
 
-            auto* layer_t = dynamic_cast<layer::TypedLayer<float>*>(layer);
+            auto* layer_t = dynamic_cast<TypedLayer<float>*>(layer);
             if (!layer_t)
                 continue;
 

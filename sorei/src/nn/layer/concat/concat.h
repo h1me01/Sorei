@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 enum class ConcatAxis { Rows, Cols };
 
@@ -73,4 +73,4 @@ struct FusedConcat : ConcatBase {
     }
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

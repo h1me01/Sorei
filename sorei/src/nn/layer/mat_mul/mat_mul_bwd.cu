@@ -1,6 +1,6 @@
 #include "mat_mul.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr float alpha = 1.0f;
 constexpr float beta = 1.0f;
@@ -27,4 +27,4 @@ void MatMul::backward(
     }
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

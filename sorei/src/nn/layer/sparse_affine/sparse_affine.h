@@ -6,7 +6,7 @@
 #include "../input.h"
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 using ActOp = std::variant<cuda::Identity, cuda::ReLU, cuda::ClampedReLU, cuda::SquaredClampedReLU>;
 
@@ -85,4 +85,4 @@ struct SparseAffinePairwiseMul : SparseAffineBase {
     }
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

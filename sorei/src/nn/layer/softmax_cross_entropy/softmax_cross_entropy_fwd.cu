@@ -1,6 +1,6 @@
 #include "softmax_cross_entropy.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 // inspired from https://github.com/Infatoshi/mnist-cuda
 __global__ void softmax_cross_entropy_forward_kernel(
@@ -82,4 +82,4 @@ void SoftmaxCrossEntropy::forward() {
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

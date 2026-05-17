@@ -1,6 +1,6 @@
 #include "mean.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 256;
 
@@ -38,4 +38,4 @@ void Mean::forward() {
     SOREI_CUDA_CHECK(cudaGetLastError());
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

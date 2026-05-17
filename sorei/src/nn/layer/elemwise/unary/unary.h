@@ -3,7 +3,7 @@
 #include "../../layer.h"
 #include "../common.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class ElemwiseUnary : public TypedLayer<float> {
   public:
@@ -46,4 +46,4 @@ class ElemwiseUnary : public TypedLayer<float> {
     Op op_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

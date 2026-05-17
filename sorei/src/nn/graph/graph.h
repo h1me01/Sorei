@@ -12,7 +12,7 @@
 
 #include "../layer/include.h"
 
-namespace sorei::nn::graph {
+namespace sorei::nn {
 
 class Graph {
   public:
@@ -23,10 +23,10 @@ class Graph {
     Graph(Graph&&) = delete;
     Graph& operator=(Graph&&) = delete;
 
-    void print() const {
-        auto top_order = topological_sort();
+    void print(const std::vector<Layer*>& output_roots) const {
+        auto top_order = topological_sort(output_roots);
 
-        std::unordered_map<layer::Layer*, int> index;
+        std::unordered_map<Layer*, int> index;
         for (int i = 0; i < (int)top_order.size(); i++)
             index[top_order[i]] = i;
 
@@ -41,13 +41,13 @@ class Graph {
             }
 
             std::string extra;
-            if (auto* sa = dynamic_cast<layer::SparseAffineBase*>(n))
+            if (auto* sa = dynamic_cast<SparseAffineBase*>(n))
                 if (sa->has_activation())
-                    extra += " [+" + layer::elemwise_op_name(sa->activation()) + "]";
-            if (auto* spwm = dynamic_cast<layer::SparseAffinePairwiseMul*>(n))
+                    extra += " [+" + elemwise_op_name(sa->activation()) + "]";
+            if (auto* spwm = dynamic_cast<SparseAffinePairwiseMul*>(n))
                 extra += " [+PairwiseMul]";
-            if (auto* c = dynamic_cast<layer::ConcatBase*>(n))
-                extra += (c->axis() == layer::ConcatAxis::Rows) ? " [axis=rows]" : " [axis=cols]";
+            if (auto* c = dynamic_cast<ConcatBase*>(n))
+                extra += (c->axis() == ConcatAxis::Rows) ? " [axis=rows]" : " [axis=cols]";
 
             std::cout << "[" << std::right << std::setw(2) << i << "] " << std::left
                       << std::setw(23) << n->name() << " dim=" << std::setw(4) << n->shape().rows()
@@ -55,37 +55,44 @@ class Graph {
         }
     }
 
-    std::vector<layer::Layer*> topological_sort() const {
-        std::vector<layer::Layer*> order;
-        std::unordered_set<layer::Layer*> visited;
+    std::vector<Layer*> topological_sort(const std::vector<Layer*>& output_roots) const {
+        std::vector<Layer*> order;
+        std::unordered_set<Layer*> visited;
+        std::unordered_set<Layer*> in_stack;
 
-        std::function<void(layer::Layer*)> dfs = [&](layer::Layer* node) {
+        std::function<void(Layer*)> dfs = [&](Layer* node) {
             if (!node || visited.count(node))
                 return;
-            visited.insert(node);
-            for (layer::Layer* dep : node->inputs())
+            if (in_stack.count(node))
+                error("Graph: cycle detected");
+
+            in_stack.insert(node);
+            for (Layer* dep : node->inputs())
                 dfs(dep);
+            in_stack.erase(node);
+
+            visited.insert(node);
             order.push_back(node);
         };
 
-        for (const auto& node : nodes_)
-            dfs(node.get());
+        for (Layer* root : output_roots)
+            dfs(root);
 
         return order;
     }
 
-    const std::vector<std::unique_ptr<layer::Layer>>& nodes() const { return nodes_; }
+    const std::vector<std::unique_ptr<Layer>>& nodes() const { return nodes_; }
     std::size_t size() const { return nodes_.size(); }
 
   private:
-    std::vector<std::unique_ptr<layer::Layer>> nodes_;
-    std::unordered_map<std::string, layer::Layer*> named_ops_;
+    std::vector<std::unique_ptr<Layer>> nodes_;
+    std::unordered_map<std::string, Layer*> named_ops_;
 
     friend class GraphBuilder;
     friend class GraphOptimizer;
 
     template <typename T, typename... Args>
-    layer::Layer* emplace(Args&&... args) {
+    Layer* emplace(Args&&... args) {
         nodes_.push_back(std::make_unique<T>(std::forward<Args>(args)...));
         SOREI_CHECK(nodes_.back());
         return nodes_.back().get();
@@ -101,7 +108,7 @@ class Graph {
         return static_cast<T*>(it->second);
     }
 
-    void erase(layer::Layer* op) {
+    void erase(Layer* op) {
         SOREI_CHECK(op);
         auto it = std::find_if(nodes_.begin(), nodes_.end(), [op](const auto& p) {
             return p.get() == op;
@@ -119,4 +126,4 @@ class Graph {
     }
 };
 
-} // namespace sorei::nn::graph
+} // namespace sorei::nn

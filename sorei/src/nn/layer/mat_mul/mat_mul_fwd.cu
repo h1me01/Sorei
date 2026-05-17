@@ -1,6 +1,6 @@
 #include "mat_mul.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
@@ -21,4 +21,4 @@ void MatMul::forward(
     cuda::cublas::sgemm(false, false, alpha, weight, in, beta, out);
 }
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

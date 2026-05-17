@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class BucketIndex : public TypedLayer<int> {
   public:
@@ -27,4 +27,4 @@ class BucketIndex : public TypedLayer<int> {
     matrix::Shape shape_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

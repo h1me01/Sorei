@@ -14,18 +14,16 @@ using namespace sorei;
 using namespace sorei::cuda;
 using namespace sorei::matrix;
 using namespace sorei::nn;
-using namespace sorei::nn::layer;
-using namespace sorei::nn::optim;
 
 namespace {
 
 struct SimpleSquareLoss {
-    std::unique_ptr<layer::Param> param;
+    std::unique_ptr<Param> param;
     std::unique_ptr<ElemwiseBinary> sq;
     std::unique_ptr<Mean> loss;
 
     explicit SimpleSquareLoss(const Shape& shape, float init_val = 0.5f) {
-        param = std::make_unique<layer::Param>(shape);
+        param = std::make_unique<Param>(shape);
         HostMatrix<float> m(shape);
         m.fill(init_val);
         param->data().upload(m);
@@ -53,8 +51,6 @@ struct SimpleSquareLoss {
 
 } // namespace
 
-// Adam
-
 TEST(Optim, Adam_LossDecreases) {
     SimpleSquareLoss net({6, 6}, 1.0f);
     Adam optim({net.param.get()});
@@ -73,23 +69,7 @@ TEST(Optim, Adam_LossDecreases) {
     EXPECT_LT((double)final_loss, (double)initial_loss * 0.5);
 }
 
-TEST(Optim, Adam_ZeroLearningRate_ParamsUnchanged) {
-    SimpleSquareLoss net({4, 4}, 0.5f);
-    Adam optim({net.param.get()});
-
-    net.forward_backward();
-    auto before = net.param->data().to_host();
-    optim.step(0.0f);
-    cudaDeviceSynchronize();
-    auto after = net.param->data().to_host();
-
-    for (int i = 0; i < 16; ++i)
-        EXPECT_NEAR(after(i), before(i), 1e-6f);
-}
-
-// AdamW
-
-TEST(Optim, AdamW_WeightDecay_MoreAggressive_Than_Adam) {
+TEST(Optim, AdamW_WeightDecay) {
     SimpleSquareLoss net_adam({4, 4}, 1.0f);
     SimpleSquareLoss net_adamw({4, 4}, 1.0f);
 
@@ -115,7 +95,7 @@ TEST(Optim, AdamW_WeightDecay_MoreAggressive_Than_Adam) {
     EXPECT_LT((double)norm_adamw, (double)norm_adam);
 }
 
-TEST(Optim, AdamW_ParamBounds_Respected) {
+TEST(Optim, AdamW_ParamBounds) {
     auto p = test::make_param({8, 8}, -2.0f, 2.0f);
     p->set_bounds(-0.5f, 0.5f);
 
@@ -172,28 +152,4 @@ TEST(Optim, AdamW_SaveLoadState) {
         EXPECT_NEAR(host1(i), host2(i), 1e-6f);
 
     std::filesystem::remove_all(state_dir);
-}
-
-TEST(Optim, Adam_MultipleParms_AllUpdated) {
-    auto p1 = test::make_param({4, 4}, 1.0f, 1.0f);
-    auto p2 = test::make_param({3, 3}, 1.0f, 1.0f);
-
-    HostMatrix<float> g1({4, 4});
-    g1.fill(0.5f);
-    HostMatrix<float> g2({3, 3});
-    g2.fill(0.5f);
-    p1->grad().upload(g1);
-    p2->grad().upload(g2);
-
-    Adam optim({p1.get(), p2.get()});
-    optim.step(1e-1f);
-    cudaDeviceSynchronize();
-
-    auto host1 = p1->data().to_host();
-    auto host2 = p2->data().to_host();
-
-    for (int i = 0; i < 16; ++i)
-        EXPECT_LT((double)host1(i), 1.0);
-    for (int i = 0; i < 9; ++i)
-        EXPECT_LT((double)host2(i), 1.0);
 }

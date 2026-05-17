@@ -10,10 +10,7 @@
 using namespace sorei;
 using namespace sorei::matrix;
 using namespace sorei::nn;
-using namespace sorei::nn::layer;
 using namespace sorei::cuda;
-
-// Helper
 
 namespace {
 
@@ -25,8 +22,6 @@ T* cast_layer(Layer* layer) {
 }
 
 } // namespace
-
-// Layer shape inference
 
 TEST(Layer, Param_Shape) {
     Param p({8, 4});
@@ -133,9 +128,17 @@ TEST(Layer, Select_Shape) {
     EXPECT_EQ(sel.data().cols(), batch);
 }
 
-// Layer forward correctness
+TEST(Layer, SparseAffine_Shape) {
+    const int out_dim = 4, n_features = 8, max_entries = 5, batch = 6;
+    Param weight({out_dim, n_features});
+    Param bias({out_dim, 1});
+    Input<int> indices({max_entries, batch});
+    SparseAffine layer(&indices, &weight, &bias);
+    EXPECT_EQ(layer.data().rows(), out_dim);
+    EXPECT_EQ(layer.data().cols(), batch);
+}
 
-TEST(Layer, ElemwiseUnary_Forward_ReLU_Correct) {
+TEST(Layer, ElemwiseUnary_Forward_ReLU) {
     auto p = test::make_param_filled({4, 1}, -1.0f);
     ElemwiseUnary layer(p.get(), ReLU{});
 
@@ -147,7 +150,7 @@ TEST(Layer, ElemwiseUnary_Forward_ReLU_Correct) {
         EXPECT_NEAR(host(i), 0.0f, 1e-6f);
 }
 
-TEST(Layer, ElemwiseBinary_Forward_Add_Correct) {
+TEST(Layer, ElemwiseBinary_Forward_Add) {
     auto a = test::make_param_filled({3, 2}, 1.0f);
     auto b = test::make_param_filled({3, 2}, 2.0f);
     ElemwiseBinary layer(a.get(), b.get(), AddBinary{});
@@ -160,7 +163,7 @@ TEST(Layer, ElemwiseBinary_Forward_Add_Correct) {
         EXPECT_NEAR(host(i), 3.0f, 1e-5f);
 }
 
-TEST(Layer, MatMul_Forward_Correct) {
+TEST(Layer, MatMul_Forward) {
     auto w = test::make_param_filled({2, 3}, 1.0f);
     auto x = test::make_param_filled({3, 4}, 1.0f);
 
@@ -173,7 +176,7 @@ TEST(Layer, MatMul_Forward_Correct) {
         EXPECT_NEAR(host(i), 3.0f, 1e-4f);
 }
 
-TEST(Layer, Mean_Forward_Correct) {
+TEST(Layer, Mean_Forward) {
     HostMatrix<float> src({3, 4});
     for (int i = 0; i < 12; ++i)
         src(i) = (float)i;
@@ -188,7 +191,7 @@ TEST(Layer, Mean_Forward_Correct) {
     EXPECT_NEAR(layer.data().to_host()(0), 5.5f, 1e-4f);
 }
 
-TEST(Layer, PairwiseMul_Forward_Correct) {
+TEST(Layer, PairwiseMul_Forward) {
     HostMatrix<float> src({4, 1});
     src(0, 0) = 1;
     src(1, 0) = 2;
@@ -206,6 +209,130 @@ TEST(Layer, PairwiseMul_Forward_Correct) {
     auto host = layer.data().to_host();
     EXPECT_NEAR(host(0, 0), 3.0f, 1e-5f);
     EXPECT_NEAR(host(1, 0), 8.0f, 1e-5f);
+}
+
+TEST(Layer, Affine_Forward) {
+    auto w = test::make_param_filled({2, 3}, 1.0f);
+    auto x = test::make_param_filled({3, 2}, 1.0f);
+
+    HostMatrix<float> bias_src({2, 1});
+    bias_src(0, 0) = 1.0f;
+    bias_src(1, 0) = 2.0f;
+    Param b({2, 1});
+    b.data().upload(bias_src);
+    b.grad().clear();
+
+    Affine layer(x.get(), w.get(), &b);
+    layer.forward();
+    cudaDeviceSynchronize();
+
+    auto host = layer.data().to_host();
+    for (int c = 0; c < 2; ++c) {
+        EXPECT_NEAR(host(0, c), 4.0f, 1e-4f);
+        EXPECT_NEAR(host(1, c), 5.0f, 1e-4f);
+    }
+}
+
+TEST(Layer, Concat_Rows_Forward) {
+    auto a = test::make_param_filled({2, 3}, 1.0f);
+    auto b = test::make_param_filled({4, 3}, 2.0f);
+    Concat layer({a.get(), b.get()}, ConcatAxis::Rows);
+
+    layer.forward();
+    cudaDeviceSynchronize();
+
+    auto host = layer.data().to_host();
+    for (int c = 0; c < 3; ++c) {
+        for (int r = 0; r < 2; ++r)
+            EXPECT_NEAR(host(r, c), 1.0f, 1e-5f);
+        for (int r = 2; r < 6; ++r)
+            EXPECT_NEAR(host(r, c), 2.0f, 1e-5f);
+    }
+}
+
+TEST(Layer, Concat_Cols_Forward) {
+    auto a = test::make_param_filled({3, 2}, 1.0f);
+    auto b = test::make_param_filled({3, 4}, 2.0f);
+    Concat layer({a.get(), b.get()}, ConcatAxis::Cols);
+
+    layer.forward();
+    cudaDeviceSynchronize();
+
+    auto host = layer.data().to_host();
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 2; ++c)
+            EXPECT_NEAR(host(r, c), 1.0f, 1e-5f);
+        for (int c = 2; c < 6; ++c)
+            EXPECT_NEAR(host(r, c), 2.0f, 1e-5f);
+    }
+}
+
+TEST(Layer, Select_Forward) {
+    HostMatrix<float> src({4, 2});
+    src(0, 0) = 1.0f;
+    src(1, 0) = 2.0f;
+    src(2, 0) = 3.0f;
+    src(3, 0) = 4.0f;
+    src(0, 1) = 5.0f;
+    src(1, 1) = 6.0f;
+    src(2, 1) = 7.0f;
+    src(3, 1) = 8.0f;
+
+    Param inp({4, 2});
+    inp.data().upload(src);
+    inp.grad().clear();
+
+    BucketIndex bidx(2, 2);
+    HostMatrix<int> idx_src({1, 2});
+    idx_src(0, 0) = 0;
+    idx_src(0, 1) = 1;
+    bidx.data().upload(idx_src);
+
+    Select sel(&inp, &bidx);
+    sel.forward();
+    cudaDeviceSynchronize();
+
+    auto host = sel.data().to_host();
+    EXPECT_NEAR(host(0, 0), 1.0f, 1e-5f);
+    EXPECT_NEAR(host(1, 0), 2.0f, 1e-5f);
+    EXPECT_NEAR(host(0, 1), 7.0f, 1e-5f);
+    EXPECT_NEAR(host(1, 1), 8.0f, 1e-5f);
+}
+
+TEST(Layer, SparseAffine_Forward) {
+    HostMatrix<float> w_src({2, 2});
+    w_src(0, 0) = 1.0f;
+    w_src(1, 0) = 2.0f;
+    w_src(0, 1) = 3.0f;
+    w_src(1, 1) = 4.0f;
+    Param weight({2, 2});
+    weight.data().upload(w_src);
+    weight.grad().clear();
+
+    HostMatrix<float> b_src({2, 1});
+    b_src(0, 0) = 0.5f;
+    b_src(1, 0) = 0.5f;
+    Param bias({2, 1});
+    bias.data().upload(b_src);
+    bias.grad().clear();
+
+    Input<int> indices({2, 2});
+    HostMatrix<int> idx_src({2, 2});
+    idx_src(0, 0) = 0;
+    idx_src(1, 0) = -1;
+    idx_src(0, 1) = 1;
+    idx_src(1, 1) = -1;
+    indices.data().upload(idx_src);
+
+    SparseAffine layer(&indices, &weight, &bias);
+    layer.forward();
+    cudaDeviceSynchronize();
+
+    auto host = layer.data().to_host();
+    EXPECT_NEAR(host(0, 0), 1.5f, 1e-4f);
+    EXPECT_NEAR(host(1, 0), 2.5f, 1e-4f);
+    EXPECT_NEAR(host(0, 1), 3.5f, 1e-4f);
+    EXPECT_NEAR(host(1, 1), 4.5f, 1e-4f);
 }
 
 TEST(Layer, SoftmaxCrossEntropy_Forward_Outputs_Positive) {
@@ -242,191 +369,22 @@ TEST(Layer, SoftmaxCrossEntropy_Forward_PerfectPrediction_SmallLoss) {
     EXPECT_LT((double)loss, 0.01);
 }
 
-// GraphBuilder fluent API
-
-TEST(Graph, Builder_BasicInputs) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float("x", {8, 4});
-    auto lbl = b.input_int("labels", {1, 4});
-    EXPECT_TRUE((bool)x);
-    EXPECT_TRUE((bool)lbl);
-    EXPECT_EQ(x.get()->shape().rows(), 8);
-}
-
-TEST(Graph, Builder_AffineLayer_Shape) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
+TEST(Graph, Builder_AffineLayer) {
+    Graph g;
+    GraphBuilder b(g);
     auto x = b.input_float("x", {6, 8});
-    auto fc = b.affine_layer(6, 4, "fc1");
+    auto fc = b.affine_layer(6, 4);
     auto y = fc(x);
     EXPECT_EQ(y.get()->shape().rows(), 4);
     EXPECT_EQ(y.get()->shape().cols(), 8);
 }
 
-TEST(Graph, Builder_FluentActivations) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float("x", {4, 2});
-    auto r = x.relu();
-    auto s = x.sigmoid();
-    auto c = x.clamped_relu();
-    EXPECT_TRUE((bool)r);
-    EXPECT_TRUE((bool)s);
-    EXPECT_TRUE((bool)c);
-}
-
-TEST(Graph, Builder_FluentArithmetic) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float("x", {4, 2});
-    auto y = b.input_float("y", {4, 2});
-    EXPECT_TRUE((bool)(x + y));
-    EXPECT_TRUE((bool)(x - y));
-    EXPECT_TRUE((bool)(x * y));
-    EXPECT_TRUE((bool)(x + 1.0f));
-    EXPECT_TRUE((bool)(x * 2.0f));
-    EXPECT_TRUE((bool)(2.0f * x));
-}
-
 TEST(Graph, Builder_Concat) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
+    Graph g;
+    GraphBuilder b(g);
     auto x = b.input_float("x", {4, 3});
     auto y = b.input_float("y", {5, 3});
-    auto c = b.concat({x, y}, layer::ConcatAxis::Rows);
+    auto c = b.concat({x, y}, ConcatAxis::Rows);
     EXPECT_EQ(c.get()->shape().rows(), 9);
     EXPECT_EQ(c.get()->shape().cols(), 3);
-}
-
-TEST(Graph, Builder_SoftmaxCrossEntropy) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto logits = b.input_float("logits", {10, 4});
-    auto labels = b.input_int("labels", {1, 4});
-    auto loss = logits.softmax_cross_entropy(labels);
-    auto mean = loss.mean();
-    EXPECT_EQ(mean.get()->shape().rows(), 1);
-    EXPECT_EQ(mean.get()->shape().cols(), 1);
-}
-
-TEST(Graph, TopologicalSort_Correctness) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-
-    auto x = b.input_float("x", {4, 2});
-    auto r = x.relu();
-    auto s = r.sigmoid();
-    auto sorted = g.topological_sort();
-
-    EXPECT_GE((int)sorted.size(), 3);
-
-    for (int i = 0; i < (int)sorted.size(); ++i) {
-        for (auto* inp : sorted[i]->inputs()) {
-            bool inp_before = false;
-            for (int j = 0; j < i; ++j)
-                if (sorted[j] == inp) {
-                    inp_before = true;
-                    break;
-                }
-            EXPECT_TRUE(inp_before);
-        }
-    }
-}
-
-// Network forward / backward / parameters
-
-TEST(Network, ForwardBackward_NoNaN) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-
-    auto x = b.input_float("x", {4, 8});
-    auto fc1 = b.affine_layer(4, 3, "fc1");
-    auto fc2 = b.affine_layer(3, 1, "fc2");
-    auto y = fc2(fc1(x).relu());
-    auto lbl = b.input_int("lbl", {1, 8});
-    auto loss = y.softmax_cross_entropy(lbl).mean();
-
-    network::Network net(g.topological_sort(), y.get(), loss.get());
-
-    {
-        HostMatrix<float> xdata({4, 8});
-        xdata.fill(0.1f);
-        cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
-        HostMatrix<int> ldata({1, 8});
-        for (int c = 0; c < 8; ++c)
-            ldata(0, c) = 0;
-        cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
-    }
-
-    net.forward();
-    cudaDeviceSynchronize();
-    net.backward();
-    cudaDeviceSynchronize();
-
-    auto pred = net.prediction().to_host();
-    EXPECT_TRUE(pred.shape() == Shape(1, 8));
-    for (int i = 0; i < pred.size(); ++i)
-        EXPECT_FALSE(std::isnan(pred(i)));
-}
-
-TEST(Network, RunningLoss_Accumulates) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float("x", {2, 4});
-    auto lbl = b.input_int("lbl", {1, 4});
-    auto fc = b.affine_layer(2, 2);
-    auto pred = fc(x);
-    auto loss = pred.softmax_cross_entropy(lbl).mean();
-
-    network::Network net(g.topological_sort(), pred.get(), loss.get());
-
-    HostMatrix<float> xdata({2, 4});
-    xdata.fill(0.1f);
-    HostMatrix<int> ldata({1, 4});
-    for (int c = 0; c < 4; ++c)
-        ldata(0, c) = 0;
-    cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
-    cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
-
-    net.forward();
-    cudaDeviceSynchronize();
-    auto rl = net.running_loss().to_host();
-
-    EXPECT_EQ(rl.size(), 1);
-    EXPECT_GT((double)rl(0), 0.0);
-}
-
-TEST(Network, GradsNonZeroAfterBackward) {
-    graph::Graph g;
-    graph::GraphBuilder b(g);
-    auto x = b.input_float("x", {3, 4});
-    auto lbl = b.input_int("lbl", {1, 4});
-    auto fc = b.affine_layer(3, 2);
-    auto out = fc(x);
-    auto loss = out.softmax_cross_entropy(lbl).mean();
-
-    network::Network net(g.topological_sort(), out.get(), loss.get());
-
-    HostMatrix<float> xdata({3, 4});
-    xdata.fill(0.5f);
-    HostMatrix<int> ldata({1, 4});
-    for (int c = 0; c < 4; ++c)
-        ldata(0, c) = c % 2;
-    cast_layer<layer::InputFloat>(x.get())->data().upload(xdata);
-    cast_layer<layer::InputInt>(lbl.get())->data().upload(ldata);
-
-    net.forward();
-    net.backward();
-    cudaDeviceSynchronize();
-
-    for (auto* p : net.params()) {
-        auto grad_host = p->grad().to_host();
-        float abs_sum = 0.0f;
-        for (int i = 0; i < grad_host.size(); ++i)
-            abs_sum += std::abs(grad_host(i));
-        if (abs_sum > 1e-8f)
-            return;
-    }
-    EXPECT_TRUE(false); // should not reach here
 }

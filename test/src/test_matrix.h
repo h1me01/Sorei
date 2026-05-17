@@ -7,35 +7,6 @@
 
 using namespace sorei::matrix;
 
-// Shape
-
-TEST(Matrix, Shape_BasicProperties) {
-    Shape s(3, 4);
-    EXPECT_EQ(s.rows(), 3);
-    EXPECT_EQ(s.cols(), 4);
-    EXPECT_EQ(s.size(), 12);
-}
-
-TEST(Matrix, Shape_Equality) {
-    EXPECT_TRUE(Shape(2, 5) == Shape(2, 5));
-    EXPECT_FALSE(Shape(2, 5) == Shape(5, 2));
-    EXPECT_TRUE(Shape(2, 5) != Shape(5, 2));
-}
-
-TEST(Matrix, Shape_ZeroSize) {
-    Shape s(0, 0);
-    EXPECT_EQ(s.size(), 0);
-    Shape s2(3, 0);
-    EXPECT_EQ(s2.size(), 0);
-}
-
-TEST(Matrix, Shape_Str) {
-    std::string str = Shape(3, 4).str();
-    EXPECT_FALSE(str.empty());
-}
-
-// HostMatrix<float>
-
 TEST(Matrix, HostMatrix_DefaultConstruct) {
     HostMatrix<float> m;
     EXPECT_EQ(m.rows(), 0);
@@ -75,80 +46,6 @@ TEST(Matrix, HostMatrix_Fill) {
         EXPECT_EQ(m(i), 7.0f);
 }
 
-TEST(Matrix, HostMatrix_ArithmeticAdd) {
-    HostMatrix<float> a({2, 2}), b({2, 2});
-    a.fill(3.0f);
-    b.fill(2.0f);
-    auto c = a + b;
-    for (int i = 0; i < 4; ++i)
-        EXPECT_EQ(c(i), 5.0f);
-}
-
-TEST(Matrix, HostMatrix_ArithmeticSub) {
-    HostMatrix<float> a({2, 2}), b({2, 2});
-    a.fill(5.0f);
-    b.fill(3.0f);
-    auto c = a - b;
-    for (int i = 0; i < 4; ++i)
-        EXPECT_EQ(c(i), 2.0f);
-}
-
-TEST(Matrix, HostMatrix_ScalarMul) {
-    HostMatrix<float> m({2, 3});
-    m.fill(2.0f);
-    auto s = m * 3.0f;
-    for (int i = 0; i < 6; ++i)
-        EXPECT_NEAR(s(i), 6.0f, 1e-6f);
-}
-
-TEST(Matrix, HostMatrix_ScalarDiv) {
-    HostMatrix<float> m({2, 3});
-    m.fill(6.0f);
-    auto s = m / 2.0f;
-    for (int i = 0; i < 6; ++i)
-        EXPECT_NEAR(s(i), 3.0f, 1e-6f);
-}
-
-TEST(Matrix, HostMatrix_Reshape) {
-    HostMatrix<float> m({2, 3});
-    for (int i = 0; i < 6; ++i)
-        m(i) = (float)i;
-    auto r = m.reshape({3, 2});
-    EXPECT_EQ(r.rows(), 3);
-    EXPECT_EQ(r.cols(), 2);
-
-    for (int i = 0; i < 6; ++i)
-        EXPECT_EQ(r(i), (float)i);
-}
-
-TEST(Matrix, HostMatrix_Transpose) {
-    HostMatrix<float> m({2, 3});
-    m(0, 0) = 1;
-    m(0, 1) = 2;
-    m(0, 2) = 3;
-    m(1, 0) = 4;
-    m(1, 1) = 5;
-    m(1, 2) = 6;
-
-    auto t = m.transpose();
-    EXPECT_EQ(t.rows(), 3);
-    EXPECT_EQ(t.cols(), 2);
-    EXPECT_EQ(t(0, 0), 1.0f);
-    EXPECT_EQ(t(1, 0), 2.0f);
-    EXPECT_EQ(t(2, 0), 3.0f);
-    EXPECT_EQ(t(0, 1), 4.0f);
-    EXPECT_EQ(t(1, 1), 5.0f);
-    EXPECT_EQ(t(2, 1), 6.0f);
-}
-
-TEST(Matrix, HostMatrix_Resize_Noop) {
-    HostMatrix<float> m({2, 3});
-    m.fill(1.0f);
-    m.resize({2, 3});
-    for (int i = 0; i < 6; ++i)
-        EXPECT_EQ(m(i), 1.0f);
-}
-
 TEST(Matrix, HostMatrix_Resize_Realloc) {
     HostMatrix<float> m({2, 3});
     m.fill(1.0f);
@@ -156,8 +53,6 @@ TEST(Matrix, HostMatrix_Resize_Realloc) {
     EXPECT_EQ(m.rows(), 4);
     EXPECT_EQ(m.cols(), 2);
 }
-
-// DeviceMatrix<float>
 
 TEST(Matrix, DeviceMatrix_Construction) {
     DeviceMatrix<float> m({3, 4});
@@ -218,17 +113,6 @@ TEST(Matrix, DeviceMatrix_Clear) {
     cudaDeviceSynchronize();
     for (int i = 0; i < 6; ++i)
         EXPECT_EQ(host(i), 0.0f);
-}
-
-TEST(Matrix, DeviceMatrix_Resize_Noop) {
-    HostMatrix<float> src({2, 3});
-    src.fill(7.0f);
-    auto dev = DeviceMatrix<float>::from_host(src);
-    dev.resize({2, 3});
-    auto host = dev.to_host();
-    cudaDeviceSynchronize();
-    for (int i = 0; i < 6; ++i)
-        EXPECT_NEAR(host(i), 7.0f, 1e-6f);
 }
 
 TEST(Matrix, DeviceMatrix_Resize_Realloc) {

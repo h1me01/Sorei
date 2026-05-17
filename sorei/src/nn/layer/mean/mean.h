@@ -2,7 +2,7 @@
 
 #include "../layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class Mean : public TypedLayer<float> {
   public:
@@ -20,4 +20,4 @@ class Mean : public TypedLayer<float> {
     TypedLayer<float>* input_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

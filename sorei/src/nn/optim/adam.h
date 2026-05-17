@@ -5,13 +5,11 @@
 
 #include "optimizer.h"
 
-namespace sorei::nn::optim {
+namespace sorei::nn {
 
 class AdamW : public Optimizer {
   public:
-    AdamW(
-        std::vector<layer::Param*> params, float beta1 = 0.9, float beta2 = 0.999, float decay = 0.0
-    )
+    AdamW(std::vector<Param*> params, float beta1 = 0.9, float beta2 = 0.999, float decay = 0.0)
         : Optimizer(std::move(params)),
           beta1_(beta1),
           beta2_(beta2),
@@ -124,8 +122,8 @@ class AdamW : public Optimizer {
 };
 
 struct Adam : public AdamW {
-    Adam(std::vector<layer::Param*> params, float beta1 = 0.9, float beta2 = 0.999)
+    Adam(std::vector<Param*> params, float beta1 = 0.9, float beta2 = 0.999)
         : AdamW(std::move(params), beta1, beta2, 0.0f) {}
 };
 
-} // namespace sorei::nn::optim
+} // namespace sorei::nn

@@ -7,7 +7,7 @@
 #include "../../rng/rng.h"
 #include "layer.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class Param : public TypedLayer<float> {
   public:
@@ -58,4 +58,4 @@ class Param : public TypedLayer<float> {
     float upper_bound_ = std::numeric_limits<float>::max();
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

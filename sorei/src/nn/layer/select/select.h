@@ -3,7 +3,7 @@
 #include "../layer.h"
 #include "bucket_index.h"
 
-namespace sorei::nn::layer {
+namespace sorei::nn {
 
 class Select : public TypedLayer<float> {
   public:
@@ -32,4 +32,4 @@ class Select : public TypedLayer<float> {
     BucketIndex* bucket_;
 };
 
-} // namespace sorei::nn::layer
+} // namespace sorei::nn

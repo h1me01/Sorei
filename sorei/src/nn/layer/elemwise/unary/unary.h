@@ -13,8 +13,6 @@ class ElemwiseUnary : public TypedLayer<float> {
         cuda::DivLeftUnary,
         cuda::Clamp,
         cuda::Abs,
-        cuda::PowInt,
-        cuda::PowFloat,
         cuda::ReLU,
         cuda::ClampedReLU,
         cuda::SquaredClampedReLU,

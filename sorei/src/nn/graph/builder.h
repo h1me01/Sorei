@@ -33,7 +33,6 @@ class Node {
 
     Node pairwise_mul() const;
     Node mean() const;
-    Node pow(float e) const;
     Node clamp(float lo, float hi) const;
     Node select(layer::BucketIndex* index) const;
     Node repeat(int count) const;
@@ -160,15 +159,6 @@ class GraphBuilder {
 
     Node clamp(const Node& x, float lo, float hi) {
         return {this, make<layer::ElemwiseUnary>(x.get(), cuda::Clamp{lo, hi})};
-    }
-
-    Node pow(const Node& x, float e) {
-        if (std::fabs(e) <= 16777216.0f) {
-            int n = static_cast<int>(e);
-            if (std::fabs(e - n) < 1e-6f)
-                return {this, make<layer::ElemwiseUnary>(x.get(), cuda::PowInt{n})};
-        }
-        return {this, make<layer::ElemwiseUnary>(x.get(), cuda::PowFloat{e})};
     }
 
     Node add(const Node& x, float s) { return affine_unary(x, 1.0f, s); }

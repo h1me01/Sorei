@@ -13,7 +13,6 @@ class GraphOptimizer {
         prediction_ = prediction;
         loss_ = loss;
 
-        fold_self_mul(graph);
         fuse_sparse_affine(graph);
         fuse_concat(graph);
 
@@ -92,33 +91,12 @@ class GraphOptimizer {
         return std::nullopt;
     }
 
-    // Folding passes
-
-    void fold_self_mul(Graph& graph) {
-        fixed_point<layer::ElemwiseBinary>(
-            graph,
-            [this](Graph& g, layer::ElemwiseBinary& eb, const ConsumerMap&) -> bool {
-                if (eb.name() != "Mul")
-                    return false;
-
-                auto ins = eb.inputs();
-                if (ins[0] != ins[1])
-                    return false;
-
-                auto* replacement = g.emplace<layer::ElemwiseUnary>(ins[0], cuda::PowInt{2});
-                redirect_and_remove(g, &eb, replacement);
-                return true;
-            }
-        );
-    }
-
     // Fusion passes
 
     void fuse_sparse_affine(Graph& graph) {
         // fuse activation into SparseAffine
         fixed_point<layer::SparseAffine>(
-            graph,
-            [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
+            graph, [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
                 auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(&sa, consumers));
                 if (!unary)
                     return false;
@@ -135,8 +113,7 @@ class GraphOptimizer {
 
         // fuse pairwise-mul into SparseAffinePairwiseMul
         fixed_point<layer::SparseAffine>(
-            graph,
-            [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
+            graph, [this](Graph& g, layer::SparseAffine& sa, const ConsumerMap& consumers) -> bool {
                 auto* pw = dynamic_cast<layer::PairwiseMul*>(sole_consumer(&sa, consumers));
                 if (!pw)
                     return false;
@@ -156,8 +133,7 @@ class GraphOptimizer {
     void fuse_concat(Graph& graph) {
         // fuse SparseAffineBase with row-wise FusedConcat
         fixed_point<layer::Concat>(
-            graph,
-            [this](Graph& g, layer::Concat& cn, const ConsumerMap& consumers) -> bool {
+            graph, [this](Graph& g, layer::Concat& cn, const ConsumerMap& consumers) -> bool {
                 if (cn.axis() != layer::ConcatAxis::Rows)
                     return false;
 
@@ -180,8 +156,7 @@ class GraphOptimizer {
 
         // fuse activation following FusedConcat into each SparseAffineBase input
         fixed_point<layer::FusedConcat>(
-            graph,
-            [this](Graph& g, layer::FusedConcat& cn, const ConsumerMap& consumers) -> bool {
+            graph, [this](Graph& g, layer::FusedConcat& cn, const ConsumerMap& consumers) -> bool {
                 auto* unary = dynamic_cast<layer::ElemwiseUnary*>(sole_consumer(&cn, consumers));
                 if (!unary)
                     return false;

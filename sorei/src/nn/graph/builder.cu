@@ -13,7 +13,6 @@ Node Node::neg() const { return gb().neg(*this); }
 
 Node Node::pairwise_mul() const { return gb().pairwise_mul(*this); }
 Node Node::mean() const { return gb().mean(*this); }
-Node Node::pow(float e) const { return gb().pow(*this, e); }
 Node Node::clamp(float lo, float hi) const { return gb().clamp(*this, lo, hi); }
 Node Node::repeat(int count) const { return gb().repeat(*this, count); }
 Node Node::select(layer::BucketIndex* index) const { return gb().select(*this, index); }

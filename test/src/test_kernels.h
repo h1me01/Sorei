@@ -165,20 +165,6 @@ TEST(Kernels, UnaryFwd_Abs) {
     EXPECT_NEAR(host(2), 2.0f, 1e-6f);
 }
 
-TEST(Kernels, UnaryFwd_PowInt) {
-    auto out = run_unary_fwd({2.0f, -3.0f}, PowInt{3});
-    auto host = out.to_host();
-    EXPECT_NEAR(host(0), 8.0f, 1e-4f);
-    EXPECT_NEAR(host(1), -27.0f, 1e-4f);
-}
-
-TEST(Kernels, UnaryFwd_PowFloat) {
-    auto out = run_unary_fwd({4.0f, 9.0f}, PowFloat{0.5f});
-    auto host = out.to_host();
-    EXPECT_NEAR(host(0), 2.0f, 1e-4f);
-    EXPECT_NEAR(host(1), 3.0f, 1e-4f);
-}
-
 TEST(Kernels, UnaryFwd_Clamp) {
     auto out = run_unary_fwd({-5.0f, 0.3f, 5.0f}, Clamp{-1.0f, 1.0f});
     auto host = out.to_host();
@@ -248,11 +234,6 @@ TEST(Kernels, UnaryBwd_Abs) {
     auto g_neg = run_unary_bwd({-2.0f}, {1.0f}, Abs{});
     EXPECT_NEAR(g_pos(0), 1.0f, 1e-5f);
     EXPECT_NEAR(g_neg(0), -1.0f, 1e-5f);
-}
-
-TEST(Kernels, UnaryBwd_PowInt2) {
-    auto g = run_unary_bwd({3.0f}, {1.0f}, PowInt{2});
-    EXPECT_NEAR(g(0), 6.0f, 1e-4f);
 }
 
 TEST(Kernels, UnaryBwd_AddScale) {

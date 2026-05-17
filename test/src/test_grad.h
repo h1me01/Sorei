@@ -41,24 +41,6 @@ TEST(Grad, ElemwiseUnary_Abs) {
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
-TEST(Grad, ElemwiseUnary_PowInt2) {
-    auto p = make_param({4, 3}, 0.5f, 2.0f);
-    auto layer = std::make_unique<nn::layer::ElemwiseUnary>(p.get(), PowInt{2});
-    EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.02f);
-}
-
-TEST(Grad, ElemwiseUnary_PowInt3) {
-    auto p = make_param({4, 3}, 0.5f, 2.0f);
-    auto layer = std::make_unique<nn::layer::ElemwiseUnary>(p.get(), PowInt{3});
-    EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
-}
-
-TEST(Grad, ElemwiseUnary_PowFloat_Half) {
-    auto p = make_param({4, 3}, 0.5f, 4.0f);
-    auto layer = std::make_unique<nn::layer::ElemwiseUnary>(p.get(), PowFloat{0.5f});
-    EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
-}
-
 TEST(Grad, ElemwiseUnary_Clamp) {
     auto p = make_param({4, 3}, -0.5f, 0.5f);
     auto layer = std::make_unique<nn::layer::ElemwiseUnary>(p.get(), Clamp{-1.0f, 1.0f});

@@ -21,7 +21,7 @@ namespace {
 
 struct SimpleSquareLoss {
     std::unique_ptr<layer::Param> param;
-    std::unique_ptr<ElemwiseUnary> sq;
+    std::unique_ptr<ElemwiseBinary> sq;
     std::unique_ptr<Mean> loss;
 
     explicit SimpleSquareLoss(const Shape& shape, float init_val = 0.5f) {
@@ -31,7 +31,7 @@ struct SimpleSquareLoss {
         param->data().upload(m);
         param->grad().clear();
 
-        sq = std::make_unique<ElemwiseUnary>(param.get(), PowInt{2});
+        sq = std::make_unique<ElemwiseBinary>(param.get(), param.get(), MulBinary{});
         loss = std::make_unique<Mean>(sq.get());
     }
 

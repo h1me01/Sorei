@@ -17,7 +17,18 @@ class MatMul : public TypedLayer<float> {
     void forward() override { forward(weight_->data(), input_->data(), data()); }
 
     void backward() override {
-        backward(weight_->data(), weight_->grad(), input_->data(), input_->grad(), grad());
+        const bool ow_input = input_->consume_grad_write();
+        const bool ow_weight = weight_->consume_grad_write();
+
+        backward(
+            weight_->data(),
+            weight_->grad(),
+            input_->data(),
+            input_->grad(),
+            grad(),
+            ow_input,
+            ow_weight
+        );
     }
 
     static void forward(
@@ -31,7 +42,9 @@ class MatMul : public TypedLayer<float> {
         matrix::DeviceMatrix<float>& weight_g,
         const matrix::DeviceMatrix<float>& in,
         matrix::DeviceMatrix<float>& in_g,
-        const matrix::DeviceMatrix<float>& out_g
+        const matrix::DeviceMatrix<float>& out_g,
+        bool ow_in_g = false,
+        bool ow_weight_g = false
     );
 
     std::vector<LayerInputSlot> mutable_inputs() override {

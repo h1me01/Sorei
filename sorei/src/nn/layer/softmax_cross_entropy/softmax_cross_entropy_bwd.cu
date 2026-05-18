@@ -2,6 +2,7 @@
 
 namespace sorei::nn {
 
+template <bool Overwrite>
 __global__ void softmax_cross_entropy_backward_kernel(
     const float* probs,
     const int* labels,
@@ -27,7 +28,10 @@ __global__ void softmax_cross_entropy_backward_kernel(
         float g = sample_probs[c];
         if (c == label)
             g -= 1.f;
-        sample_grad[c] += g * scale;
+        if constexpr (Overwrite)
+            sample_grad[c] = g * scale;
+        else
+            sample_grad[c] += g * scale;
     }
 }
 
@@ -39,14 +43,25 @@ void SoftmaxCrossEntropy::backward() {
     const auto& out_grad = grad();
     auto& in_grad = input_->grad();
 
-    softmax_cross_entropy_backward_kernel<<<logits.cols(), get_block_size()>>>(
-        probs_.data(),
-        labels_->data().data(),
-        out_grad.data(),
-        in_grad.data(),
-        logits.cols(),
-        logits.rows()
-    );
+    if (input_->consume_grad_write()) {
+        softmax_cross_entropy_backward_kernel<true><<<logits.cols(), get_block_size()>>>(
+            probs_.data(),
+            labels_->data().data(),
+            out_grad.data(),
+            in_grad.data(),
+            logits.cols(),
+            logits.rows()
+        );
+    } else {
+        softmax_cross_entropy_backward_kernel<false><<<logits.cols(), get_block_size()>>>(
+            probs_.data(),
+            labels_->data().data(),
+            out_grad.data(),
+            in_grad.data(),
+            logits.cols(),
+            logits.rows()
+        );
+    }
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }

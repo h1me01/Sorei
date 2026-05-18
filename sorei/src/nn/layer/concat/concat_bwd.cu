@@ -4,7 +4,7 @@ namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 256;
 
-template <ConcatAxis Axis>
+template <ConcatAxis Axis, bool Overwrite>
 __global__ void concat_bwd_kernel(
     float* in_g,
     const float* out_g,
@@ -22,7 +22,10 @@ __global__ void concat_bwd_kernel(
 
     const int out_row = (Axis == ConcatAxis::Rows) ? row + offset : row;
     const int out_col = (Axis == ConcatAxis::Rows) ? col : col + offset;
-    in_g[row + col * in_r] += out_g[out_row + out_col * out_r];
+    if constexpr (Overwrite)
+        in_g[row + col * in_r] = out_g[out_row + out_col * out_r];
+    else
+        in_g[row + col * in_r] += out_g[out_row + out_col * out_r];
 }
 
 void Concat::backward() {
@@ -40,16 +43,28 @@ void Concat::backward() {
             SOREI_CHECK(in_g.cols() == out_g.cols());
             SOREI_CHECK(offset + in_g.rows() <= out_g.rows());
 
-            concat_bwd_kernel<ConcatAxis::Rows><<<blocks, BLOCK_SIZE>>>(
-                in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
-            );
+            if (input->consume_grad_write()) {
+                concat_bwd_kernel<ConcatAxis::Rows, true><<<blocks, BLOCK_SIZE>>>(
+                    in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
+                );
+            } else {
+                concat_bwd_kernel<ConcatAxis::Rows, false><<<blocks, BLOCK_SIZE>>>(
+                    in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
+                );
+            }
         } else {
             SOREI_CHECK(in_g.rows() == out_g.rows());
             SOREI_CHECK(offset + in_g.cols() <= out_g.cols());
 
-            concat_bwd_kernel<ConcatAxis::Cols><<<blocks, BLOCK_SIZE>>>(
-                in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
-            );
+            if (input->consume_grad_write()) {
+                concat_bwd_kernel<ConcatAxis::Cols, true><<<blocks, BLOCK_SIZE>>>(
+                    in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
+                );
+            } else {
+                concat_bwd_kernel<ConcatAxis::Cols, false><<<blocks, BLOCK_SIZE>>>(
+                    in_g.data(), out_g.data(), in_g.rows(), in_g.cols(), out_g.rows(), offset
+                );
+            }
         }
 
         SOREI_CUDA_KERNEL_LAUNCH_CHECK();

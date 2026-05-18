@@ -43,6 +43,9 @@ void Select::backward() {
     SOREI_CHECK(out_g.data());
     SOREI_CHECK(indices.data());
 
+    if (input_->consume_grad_write())
+        in_g.clear();
+
     const int blocks = cuda::ceil_div(out_g.size(), BLOCK_SIZE);
     select_bwd_kernel<<<blocks, BLOCK_SIZE>>>(
         in_g.data(), out_g.data(), indices.data(), in_g.rows(), out_g.rows(), out_g.cols()

@@ -48,7 +48,14 @@ class Network {
     void backward() {
         SOREI_CHECK(loss_);
 
-        zero_grads();
+        for (auto* layer : layers_) {
+            if (layer == loss_)
+                continue;
+            if (dynamic_cast<Param*>(layer))
+                continue;
+            if (auto* tl = dynamic_cast<TypedLayer<float>*>(layer))
+                tl->reset_grad_write();
+        }
 
         for (int i = (int)layers_.size() - 1; i >= 0; --i)
             layers_[i]->backward();
@@ -77,22 +84,6 @@ class Network {
 
     static bool contains(const std::vector<Layer*>& layers, Layer* target) {
         return std::find(layers.begin(), layers.end(), target) != layers.end();
-    }
-
-    void zero_grads() {
-        std::unordered_set<matrix::DeviceMatrix<float>*> seen;
-        for (auto* layer : layers_) {
-            if (layer == loss_)
-                continue;
-
-            auto* layer_t = dynamic_cast<TypedLayer<float>*>(layer);
-            if (!layer_t)
-                continue;
-
-            auto* g = &layer_t->grad();
-            if (g && !g->empty() && seen.insert(g).second)
-                g->clear();
-        }
     }
 };
 

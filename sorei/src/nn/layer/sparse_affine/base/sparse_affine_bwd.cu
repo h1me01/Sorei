@@ -52,6 +52,11 @@ void SparseAffine::backward() {
     auto& out_g = effective_grad();
     auto& indices = input_->data();
 
+    if (weight_->consume_grad_write())
+        weight_g.clear();
+    if (bias_->consume_grad_write())
+        bias_g.clear();
+
     SOREI_CHECK(weight_g.data());
     SOREI_CHECK(bias_g.data());
     SOREI_CHECK(out.data());

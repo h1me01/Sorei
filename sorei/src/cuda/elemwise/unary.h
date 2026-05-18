@@ -4,8 +4,6 @@
 
 namespace sorei::cuda {
 
-// Basic arithmetic
-
 struct Identity {
     static constexpr std::string_view name = "Identity";
 
@@ -30,8 +28,6 @@ struct DivLeftUnary {
     __device__ float backward(float x) const { return -scalar / (x * x); }
 };
 
-// Unary operations
-
 struct Clamp {
     static constexpr std::string_view name = "Clamp";
 
@@ -49,8 +45,6 @@ struct Abs {
         return (x > 0.0f) ? 1.0f : ((x < 0.0f) ? -1.0f : 0.0f);
     }
 };
-
-// Activation functions
 
 struct ReLU {
     static constexpr std::string_view name = "ReLU";

@@ -114,6 +114,14 @@ class TypedLayer : public Layer {
         return grad_;
     }
 
+    bool consume_grad_write() {
+        bool first = grad_first_write_;
+        grad_first_write_ = false;
+        return first;
+    }
+
+    void reset_grad_write() { grad_first_write_ = true; }
+
   protected:
     void drop_buffers() {
         data_ = matrix::DeviceMatrix<T>();
@@ -123,6 +131,7 @@ class TypedLayer : public Layer {
 
   private:
     bool drop_buffers_ = false;
+    bool grad_first_write_ = true;
     matrix::DeviceMatrix<T> data_;
     matrix::DeviceMatrix<T> grad_;
 };

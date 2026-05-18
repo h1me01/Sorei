@@ -4,7 +4,7 @@ namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 1024;
 
-template <typename Op, bool GradF, bool GradB>
+template <typename Op, bool GradA, bool GradB, bool OverwriteA>
 __global__ void binary_broadcast_backward_kernel(
     const float* full,
     const float* broadcast,
@@ -21,17 +21,22 @@ __global__ void binary_broadcast_backward_kernel(
 
     const int b_idx = idx % out_r;
 
-    const float go = out_g[idx];
-    float fg = 0.0f;
-    float bg = 0.0f;
+    const float o_g = out_g[idx];
+    float a_g = 0.0f;
+    float b_g = 0.0f;
 
-    op.backward(go, full[idx], broadcast[b_idx], fg, bg);
+    op.backward(full[idx], broadcast[b_idx], a_g, b_g, o_g);
 
-    if constexpr (GradF)
-        full_g[idx] += fg;
+    if constexpr (GradA) {
+        if constexpr (OverwriteA)
+            full_g[idx] = a_g;
+        else
+            full_g[idx] += a_g;
+    }
+
     if constexpr (GradB)
-        if (bg != 0.0f)
-            atomicAdd(&broadcast_g[b_idx], bg);
+        if (b_g != 0.0f)
+            atomicAdd(&broadcast_g[b_idx], b_g);
 }
 
 void ElemwiseBinary::broadcast_backward(
@@ -40,7 +45,9 @@ void ElemwiseBinary::broadcast_backward(
     const matrix::DeviceMatrix<float>& b,
     matrix::DeviceMatrix<float>& b_g,
     const matrix::DeviceMatrix<float>& c_g,
-    const Op& op
+    const Op& op,
+    bool ow_a_g,
+    bool ow_b_g
 ) {
     const bool repeat_a = (a.cols() == 1);
 
@@ -49,6 +56,8 @@ void ElemwiseBinary::broadcast_backward(
 
     const auto& broadcast = repeat_a ? a : b;
     auto& broadcast_g = repeat_a ? a_g : b_g;
+
+    const bool ow_full = repeat_a ? ow_b_g : ow_a_g;
 
     SOREI_CHECK(full.shape() == c_g.shape());
     SOREI_CHECK(full.rows() == broadcast.rows());
@@ -61,30 +70,42 @@ void ElemwiseBinary::broadcast_backward(
     SOREI_CHECK(c_g.data() != full.data());
     SOREI_CHECK(c_g.data() != broadcast.data());
 
+    const bool ow_broadcast = repeat_a ? ow_a_g : ow_b_g;
+    if (ow_broadcast && !broadcast_g.empty())
+        broadcast_g.clear();
+
     const int grid = cuda::ceil_div(c_g.size(), BLOCK_SIZE);
 
     std::visit(
         [&](auto&& o) {
-            auto launch = [&]<bool GradF, bool GradB>() {
-                binary_broadcast_backward_kernel<decltype(o), GradF, GradB><<<grid, BLOCK_SIZE>>>(
-                    full.data(),
-                    broadcast.data(),
-                    full_g.data(),
-                    broadcast_g.data(),
-                    c_g.data(),
-                    c_g.rows(),
-                    c_g.size(),
-                    o
-                );
+            auto launch = [&]<bool GradF, bool GradB, bool OvF>() {
+                binary_broadcast_backward_kernel<std::decay_t<decltype(o)>, GradF, GradB, OvF>
+                    <<<grid, BLOCK_SIZE>>>(
+                        full.data(),
+                        broadcast.data(),
+                        full_g.data(),
+                        broadcast_g.data(),
+                        c_g.data(),
+                        c_g.rows(),
+                        c_g.size(),
+                        o
+                    );
             };
 
             bool ha = !full_g.empty(), hb = !broadcast_g.empty();
-            if (ha && hb)
-                launch.template operator()<true, true>();
-            else if (ha)
-                launch.template operator()<true, false>();
-            else if (hb)
-                launch.template operator()<false, true>();
+            if (ha && hb) {
+                if (ow_full)
+                    launch.template operator()<true, true, true>();
+                else
+                    launch.template operator()<true, true, false>();
+            } else if (ha) {
+                if (ow_full)
+                    launch.template operator()<true, false, true>();
+                else
+                    launch.template operator()<true, false, false>();
+            } else if (hb) {
+                launch.template operator()<false, true, false>();
+            }
         },
         op
     );

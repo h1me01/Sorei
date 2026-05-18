@@ -25,11 +25,29 @@ class Affine : public TypedLayer<float> {
     }
 
     void backward() override {
+        const bool ow_bias = bias_->consume_grad_write();
+        const bool ow_input = input_->consume_grad_write();
+        const bool ow_weight = weight_->consume_grad_write();
+
         matrix::DeviceMatrix<float> tmp;
         ElemwiseBinary::broadcast_backward(
-            bias_->data(), bias_->grad(), data(), tmp, grad(), ElemwiseBinary::Op{cuda::AddBinary{}}
+            bias_->data(),
+            bias_->grad(),
+            data(),
+            tmp,
+            grad(),
+            ElemwiseBinary::Op{cuda::AddBinary{}},
+            ow_bias
         );
-        MatMul::backward(weight_->data(), weight_->grad(), input_->data(), input_->grad(), grad());
+        MatMul::backward(
+            weight_->data(),
+            weight_->grad(),
+            input_->data(),
+            input_->grad(),
+            grad(),
+            ow_input,
+            ow_weight
+        );
     }
 
     std::vector<LayerInputSlot> mutable_inputs() override {

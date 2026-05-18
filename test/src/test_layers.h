@@ -12,17 +12,6 @@ using namespace sorei::matrix;
 using namespace sorei::nn;
 using namespace sorei::cuda;
 
-namespace {
-
-template <typename T>
-T* cast_layer(Layer* layer) {
-    auto* typed = dynamic_cast<T*>(layer);
-    SOREI_CHECK(typed != nullptr);
-    return typed;
-}
-
-} // namespace
-
 TEST(Layer, Param_Shape) {
     Param p({8, 4});
     EXPECT_EQ(p.data().rows(), 8);

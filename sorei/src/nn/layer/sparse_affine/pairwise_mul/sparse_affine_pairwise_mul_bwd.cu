@@ -21,7 +21,6 @@ __global__ void sparse_affine_pairwise_mul_bwd_kernel(
 ) {
     const int row = blockIdx.y * blockDim.x + threadIdx.x;
     const int batch_idx = blockIdx.x;
-
     const int half = weight_r / 2;
 
     extern __shared__ int shared_features[];
@@ -75,6 +74,11 @@ void SparseAffinePairwiseMul::backward() {
     auto& bias = bias_->data();
     auto& out_g = effective_grad();
     auto& indices = input_->data();
+
+    if (weight_->consume_grad_write())
+        weight_g.clear();
+    if (bias_->consume_grad_write())
+        bias_g.clear();
 
     SOREI_CHECK(out_g.cols() <= 65535);
     SOREI_CHECK(indices.cols() == out_g.cols());

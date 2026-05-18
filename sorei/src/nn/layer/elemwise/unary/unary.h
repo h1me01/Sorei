@@ -25,7 +25,9 @@ class ElemwiseUnary : public TypedLayer<float> {
           op_(op) {}
 
     void forward() override { forward(input_->data(), data(), op_); }
-    void backward() override { backward(input_->data(), input_->grad(), grad(), op_); }
+    void backward() override {
+        backward(input_->data(), input_->grad(), grad(), op_, input_->consume_grad_write());
+    }
 
     static void
     forward(const matrix::DeviceMatrix<float>& in, matrix::DeviceMatrix<float>& out, const Op& op);
@@ -34,7 +36,8 @@ class ElemwiseUnary : public TypedLayer<float> {
         matrix::DeviceMatrix<float>& in,
         matrix::DeviceMatrix<float>& in_g,
         const matrix::DeviceMatrix<float>& out_g,
-        const Op& op
+        const Op& op,
+        bool overwrite
     );
 
     Op op() const { return op_; }

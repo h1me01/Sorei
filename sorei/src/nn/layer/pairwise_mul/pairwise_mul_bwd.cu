@@ -4,6 +4,7 @@ namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 256;
 
+template <bool Overwrite>
 __global__ void pairwise_mul_bwd_kernel(
     const float* in_d, float* in_g, const float* out_g, const int out_r, const int out_c
 ) {
@@ -19,17 +20,22 @@ __global__ void pairwise_mul_bwd_kernel(
     const int in_offset_a = batch_idx * 2 * out_r + feature_idx;
     const int in_offset_b = in_offset_a + out_r;
 
-    in_g[in_offset_a] += grad * in_d[in_offset_b];
-    in_g[in_offset_b] += grad * in_d[in_offset_a];
+    if constexpr (Overwrite) {
+        in_g[in_offset_a] = grad * in_d[in_offset_b];
+        in_g[in_offset_b] = grad * in_d[in_offset_a];
+    } else {
+        in_g[in_offset_a] += grad * in_d[in_offset_b];
+        in_g[in_offset_b] += grad * in_d[in_offset_a];
+    }
 }
 
 void PairwiseMul::backward() {
+    if (!input_->requires_grad())
+        return;
+
     auto& in_g = input_->grad();
     auto& out_g = grad();
     auto& in = input_->data();
-
-    if (!input_->requires_grad())
-        return;
 
     SOREI_CHECK(in.rows() % 2 == 0);
     SOREI_CHECK(in.cols() == out_g.cols());
@@ -39,9 +45,16 @@ void PairwiseMul::backward() {
     SOREI_CHECK(out_g.data());
 
     const int blocks = cuda::ceil_div(out_g.size(), BLOCK_SIZE);
-    pairwise_mul_bwd_kernel<<<blocks, BLOCK_SIZE>>>(
-        in.data(), in_g.data(), out_g.data(), out_g.rows(), out_g.cols()
-    );
+
+    if (input_->consume_grad_write()) {
+        pairwise_mul_bwd_kernel<true><<<blocks, BLOCK_SIZE>>>(
+            in.data(), in_g.data(), out_g.data(), out_g.rows(), out_g.cols()
+        );
+    } else {
+        pairwise_mul_bwd_kernel<false><<<blocks, BLOCK_SIZE>>>(
+            in.data(), in_g.data(), out_g.data(), out_g.rows(), out_g.cols()
+        );
+    }
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }

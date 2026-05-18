@@ -20,7 +20,6 @@ __global__ void sparse_affine_pairwise_mul_fwd_vec_kernel(
 
     const int row4 = blockIdx.x * blockDim.x + threadIdx.x;
     const int batch_idx = blockIdx.y;
-
     const int half4 = weight_r4 / 2;
 
     if (row4 >= half4 || batch_idx >= batch_size)

@@ -37,8 +37,6 @@ __host__ __device__ constexpr T ceil_div(T a, T b) {
 }
 
 SOREI_DEFINE_T4_OP(add_t4, +)
-SOREI_DEFINE_T4_OP(sub_t4, -)
 SOREI_DEFINE_T4_OP(mul_t4, *)
-SOREI_DEFINE_T4_OP(div_t4, /)
 
 } // namespace sorei::cuda

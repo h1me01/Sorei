@@ -62,7 +62,7 @@ static HostMatrix<float> run_unary_bwd(
     dev_in_g.clear();
     auto dev_og = DeviceMatrix<float>::from_host(host_og);
 
-    ElemwiseUnary::backward(dev_in, dev_in_g, dev_og, op);
+    ElemwiseUnary::backward(dev_in, dev_in_g, dev_og, op, false);
     cudaDeviceSynchronize();
     return dev_in_g.to_host();
 }

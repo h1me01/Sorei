@@ -27,9 +27,9 @@ __device__ void adam_update(
 
 __global__ void adam_kernel(
     float* data,
-    const float* grads,
     float* moms,
     float* vels,
+    const float* grads,
     const float lr,
     const float beta1,
     const float beta2,
@@ -88,9 +88,9 @@ void AdamW::step(float lr) {
         const int blocks = cuda::ceil_div(data.size(), 4 * BLOCK_SIZE);
         adam_kernel<<<blocks, BLOCK_SIZE>>>(
             data.data(),
-            grad.data(),
             moms.data(),
             vels.data(),
+            grad.data(),
             lr,
             beta1_,
             beta2_,
@@ -101,6 +101,8 @@ void AdamW::step(float lr) {
         );
 
         SOREI_CUDA_KERNEL_LAUNCH_CHECK();
+
+        grad.clear();
     }
 }
 

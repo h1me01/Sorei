@@ -36,13 +36,30 @@ class ElemwiseBinary : public TypedLayer<float> {
     }
 
     void backward() override {
+        const bool ow1 = input1_->consume_grad_write();
+        const bool ow2 = input2_->consume_grad_write();
+
         if (broadcast()) {
             broadcast_backward(
-                input1_->data(), input1_->grad(), input2_->data(), input2_->grad(), grad(), op_
+                input1_->data(),
+                input1_->grad(),
+                input2_->data(),
+                input2_->grad(),
+                grad(),
+                op_,
+                ow1,
+                ow2
             );
         } else {
             backward(
-                input1_->data(), input1_->grad(), input2_->data(), input2_->grad(), grad(), op_
+                input1_->data(),
+                input1_->grad(),
+                input2_->data(),
+                input2_->grad(),
+                grad(),
+                op_,
+                ow1,
+                ow2
             );
         }
     }
@@ -60,7 +77,9 @@ class ElemwiseBinary : public TypedLayer<float> {
         const matrix::DeviceMatrix<float>& b,
         matrix::DeviceMatrix<float>& b_g,
         const matrix::DeviceMatrix<float>& c_g,
-        const Op& op
+        const Op& op,
+        bool ow_a_g = false,
+        bool ow_b_g = false
     );
 
     static void broadcast_forward(
@@ -76,7 +95,9 @@ class ElemwiseBinary : public TypedLayer<float> {
         const matrix::DeviceMatrix<float>& b,
         matrix::DeviceMatrix<float>& b_g,
         const matrix::DeviceMatrix<float>& c_g,
-        const Op& op
+        const Op& op,
+        bool ow_a_g = false,
+        bool ow_b_g = false
     );
 
     std::vector<LayerInputSlot> mutable_inputs() override {

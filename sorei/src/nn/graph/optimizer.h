@@ -24,8 +24,6 @@ class GraphOptimizer {
     Layer* prediction_ = nullptr;
     Layer* loss_ = nullptr;
 
-    // Consumer map
-
     using ConsumerMap = std::unordered_map<Layer*, std::vector<Layer*>>;
 
     ConsumerMap build_consumers(const Graph& graph) {
@@ -44,8 +42,6 @@ class GraphOptimizer {
             return nullptr;
         return it->second[0];
     }
-
-    // Helper
 
     void redirect_and_remove(Graph& graph, Layer* removed, Layer* replacement) {
         for (const auto& node : graph.topological_sort({prediction_, loss_}))

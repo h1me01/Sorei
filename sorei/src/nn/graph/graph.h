@@ -115,12 +115,7 @@ class Graph {
         });
 
         if (it != nodes_.end()) {
-            for (auto nit = named_ops_.begin(); nit != named_ops_.end(); ++nit) {
-                if (nit->second == op) {
-                    named_ops_.erase(nit);
-                    break;
-                }
-            }
+            std::erase_if(named_ops_, [op](const auto& kv) { return kv.second == op; });
             nodes_.erase(it);
         }
     }

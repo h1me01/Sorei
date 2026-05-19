@@ -21,7 +21,7 @@ class ElemwiseUnary : public TypedLayer<float> {
   public:
     ElemwiseUnary(Layer* input, Op op)
         : TypedLayer<float>(elemwise_op_name(op)),
-          input_(layer_cast<TypedLayer<float>>(input)),
+          input_(checked_cast<TypedLayer<float>>(input)),
           op_(op) {}
 
     void forward() override { forward(input_->data(), data(), op_); }

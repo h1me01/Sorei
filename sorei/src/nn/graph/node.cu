@@ -3,8 +3,6 @@
 
 namespace sorei::nn {
 
-// Node
-
 Node Node::relu() const { return gb().relu(*this); }
 Node Node::clamped_relu() const { return gb().clamped_relu(*this); }
 Node Node::squared_clamped_relu() const { return gb().squared_clamped_relu(*this); }
@@ -35,8 +33,6 @@ Node operator+(float s, const Node& n) { return n.gb().add(n, s); }
 Node operator-(float s, const Node& n) { return n.gb().sub(s, n); }
 Node operator*(float s, const Node& n) { return n.gb().mul(n, s); }
 Node operator/(float s, const Node& n) { return n.gb().div(s, n); }
-
-// AffineLayer
 
 Node AffineLayer::operator()(const Node& input) const {
     return weight.gb().affine(input, weight, bias);

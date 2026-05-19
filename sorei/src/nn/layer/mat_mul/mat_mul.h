@@ -8,8 +8,8 @@ class MatMul : public TypedLayer<float> {
   public:
     MatMul(Layer* weight, Layer* input)
         : TypedLayer<float>("MatMul"),
-          weight_(layer_cast<TypedLayer<float>>(weight)),
-          input_(layer_cast<TypedLayer<float>>(input)) {
+          weight_(checked_cast<TypedLayer<float>>(weight)),
+          input_(checked_cast<TypedLayer<float>>(input)) {
 
         SOREI_CHECK(weight_->shape().cols() == input_->shape().rows());
     }

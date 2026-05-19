@@ -13,6 +13,8 @@
 
 namespace sorei::test {
 
+using namespace matrix;
+
 // numerically verifies backward
 inline float grad_check(
     nn::TypedLayer<float>* layer,
@@ -20,8 +22,6 @@ inline float grad_check(
     float eps = 1e-3f,
     float* out_abs = nullptr
 ) {
-    using namespace matrix;
-
     layer->forward();
     cudaDeviceSynchronize();
 
@@ -94,14 +94,13 @@ inline float grad_check(
 }
 
 inline std::unique_ptr<nn::Param>
-make_param(const matrix::Shape& shape, float lo = -0.5f, float hi = 0.5f) {
+make_param(const Shape& shape, float lo = -0.5f, float hi = 0.5f) {
     auto p = std::make_unique<nn::Param>(shape);
     p->uniform_init(lo, hi);
     return p;
 }
 
-inline std::unique_ptr<nn::Param> make_param_filled(const matrix::Shape& shape, float val) {
-    using namespace matrix;
+inline std::unique_ptr<nn::Param> make_param_filled(const Shape& shape, float val) {
     auto p = std::make_unique<nn::Param>(shape);
     HostMatrix<float> m(shape);
     m.fill(val);
@@ -111,8 +110,7 @@ inline std::unique_ptr<nn::Param> make_param_filled(const matrix::Shape& shape, 
 }
 
 inline std::unique_ptr<nn::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
-    using namespace matrix;
-    auto inp = std::make_unique<nn::Input<int>>(matrix::Shape{1, cols});
+    auto inp = std::make_unique<nn::Input<int>>(Shape{1, cols}, "input");
     HostMatrix<int> m({1, cols});
     for (int i = 0; i < cols; ++i)
         m(0, i) = vals[i];

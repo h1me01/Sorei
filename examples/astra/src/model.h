@@ -18,9 +18,9 @@ write_quantized(std::ostream& f, const sorei::matrix::HostMatrix<float>& src, in
         if constexpr (std::is_same_v<T, float>) {
             dst(i) = src(i);
         } else {
-            constexpr T lo = std::numeric_limits<T>::min();
-            constexpr T hi = std::numeric_limits<T>::max();
-            const T qv = static_cast<T>(std::round(src(i) * scale));
+            constexpr double lo = std::numeric_limits<T>::min();
+            constexpr double hi = std::numeric_limits<T>::max();
+            const double qv = std::round((double)scale * (double)src(i));
             if (qv < lo || qv > hi)
                 sorei::println("Warning: value {} out of range, clamping", src(i));
             dst(i) = std::clamp(qv, lo, hi);
@@ -37,14 +37,14 @@ write_quantized(std::ostream& f, const sorei::matrix::HostMatrix<float>& src, in
 class AstraInputs {
   public:
     static constexpr std::array<int, 64> INPUT_BUCKET = {
-        0, 0, 1, 1, 1, 1, 0, 0, //
-        2, 2, 2, 2, 2, 2, 2, 2, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
-        3, 3, 3, 3, 3, 3, 3, 3, //
+        0, 1, 2, 3, 3, 2, 1, 0, //
+        4, 4, 5, 5, 5, 5, 4, 4, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
+        6, 6, 6, 6, 6, 6, 6, 6, //
     };
 
     static constexpr int NUM_INPUT_BUCKETS = std::ranges::max(INPUT_BUCKET) + 1;
@@ -118,18 +118,13 @@ class AstraInputs {
 inline float AstraInputs::WDL_WEIGHT = 0.5f;
 
 struct AstraModel : sorei::nn::Model {
-    using AffineLayer = sorei::nn::AffineLayer;
-    using ParamNode = sorei::nn::ParamNode;
-    using Node = sorei::nn::Node;
-    using ConcatAxis = sorei::nn::ConcatAxis;
-
     static constexpr int FT_SIZE = 1024;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
     static constexpr int OUTPUT_BUCKETS = 8;
 
-    ParamNode factorizer;
-    AffineLayer ft, l1, l2, l3;
+    sorei::nn::ParamNode factorizer;
+    sorei::nn::AffineLayer ft, l1, l2, l3;
 
     sorei::nn::GraphOutput build_graph(sorei::nn::GraphBuilder& b) override {
         // params
@@ -147,7 +142,8 @@ struct AstraModel : sorei::nn::Model {
 
         // forward pass
         auto repeated_factorizer = b.concat(
-            std::vector<Node>(AstraInputs::NUM_INPUT_BUCKETS, factorizer), ConcatAxis::Cols
+            std::vector<sorei::nn::Node>(AstraInputs::NUM_INPUT_BUCKETS, factorizer),
+            sorei::nn::ConcatAxis::Cols
         );
         auto factorized_ftw = repeated_factorizer + ft.weight;
 

@@ -107,9 +107,7 @@ class AdamW : public Optimizer {
             if (bytes_read != bytes_to_read) {
                 error(
                     "Optimizer: failed to read state from file {}, expected to read {} elements "
-                    "but "
-                    "read "
-                    "{}",
+                    "but read {}",
                     file,
                     element_count,
                     bytes_read / sizeof(float)

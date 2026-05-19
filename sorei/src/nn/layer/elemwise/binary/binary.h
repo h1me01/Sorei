@@ -12,8 +12,8 @@ class ElemwiseBinary : public TypedLayer<float> {
   public:
     ElemwiseBinary(Layer* input1, Layer* input2, Op op)
         : TypedLayer<float>(elemwise_op_name(op)),
-          input1_(layer_cast<TypedLayer<float>>(input1)),
-          input2_(layer_cast<TypedLayer<float>>(input2)),
+          input1_(checked_cast<TypedLayer<float>>(input1)),
+          input2_(checked_cast<TypedLayer<float>>(input2)),
           op_(op) {
 
         const auto s1 = input1_->shape();

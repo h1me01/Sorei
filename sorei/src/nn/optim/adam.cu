@@ -101,8 +101,6 @@ void AdamW::step(float lr) {
         );
 
         SOREI_CUDA_KERNEL_LAUNCH_CHECK();
-
-        grad.clear();
     }
 }
 

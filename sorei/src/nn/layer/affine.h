@@ -10,9 +10,9 @@ class Affine : public TypedLayer<float> {
   public:
     Affine(Layer* input, Layer* weight, Layer* bias)
         : TypedLayer<float>("Affine"),
-          input_(layer_cast<TypedLayer<float>>(input)),
-          weight_(layer_cast<TypedLayer<float>>(weight)),
-          bias_(layer_cast<TypedLayer<float>>(bias)) {
+          input_(checked_cast<TypedLayer<float>>(input)),
+          weight_(checked_cast<TypedLayer<float>>(weight)),
+          bias_(checked_cast<TypedLayer<float>>(bias)) {
 
         SOREI_CHECK(weight_->shape().cols() == input_->shape().rows());
     }

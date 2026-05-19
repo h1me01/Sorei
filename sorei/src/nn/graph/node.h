@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../layer/include.h"
+#include "../../matrix/include.h"
+
 namespace sorei::nn {
 
 class GraphBuilder;
-
-// Node
 
 class Node {
   public:
@@ -60,8 +61,6 @@ Node operator-(float s, const Node& n);
 Node operator*(float s, const Node& n);
 Node operator/(float s, const Node& n);
 
-// Param
-
 struct ParamNode : Node {
     ParamNode() = default;
 
@@ -78,10 +77,8 @@ struct ParamNode : Node {
     int input_dim() const { return get()->data().shape().cols(); }
     int output_dim() const { return get()->data().shape().rows(); }
 
-    Param* get() const { return dynamic_cast<Param*>(Node::get()); }
+    Param* get() const { return checked_cast<Param>(Node::get()); }
 };
-
-// AffineLayer
 
 struct AffineLayer {
     ParamNode weight;

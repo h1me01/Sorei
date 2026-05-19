@@ -20,11 +20,7 @@ class LayerInputSlot {
         return LayerInputSlot(
             &slot,
             [](void* ptr) -> Layer* { return *static_cast<T**>(ptr); },
-            [](void* ptr, Layer* layer) {
-                auto* typed = dynamic_cast<T*>(layer);
-                SOREI_CHECK(typed);
-                *static_cast<T**>(ptr) = typed;
-            }
+            [](void* ptr, Layer* layer) { *static_cast<T**>(ptr) = checked_cast<T>(layer); }
         );
     }
 
@@ -135,13 +131,5 @@ class TypedLayer : public Layer {
     matrix::DeviceMatrix<T> data_;
     matrix::DeviceMatrix<T> grad_;
 };
-
-template <typename T>
-T* layer_cast(Layer* layer) {
-    SOREI_CHECK(layer);
-    T* typed = dynamic_cast<T*>(layer);
-    SOREI_CHECK(typed);
-    return typed;
-}
 
 } // namespace sorei::nn

@@ -12,8 +12,8 @@ class Network {
   public:
     Network(std::vector<Layer*> layers, Layer* prediction, Layer* loss = nullptr)
         : layers_(layers),
-          prediction_(dynamic_cast<TypedLayer<float>*>(prediction)),
-          loss_(dynamic_cast<TypedLayer<float>*>(loss)) {
+          prediction_(checked_cast<TypedLayer<float>>(prediction)),
+          loss_(checked_cast<TypedLayer<float>>(loss)) {
 
         for (auto* layer : layers_)
             SOREI_CHECK(layer);
@@ -49,10 +49,6 @@ class Network {
         SOREI_CHECK(loss_);
 
         for (auto* layer : layers_) {
-            if (layer == loss_)
-                continue;
-            if (dynamic_cast<Param*>(layer))
-                continue;
             if (auto* tl = dynamic_cast<TypedLayer<float>*>(layer))
                 tl->reset_grad_write();
         }

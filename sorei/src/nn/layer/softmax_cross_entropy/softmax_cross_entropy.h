@@ -11,7 +11,7 @@ class SoftmaxCrossEntropy : public TypedLayer<float> {
   public:
     SoftmaxCrossEntropy(Layer* logits, InputInt* labels)
         : TypedLayer<float>("SoftmaxCrossEntropy"),
-          input_(layer_cast<TypedLayer<float>>(logits)),
+          input_(checked_cast<TypedLayer<float>>(logits)),
           labels_(labels) {
 
         SOREI_CHECK(labels_);

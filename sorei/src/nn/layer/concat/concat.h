@@ -14,7 +14,7 @@ class ConcatBase : public TypedLayer<float> {
 
         SOREI_CHECK(!inputs.empty());
         for (auto* p : inputs)
-            inputs_.push_back(layer_cast<TypedLayer<float>>(p));
+            inputs_.push_back(checked_cast<TypedLayer<float>>(p));
     }
 
     ConcatAxis axis() const { return axis_; }

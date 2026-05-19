@@ -6,7 +6,7 @@ namespace sorei::nn {
 
 class BucketIndex : public TypedLayer<int> {
   public:
-    BucketIndex(int count, int size, const std::string& name = "BucketIndex")
+    BucketIndex(int count, int size, const std::string& name)
         : TypedLayer<int>(name),
           count_(count),
           shape_(1, size) {

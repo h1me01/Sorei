@@ -15,8 +15,8 @@ class SparseAffineBase : public TypedLayer<float> {
     SparseAffineBase(InputInt* input, Layer* weight, Layer* bias)
         : TypedLayer<float>("SparseAffine"),
           input_(input),
-          weight_(layer_cast<TypedLayer<float>>(weight)),
-          bias_(layer_cast<TypedLayer<float>>(bias)) {
+          weight_(checked_cast<TypedLayer<float>>(weight)),
+          bias_(checked_cast<TypedLayer<float>>(bias)) {
 
         SOREI_CHECK(input);
     }

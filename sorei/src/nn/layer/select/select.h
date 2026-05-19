@@ -9,7 +9,7 @@ class Select : public TypedLayer<float> {
   public:
     Select(Layer* input, BucketIndex* bucket)
         : TypedLayer<float>("Select"),
-          input_(layer_cast<TypedLayer<float>>(input)),
+          input_(checked_cast<TypedLayer<float>>(input)),
           bucket_(bucket) {
 
         SOREI_CHECK(bucket_);

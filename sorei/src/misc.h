@@ -50,6 +50,14 @@ template <typename... Args>
     std::abort();
 }
 
+template <typename T, typename Base>
+T* checked_cast(Base* ptr) {
+    SOREI_CHECK(ptr);
+    T* typed = dynamic_cast<T*>(ptr);
+    SOREI_CHECK(typed);
+    return typed;
+}
+
 inline void set_device(int id) { SOREI_CUDA_CHECK(cudaSetDevice(id)); }
 
 inline std::string device_info() {

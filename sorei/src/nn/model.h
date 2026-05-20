@@ -93,7 +93,7 @@ class Model {
         if (!f)
             error("Model: file {} does not exist", file);
 
-        for (auto* p : net_->params()) {
+        for (auto* p : network().params()) {
             matrix::HostMatrix<float> host(p->data().shape());
             const size_t expected = host.size() * sizeof(float);
             f.read(reinterpret_cast<char*>(host.data()), expected);
@@ -111,7 +111,7 @@ class Model {
         if (!f)
             error("Model: failed writing params to {}", file);
 
-        for (auto* p : net_->params()) {
+        for (auto* p : network().params()) {
             auto host = p->data().to_host();
             f.write(reinterpret_cast<const char*>(host.data()), host.size() * sizeof(float));
             if (!f)

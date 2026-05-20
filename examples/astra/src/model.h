@@ -7,33 +7,6 @@
 #include "../sf_binpack/training_data_format.h"
 #include "sorei/nn.h"
 
-namespace {
-
-template <typename T = float>
-static void
-write_quantized(std::ostream& f, const sorei::matrix::HostMatrix<float>& src, int scale = 1) {
-    sorei::matrix::HostMatrix<T> dst(src.shape());
-
-    for (int i = 0; i < src.size(); i++) {
-        if constexpr (std::is_same_v<T, float>) {
-            dst(i) = src(i);
-        } else {
-            constexpr double lo = std::numeric_limits<T>::min();
-            constexpr double hi = std::numeric_limits<T>::max();
-            const double qv = std::round((double)scale * (double)src(i));
-            if (qv < lo || qv > hi)
-                sorei::println("Warning: value {} out of range, clamping", src(i));
-            dst(i) = std::clamp(qv, lo, hi);
-        }
-    }
-
-    f.write(reinterpret_cast<const char*>(dst.data()), dst.size() * sizeof(T));
-    if (!f.good())
-        sorei::error("Failed writing quantized data");
-}
-
-} // namespace
-
 class AstraInputs {
   public:
     static constexpr std::array<int, 64> INPUT_BUCKET = {
@@ -197,10 +170,34 @@ struct AstraModel : sorei::nn::Model {
         write_quantized<int16_t>(f, factorized_ftw, 255);
         write_quantized<int16_t>(f, ft.bias.data().to_host(), 255);
         write_quantized<int8_t>(f, l1.weight.data().to_host().transpose(), 64);
-        write_quantized<float>(f, l1.bias.data().to_host());
-        write_quantized<float>(f, l2.weight.data().to_host().transpose());
-        write_quantized<float>(f, l2.bias.data().to_host());
-        write_quantized<float>(f, l3.weight.data().to_host().transpose());
-        write_quantized<float>(f, l3.bias.data().to_host());
+        write_quantized(f, l1.bias.data().to_host());
+        write_quantized(f, l2.weight.data().to_host().transpose());
+        write_quantized(f, l2.bias.data().to_host());
+        write_quantized(f, l3.weight.data().to_host().transpose());
+        write_quantized(f, l3.bias.data().to_host());
+    }
+
+  private:
+    template <typename T = float>
+    void
+    write_quantized(std::ostream& f, const sorei::matrix::HostMatrix<float>& src, int scale = 1) {
+        sorei::matrix::HostMatrix<T> dst(src.shape());
+
+        for (int i = 0; i < src.size(); i++) {
+            if constexpr (std::is_same_v<T, float>) {
+                dst(i) = src(i);
+            } else {
+                constexpr double lo = std::numeric_limits<T>::min();
+                constexpr double hi = std::numeric_limits<T>::max();
+                const double qv = std::round((double)scale * (double)src(i));
+                if (qv < lo || qv > hi)
+                    sorei::println("Warning: value {} out of range, clamping", src(i));
+                dst(i) = std::clamp(qv, lo, hi);
+            }
+        }
+
+        f.write(reinterpret_cast<const char*>(dst.data()), dst.size() * sizeof(T));
+        if (!f.good())
+            sorei::error("Failed writing quantized data");
     }
 };

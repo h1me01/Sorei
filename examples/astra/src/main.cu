@@ -47,31 +47,35 @@ class WDLScheduler {
     int step_count_ = 0;
 };
 
-int main() {
-    const float lr = 0.001f;
-    const int epochs = 400;
+void train(
+    const int epochs,
+    const float lr,
+    WDLScheduler wdl_sched,
+    const std::string& checkpoint_dir,
+    const std::string& model_path = ""
+) {
     const int batch_size = 16384;
     const int batches_per_epoch = 6104;
-    const int save_rate = 40;
-
-    const std::string checkpoint_dir = "checkpoints";
+    const int save_rate = 100;
 
     AstraModel model;
     for (auto p : model.params())
         p->set_bounds(-0.99f, 0.99f);
 
+    if (!model_path.empty()) {
+        model.load_params(model_path);
+        sorei::println("Loaded model parameters from {}", model_path);
+    }
+
     auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
     auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
-    auto wdl_sched = WDLScheduler(0.2f, 0.6f, epochs);
 
     auto binpack_loader = BinpackLoader(
-        batch_size,
-        4,
-        {"/home/h1me/Downloads/data.binpack"},
-        [](const binpack::TrainingDataEntry& e) {
-            return std::abs(e.score) > 10000 //
-                   || e.isInCheck()          //
-                   || e.isCapturingMove()    //
+        batch_size, 4, {"/workspace/data.binpack"}, [](const binpack::TrainingDataEntry& e) {
+            return e.ply < 8                    //
+                   || e.isInCheck()             //
+                   || e.isCapturingMove()       //
+                   || std::abs(e.score) > 10000 //
                    || e.move.type != chess::MoveType::Normal;
         }
     );
@@ -132,7 +136,7 @@ int main() {
             }
         }
 
-        if (epoch % save_rate == 0) {
+        if (epoch % save_rate == 0 || epoch == epochs) {
             std::string e_checkpoint_dir = checkpoint_dir + "/epoch_" + std::to_string(epoch);
             std::filesystem::create_directories(e_checkpoint_dir);
             model.save_params(e_checkpoint_dir + "/model.nn");
@@ -148,4 +152,21 @@ int main() {
     sorei::println(
         "\nstartpos eval: {:.2f}", model.predict(chess::Position::startPosition().fen())
     );
+}
+
+int main() {
+    const int stage1_epochs = 600;
+    const int stage2_epochs = 200;
+
+    train(stage1_epochs, 0.001f, WDLScheduler(0.2f, 0.6f, stage1_epochs), "stage1_checkpoints");
+
+    train(
+        stage2_epochs,
+        0.000025f,
+        WDLScheduler(1.0f, 1.0f, stage2_epochs),
+        "stage2_checkpoints",
+        std::format("stage1_checkpoints/epoch_{}/model.nn", stage1_epochs)
+    );
+
+    return 0;
 }

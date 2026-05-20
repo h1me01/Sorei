@@ -11,13 +11,13 @@ class AstraInputs {
   public:
     static constexpr std::array<int, 64> INPUT_BUCKET = {
         0, 1, 2, 3, 3, 2, 1, 0, //
-        4, 4, 5, 5, 5, 5, 4, 4, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
+        4, 5, 6, 7, 7, 6, 5, 4, //
+        8, 8, 8, 8, 8, 8, 8, 8, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
     };
 
     static constexpr int NUM_INPUT_BUCKETS = std::ranges::max(INPUT_BUCKET) + 1;
@@ -91,7 +91,7 @@ class AstraInputs {
 inline float AstraInputs::WDL_WEIGHT = 0.5f;
 
 struct AstraModel : sorei::nn::Model {
-    static constexpr int FT_SIZE = 1024;
+    static constexpr int FT_SIZE = 1536;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
     static constexpr int OUTPUT_BUCKETS = 8;

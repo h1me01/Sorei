@@ -76,8 +76,6 @@ int main() {
         }
     );
 
-    auto prefetcher = BatchPrefetcher(binpack_loader, batch_size);
-
     sorei::println("\nTraining configuration:");
     sorei::println("  Device         {}", sorei::device_info());
     sorei::println("  Epochs         {}", epochs);
@@ -100,16 +98,17 @@ int main() {
         model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            auto* dev_batch = prefetcher.next();
-            if (!dev_batch)
+            auto* data = binpack_loader.next();
+            if (!data)
                 break;
 
             model.forward(
-                {{"stm_in", dev_batch->stm_indices},
-                 {"nstm_in", dev_batch->nstm_indices},
-                 {"output_bucket", dev_batch->bucket_indices},
-                 {"target", dev_batch->targets}}
+                {{"stm_in", data->stm_indices()},
+                 {"nstm_in", data->nstm_indices()},
+                 {"output_bucket", data->bucket_indices()},
+                 {"target", data->targets()}}
             );
+            delete data;
             model.backward();
             optim.step(lr_sched.get_lr());
 

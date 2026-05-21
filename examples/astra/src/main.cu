@@ -71,7 +71,11 @@ void train(
     auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
 
     auto binpack_loader = BinpackLoader(
-        batch_size, 4, {"/workspace/data.binpack"}, [](const binpack::TrainingDataEntry& e) {
+        batch_size,
+        4,
+        {"/workspace/data.binpack"},
+        256 * 1024 * 1024,
+        [](const binpack::TrainingDataEntry& e) {
             return e.ply < 8                    //
                    || e.isInCheck()             //
                    || e.isCapturingMove()       //
@@ -79,8 +83,6 @@ void train(
                    || e.move.type != chess::MoveType::Normal;
         }
     );
-
-    auto prefetcher = BatchPrefetcher(binpack_loader, batch_size);
 
     sorei::println("\nTraining configuration:");
     sorei::println("  Device         {}", sorei::device_info());
@@ -104,16 +106,15 @@ void train(
         model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            auto* dev_batch = prefetcher.next();
-            if (!dev_batch)
-                break;
+            auto* data = binpack_loader.next();
 
             model.forward(
-                {{"stm_in", dev_batch->stm_indices},
-                 {"nstm_in", dev_batch->nstm_indices},
-                 {"output_bucket", dev_batch->bucket_indices},
-                 {"target", dev_batch->targets}}
+                {{"stm_in", data->stm_indices()},
+                 {"nstm_in", data->nstm_indices()},
+                 {"output_bucket", data->bucket_indices()},
+                 {"target", data->targets()}}
             );
+            delete data;
             model.backward();
             optim.step(lr_sched.get_lr());
 

@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <condition_variable>
+#include <cstdint>
 #include <deque>
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -18,7 +21,30 @@
 #include "model.h"
 #include "sorei/nn.h"
 
-// BinpackLoader
+class XorShift64 {
+  public:
+    XorShift64() {
+        auto ns = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        state_ = static_cast<uint64_t>(ns) | 1ULL;
+    }
+
+    uint64_t next() {
+        state_ ^= state_ << 13;
+        state_ ^= state_ >> 7;
+        state_ ^= state_ << 17;
+        return state_;
+    }
+
+  private:
+    uint64_t state_;
+};
+
+struct CompactEntry {
+    chess::CompressedPosition pos;
+    std::int16_t score;
+    std::int16_t result;
+};
+static_assert(sizeof(CompactEntry) == 32);
 
 class BinpackLoader {
   public:
@@ -30,12 +56,14 @@ class BinpackLoader {
         int batch_size,
         int thread_count,
         std::vector<std::string> filenames,
+        size_t shuffle_buffer_size = 0,
         SkipPredicate skip_predicate = nullptr
     )
         : batch_size_(batch_size),
           thread_count_(thread_count),
           filenames_(std::move(filenames)),
-          num_workers_(num_worker_threads(thread_count)),
+          shuffle_buffer_size_(shuffle_buffer_size),
+          num_workers_(shuffle_buffer_size > 0 ? 1 : num_worker_threads(thread_count)),
           stream_(std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
               num_reader_threads(thread_count_),
               filenames_,
@@ -45,39 +73,42 @@ class BinpackLoader {
           )) {
 
         validate_files(filenames_);
-
         stop_flag_.store(false);
 
-        auto worker = [this]() {
-            std::vector<binpack::TrainingDataEntry> entries;
-            entries.reserve(batch_size_);
+        if (shuffle_buffer_size_ > 0) {
+            workers_.emplace_back([this]() { run_shuffle_producer(); });
+        } else {
+            auto worker = [this]() {
+                std::vector<binpack::TrainingDataEntry> entries;
+                entries.reserve(batch_size_);
 
-            while (!stop_flag_.load()) {
-                entries.clear();
-                {
-                    stream_->fill(entries, batch_size_);
-                    if (entries.empty())
-                        break;
+                while (!stop_flag_.load()) {
+                    entries.clear();
+                    {
+                        stream_->fill(entries, batch_size_);
+                        if (entries.empty())
+                            break;
+                    }
+
+                    auto batch = new AstraInputs(entries);
+
+                    {
+                        std::unique_lock lock(batch_mutex_);
+                        batches_not_full_.wait(lock, [this]() {
+                            return batches_.size() < thread_count_ + 1 || stop_flag_.load();
+                        });
+                        batches_.emplace_back(batch);
+                        lock.unlock();
+                        batches_any_.notify_one();
+                    }
                 }
+                num_workers_.fetch_sub(1);
+                batches_any_.notify_one();
+            };
 
-                auto batch = new AstraInputs(entries);
-
-                {
-                    std::unique_lock lock(batch_mutex_);
-                    batches_not_full_.wait(lock, [this]() {
-                        return batches_.size() < thread_count_ + 1 || stop_flag_.load();
-                    });
-                    batches_.emplace_back(batch);
-                    lock.unlock();
-                    batches_any_.notify_one();
-                }
-            }
-            num_workers_.fetch_sub(1);
-            batches_any_.notify_one();
-        };
-
-        for (int i = 0; i < num_worker_threads(thread_count_); ++i)
-            workers_.emplace_back(worker);
+            for (int i = 0; i < num_worker_threads(thread_count_); ++i)
+                workers_.emplace_back(worker);
+        }
     }
 
     BinpackLoader(const BinpackLoader&) = delete;
@@ -88,6 +119,7 @@ class BinpackLoader {
     ~BinpackLoader() {
         stop_flag_.store(true);
         batches_not_full_.notify_all();
+        batches_any_.notify_all();
         for (auto& w : workers_)
             if (w.joinable())
                 w.join();
@@ -114,6 +146,7 @@ class BinpackLoader {
     int batch_size_;
     int thread_count_;
     std::vector<std::string> filenames_;
+    size_t shuffle_buffer_size_;
     std::deque<AstraInputs*> batches_;
     std::mutex batch_mutex_;
     std::condition_variable batches_not_full_;
@@ -122,6 +155,82 @@ class BinpackLoader {
     std::atomic_int num_workers_;
     std::vector<std::thread> workers_;
     std::unique_ptr<binpack::CompressedTrainingDataEntryParallelReader> stream_;
+
+    void fill_shuffle_buf(std::vector<CompactEntry>& buf) {
+        buf.clear();
+        while (buf.size() < shuffle_buffer_size_ && !stop_flag_.load()) {
+            const int want =
+                static_cast<int>(std::min<size_t>(16384, shuffle_buffer_size_ - buf.size()));
+            std::vector<binpack::TrainingDataEntry> tmp;
+            stream_->fill(tmp, want);
+            if (tmp.empty())
+                break;
+            for (auto& e : tmp)
+                buf.push_back({e.pos.compress(), e.score, e.result});
+        }
+    }
+
+    void run_shuffle_producer() {
+        XorShift64 rng;
+
+        std::vector<CompactEntry> cur_buf, nxt_buf;
+        cur_buf.reserve(shuffle_buffer_size_);
+        nxt_buf.reserve(shuffle_buffer_size_);
+
+        fill_shuffle_buf(cur_buf);
+        if (cur_buf.empty()) {
+            num_workers_.fetch_sub(1);
+            batches_any_.notify_one();
+            return;
+        }
+
+        while (!stop_flag_.load()) {
+            auto fill_future =
+                std::async(std::launch::async, [this, &nxt_buf]() { fill_shuffle_buf(nxt_buf); });
+
+            for (int64_t i = static_cast<int64_t>(cur_buf.size()) - 1; i > 0; --i) {
+                const int64_t j = static_cast<int64_t>(rng.next() % static_cast<uint64_t>(i + 1));
+                std::swap(cur_buf[i], cur_buf[j]);
+            }
+
+            for (size_t pos = 0;
+                 pos + static_cast<size_t>(batch_size_) <= cur_buf.size() && !stop_flag_.load();
+                 pos += static_cast<size_t>(batch_size_)) {
+
+                std::vector<binpack::TrainingDataEntry> entries;
+                entries.reserve(static_cast<size_t>(batch_size_));
+                for (int i = 0; i < batch_size_; ++i) {
+                    const CompactEntry& ce = cur_buf[pos + static_cast<size_t>(i)];
+                    binpack::TrainingDataEntry e;
+                    e.pos = ce.pos.decompress();
+                    e.score = ce.score;
+                    e.result = ce.result;
+                    entries.push_back(std::move(e));
+                }
+                auto* batch = new AstraInputs(entries);
+
+                {
+                    std::unique_lock lock(batch_mutex_);
+                    batches_not_full_.wait(lock, [this]() {
+                        return batches_.size() < static_cast<size_t>(thread_count_ + 1) ||
+                               stop_flag_.load();
+                    });
+                    batches_.emplace_back(batch);
+                    lock.unlock();
+                    batches_any_.notify_one();
+                }
+            }
+
+            fill_future.wait();
+            if (nxt_buf.empty())
+                break;
+
+            std::swap(cur_buf, nxt_buf);
+        }
+
+        num_workers_.fetch_sub(1);
+        batches_any_.notify_one();
+    }
 
     static int num_worker_threads(int concurrency) {
         return std::max(1, static_cast<int>(std::floor(concurrency * WORKER_THREAD_RATIO)));
@@ -143,116 +252,4 @@ class BinpackLoader {
                 sorei::error("BinpackLoader: {} is not a binpack file", f);
         }
     }
-};
-
-// DeviceBatchData
-
-struct DeviceBatchData {
-    sorei::matrix::DeviceMatrix<int> stm_indices;
-    sorei::matrix::DeviceMatrix<int> nstm_indices;
-    sorei::matrix::DeviceMatrix<int> bucket_indices;
-    sorei::matrix::DeviceMatrix<float> targets;
-
-    explicit DeviceBatchData(int n) {
-        stm_indices.resize({32, n});
-        nstm_indices.resize({32, n});
-        bucket_indices.resize({1, n});
-        targets.resize({1, n});
-
-        stm_staging_.resize({32, n});
-        nstm_staging_.resize({32, n});
-        bucket_staging_.resize({1, n});
-        targets_staging_.resize({1, n});
-    }
-
-    void upload_async(const AstraInputs& src, cudaStream_t stream) {
-        auto stage = [](auto& pinned, const auto& host) {
-            std::memcpy(pinned.data(), host.data(), host.bytes());
-        };
-        stage(stm_staging_, src.stm_indices());
-        stage(nstm_staging_, src.nstm_indices());
-        stage(bucket_staging_, src.bucket_indices());
-        stage(targets_staging_, src.targets());
-
-        auto dma = [&](auto& dst, const auto& pinned) {
-            SOREI_CUDA_CHECK(cudaMemcpyAsync(
-                dst.data(), pinned.data(), pinned.bytes(), cudaMemcpyHostToDevice, stream
-            ));
-        };
-        dma(stm_indices, stm_staging_);
-        dma(nstm_indices, nstm_staging_);
-        dma(bucket_indices, bucket_staging_);
-        dma(targets, targets_staging_);
-    }
-
-  private:
-    sorei::matrix::HostPinnedMatrix<int> stm_staging_;
-    sorei::matrix::HostPinnedMatrix<int> nstm_staging_;
-    sorei::matrix::HostPinnedMatrix<int> bucket_staging_;
-    sorei::matrix::HostPinnedMatrix<float> targets_staging_;
-};
-
-// BatchPrefetcher
-
-class BatchPrefetcher {
-  public:
-    BatchPrefetcher(BinpackLoader& loader, int batch_size)
-        : loader_(loader) {
-        SOREI_CUDA_CHECK(cudaStreamCreate(&stream_));
-        SOREI_CUDA_CHECK(cudaEventCreate(&event_));
-
-        buf_[0] = new DeviceBatchData(batch_size);
-        buf_[1] = new DeviceBatchData(batch_size);
-
-        next_host_ = loader_.next();
-        if (next_host_) {
-            buf_[write_]->upload_async(*next_host_, stream_);
-            SOREI_CUDA_CHECK(cudaEventRecord(event_, stream_));
-            delete next_host_;
-            next_host_ = loader_.next();
-            has_pending_ = true;
-        }
-    }
-
-    ~BatchPrefetcher() {
-        SOREI_CUDA_CHECK(cudaStreamSynchronize(stream_));
-        SOREI_CUDA_CHECK(cudaEventDestroy(event_));
-        SOREI_CUDA_CHECK(cudaStreamDestroy(stream_));
-        delete buf_[0];
-        delete buf_[1];
-        delete next_host_;
-    }
-
-    BatchPrefetcher(const BatchPrefetcher&) = delete;
-    BatchPrefetcher& operator=(const BatchPrefetcher&) = delete;
-    BatchPrefetcher(BatchPrefetcher&&) = delete;
-    BatchPrefetcher& operator=(BatchPrefetcher&&) = delete;
-
-    DeviceBatchData* next() {
-        if (!has_pending_)
-            return nullptr;
-
-        SOREI_CUDA_CHECK(cudaEventSynchronize(event_));
-        std::swap(read_, write_);
-        has_pending_ = false;
-
-        if (next_host_) {
-            buf_[write_]->upload_async(*next_host_, stream_);
-            SOREI_CUDA_CHECK(cudaEventRecord(event_, stream_));
-            delete next_host_;
-            next_host_ = loader_.next();
-            has_pending_ = true;
-        }
-        return buf_[read_];
-    }
-
-  private:
-    BinpackLoader& loader_;
-    DeviceBatchData* buf_[2] = {};
-    AstraInputs* next_host_ = nullptr;
-    int read_ = 1;
-    int write_ = 0;
-    bool has_pending_ = false;
-    cudaStream_t stream_ = {};
-    cudaEvent_t event_ = {};
 };

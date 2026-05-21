@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "../sf_binpack/training_data_format.h"
-#include "model.h"
 #include "sorei/nn.h"
 
 class XorShift64 {
@@ -64,13 +63,15 @@ class BinpackLoader {
           filenames_(std::move(filenames)),
           shuffle_buffer_size_(shuffle_buffer_size),
           num_workers_(shuffle_buffer_size > 0 ? 1 : num_worker_threads(thread_count)),
-          stream_(std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
-              num_reader_threads(thread_count_),
-              filenames_,
-              std::ios::in | std::ios::binary,
-              true,
-              std::move(skip_predicate)
-          )) {
+          stream_(
+              std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
+                  num_reader_threads(thread_count_),
+                  filenames_,
+                  std::ios::in | std::ios::binary,
+                  true,
+                  std::move(skip_predicate)
+              )
+          ) {
 
         validate_files(filenames_);
         stop_flag_.store(false);
@@ -90,14 +91,12 @@ class BinpackLoader {
                             break;
                     }
 
-                    auto batch = new AstraInputs(entries);
-
                     {
                         std::unique_lock lock(batch_mutex_);
                         batches_not_full_.wait(lock, [this]() {
                             return batches_.size() < thread_count_ + 1 || stop_flag_.load();
                         });
-                        batches_.emplace_back(batch);
+                        batches_.emplace_back(std::move(entries));
                         lock.unlock();
                         batches_any_.notify_one();
                     }
@@ -123,17 +122,15 @@ class BinpackLoader {
         for (auto& w : workers_)
             if (w.joinable())
                 w.join();
-        for (auto* b : batches_)
-            delete b;
     }
 
-    AstraInputs* next() {
+    std::vector<binpack::TrainingDataEntry> next() {
         std::unique_lock lock(batch_mutex_);
         batches_any_.wait(lock, [this] { return !batches_.empty() || num_workers_.load() == 0; });
         if (batches_.empty())
-            return nullptr;
+            return {};
 
-        auto* batch = batches_.front();
+        auto batch = std::move(batches_.front());
         batches_.pop_front();
         lock.unlock();
         batches_not_full_.notify_one();
@@ -147,7 +144,7 @@ class BinpackLoader {
     int thread_count_;
     std::vector<std::string> filenames_;
     size_t shuffle_buffer_size_;
-    std::deque<AstraInputs*> batches_;
+    std::deque<std::vector<binpack::TrainingDataEntry>> batches_;
     std::mutex batch_mutex_;
     std::condition_variable batches_not_full_;
     std::condition_variable batches_any_;
@@ -207,15 +204,13 @@ class BinpackLoader {
                     e.result = ce.result;
                     entries.push_back(std::move(e));
                 }
-                auto* batch = new AstraInputs(entries);
-
                 {
                     std::unique_lock lock(batch_mutex_);
                     batches_not_full_.wait(lock, [this]() {
                         return batches_.size() < static_cast<size_t>(thread_count_ + 1) ||
                                stop_flag_.load();
                     });
-                    batches_.emplace_back(batch);
+                    batches_.emplace_back(std::move(entries));
                     lock.unlock();
                     batches_any_.notify_one();
                 }

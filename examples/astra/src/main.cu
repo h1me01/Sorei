@@ -67,6 +67,8 @@ void train(
         sorei::println("Loaded model parameters from {}", model_path);
     }
 
+    AstraInputs astra_inputs;
+
     auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
     auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
 
@@ -101,20 +103,17 @@ void train(
     for (int epoch = 1; epoch <= epochs; epoch++) {
         Timer timer;
 
-        AstraInputs::WDL_WEIGHT = wdl_sched.get_wdl();
-
         model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            auto* data = binpack_loader.next();
+            astra_inputs.fill(binpack_loader.next(), wdl_sched.get_wdl());
 
             model.forward(
-                {{"stm_in", data->stm_indices()},
-                 {"nstm_in", data->nstm_indices()},
-                 {"output_bucket", data->bucket_indices()},
-                 {"target", data->targets()}}
+                {{"stm_in", astra_inputs.stm_indices},
+                 {"nstm_in", astra_inputs.nstm_indices},
+                 {"output_bucket", astra_inputs.bucket_indices},
+                 {"target", astra_inputs.targets}}
             );
-            delete data;
             model.backward();
             optim.step(lr_sched.get_lr());
 

@@ -11,31 +11,36 @@ class AstraInputs {
   public:
     static constexpr std::array<int, 64> INPUT_BUCKET = {
         0, 1, 2, 3, 3, 2, 1, 0, //
-        4, 4, 5, 5, 5, 5, 4, 4, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
-        6, 6, 6, 6, 6, 6, 6, 6, //
+        4, 5, 6, 7, 7, 6, 5, 4, //
+        8, 8, 8, 8, 8, 8, 8, 8, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
+        9, 9, 9, 9, 9, 9, 9, 9, //
     };
 
     static constexpr int NUM_INPUT_BUCKETS = std::ranges::max(INPUT_BUCKET) + 1;
 
     static constexpr int FEATURE_SIZE = 768;
     static constexpr float EVAL_SCALE = 400.0f;
-    static float WDL_WEIGHT;
 
-    explicit AstraInputs(const std::vector<binpack::TrainingDataEntry>& entries) {
+    sorei::matrix::HostPinnedMatrix<int> stm_indices;
+    sorei::matrix::HostPinnedMatrix<int> nstm_indices;
+    sorei::matrix::HostPinnedMatrix<int> bucket_indices;
+    sorei::matrix::HostPinnedMatrix<float> targets;
+
+    void
+    fill(const std::vector<binpack::TrainingDataEntry>& entries, const float wdl_weight = 0.5f) {
         const int n = static_cast<int>(entries.size());
 
-        stm_indices_.resize({32, n});
-        nstm_indices_.resize({32, n});
-        bucket_indices_.resize({1, n});
-        targets_.resize({1, n});
+        stm_indices.resize({32, n});
+        nstm_indices.resize({32, n});
+        bucket_indices.resize({1, n});
+        targets.resize({1, n});
 
-        stm_indices_.fill(-1);
-        nstm_indices_.fill(-1);
+        stm_indices.fill(-1);
+        nstm_indices.fill(-1);
 
         for (int i = 0; i < n; ++i) {
             const auto& pos = entries[i].pos;
@@ -46,29 +51,19 @@ class AstraInputs {
             int j = 0;
             for (auto sq : pos.piecesBB()) {
                 const auto pc = pos.pieceAt(sq);
-                stm_indices_(j, i) = feature_index(pc, sq, stm_ksq, stm);
-                nstm_indices_(j, i) = feature_index(pc, sq, nstm_ksq, !stm);
+                stm_indices(j, i) = feature_index(pc, sq, stm_ksq, stm);
+                nstm_indices(j, i) = feature_index(pc, sq, nstm_ksq, !stm);
                 ++j;
             }
 
             const float score_target = sigmoid(entries[i].score / EVAL_SCALE);
             const float wdl_target = (entries[i].result + 1) / 2.0f;
-            targets_(i) = WDL_WEIGHT * wdl_target + (1.0f - WDL_WEIGHT) * score_target;
-            bucket_indices_(i) = (pos.pieceCount() - 2) / 4;
+            targets(i) = wdl_weight * wdl_target + (1.0f - wdl_weight) * score_target;
+            bucket_indices(i) = (pos.pieceCount() - 2) / 4;
         }
     }
 
-    const sorei::matrix::HostMatrix<int>& stm_indices() const { return stm_indices_; }
-    const sorei::matrix::HostMatrix<int>& nstm_indices() const { return nstm_indices_; }
-    const sorei::matrix::HostMatrix<int>& bucket_indices() const { return bucket_indices_; }
-    const sorei::matrix::HostMatrix<float>& targets() const { return targets_; }
-
   private:
-    sorei::matrix::HostMatrix<int> stm_indices_;
-    sorei::matrix::HostMatrix<int> nstm_indices_;
-    sorei::matrix::HostMatrix<int> bucket_indices_;
-    sorei::matrix::HostMatrix<float> targets_;
-
     static float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
     static int
@@ -88,10 +83,8 @@ class AstraInputs {
     }
 };
 
-inline float AstraInputs::WDL_WEIGHT = 0.5f;
-
 struct AstraModel : sorei::nn::Model {
-    static constexpr int FT_SIZE = 1024;
+    static constexpr int FT_SIZE = 1536;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
     static constexpr int OUTPUT_BUCKETS = 8;
@@ -142,13 +135,14 @@ struct AstraModel : sorei::nn::Model {
         pos.set(fen);
         std::vector<binpack::TrainingDataEntry> ds{{pos}};
 
-        AstraInputs batch{ds};
+        AstraInputs batch;
+        batch.fill(ds);
 
         forward({
-            {"stm_in", batch.stm_indices()},
-            {"nstm_in", batch.nstm_indices()},
-            {"output_bucket", batch.bucket_indices()},
-            {"target", batch.targets()},
+            {"stm_in", batch.stm_indices},
+            {"nstm_in", batch.nstm_indices},
+            {"output_bucket", batch.bucket_indices},
+            {"target", batch.targets},
         });
 
         return prediction().to_host()(0) * AstraInputs::EVAL_SCALE;

@@ -57,31 +57,41 @@ std::string device_info() {
     return prop.name;
 }
 
-int main() {
-    const float lr = 0.001f;
-    const int epochs = 400;
+void train(
+    const int epochs,
+    const float lr,
+    WDLScheduler wdl_sched,
+    const std::string& checkpoint_dir,
+    const std::string& model_path = ""
+) {
     const int batch_size = 16384;
     const int batches_per_epoch = 6104;
-    const int save_rate = 40;
-
-    const std::string checkpoint_dir = "checkpoints";
+    const int save_rate = 100;
 
     AstraModel model;
     for (auto p : model.params())
         p->set_bounds(-0.99f, 0.99f);
 
+    if (!model_path.empty()) {
+        model.load_params(model_path);
+        sorei::println("Loaded model parameters from {}", model_path);
+    }
+
+    AstraInputs astra_inputs;
+
     auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
     auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
-    auto wdl_sched = WDLScheduler(0.2f, 0.6f, epochs);
 
     auto binpack_loader = BinpackLoader(
         batch_size,
         4,
-        {"/home/h1me/Downloads/data.binpack"},
+        {"data/data.binpack"},
+        256 * 1024 * 1024,
         [](const binpack::TrainingDataEntry& e) {
-            return std::abs(e.score) > 10000 //
-                   || e.isInCheck()          //
-                   || e.isCapturingMove()    //
+            return e.ply < 8                    //
+                   || e.isInCheck()             //
+                   || e.isCapturingMove()       //
+                   || std::abs(e.score) > 10000 //
                    || e.move.type != chess::MoveType::Normal;
         }
     );
@@ -103,22 +113,17 @@ int main() {
     for (int epoch = 1; epoch <= epochs; epoch++) {
         Timer timer;
 
-        AstraInputs::WDL_WEIGHT = wdl_sched.get_wdl();
-
         model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            auto* data = binpack_loader.next();
-            if (!data)
-                break;
+            astra_inputs.fill(binpack_loader.next(), wdl_sched.get_wdl());
 
             model.forward(
-                {{"stm_in", data->stm_indices()},
-                 {"nstm_in", data->nstm_indices()},
-                 {"output_bucket", data->bucket_indices()},
-                 {"target", data->targets()}}
+                {{"stm_in", astra_inputs.stm_indices},
+                 {"nstm_in", astra_inputs.nstm_indices},
+                 {"output_bucket", astra_inputs.bucket_indices},
+                 {"target", astra_inputs.targets}}
             );
-            delete data;
             model.backward();
             optim.step(lr_sched.get_lr());
 
@@ -141,7 +146,7 @@ int main() {
             }
         }
 
-        if (epoch % save_rate == 0) {
+        if (epoch % save_rate == 0 || epoch == epochs) {
             std::string e_checkpoint_dir = checkpoint_dir + "/epoch_" + std::to_string(epoch);
             std::filesystem::create_directories(e_checkpoint_dir);
             model.save_params(e_checkpoint_dir + "/model.nn");
@@ -157,4 +162,21 @@ int main() {
     sorei::println(
         "\nstartpos eval: {:.2f}", model.predict(chess::Position::startPosition().fen())
     );
+}
+
+int main() {
+    const int stage1_epochs = 600;
+    const int stage2_epochs = 200;
+
+    train(stage1_epochs, 0.001f, WDLScheduler(0.2f, 0.6f, stage1_epochs), "stage1_checkpoints");
+
+    train(
+        stage2_epochs,
+        0.000025f,
+        WDLScheduler(1.0f, 1.0f, stage2_epochs),
+        "stage2_checkpoints",
+        std::format("stage1_checkpoints/epoch_{}/model.nn", stage1_epochs)
+    );
+
+    return 0;
 }

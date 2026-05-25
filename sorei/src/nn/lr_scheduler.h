@@ -5,7 +5,7 @@
 #include <numbers>
 #include <string>
 
-#include "../misc.h"
+#include "../util.h"
 
 namespace sorei::nn {
 

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "../misc.h"
+#include "../util.h"
 
 namespace sorei::matrix {
 

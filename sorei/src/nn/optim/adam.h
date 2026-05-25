@@ -19,9 +19,8 @@ class AdamW : public Optimizer {
         SOREI_CHECK(beta2 >= 0.0f && beta2 < 1.0f);
 
         for (auto* t : params_) {
-            auto shape = t->data().shape();
-            momentum_.emplace_back(shape);
-            velocity_.emplace_back(shape);
+            momentum_.emplace_back(t->data().shape());
+            velocity_.emplace_back(t->data().shape());
             momentum_.back().clear();
             velocity_.back().clear();
         }
@@ -47,7 +46,6 @@ class AdamW : public Optimizer {
 
         try {
             std::filesystem::create_directories(state_path);
-
             save_buffers(state_path / "momentum.bin", momentum_);
             save_buffers(state_path / "velocity.bin", velocity_);
         } catch (const std::exception& e) {

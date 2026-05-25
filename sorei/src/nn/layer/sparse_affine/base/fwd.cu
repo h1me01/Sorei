@@ -89,15 +89,11 @@ void SparseAffine::forward() {
     SOREI_CHECK(out.data());
     SOREI_CHECK(indices.data());
 
-    SOREI_CHECK(weight.rows() == bias.rows());
-    SOREI_CHECK(out.cols() <= 65535);
-    SOREI_CHECK(out.rows() >= weight.rows() + out_offset_);
-
     const int w_r = weight.rows();
 
+    SOREI_CHECK(weight.rows() == bias.rows());
     SOREI_CHECK(out.cols() <= 65535);
     SOREI_CHECK(indices.cols() == out.cols());
-    SOREI_CHECK(weight.rows() == bias.rows());
     SOREI_CHECK(out.rows() >= w_r + out_offset_);
 
     const int max_entries = indices.rows();

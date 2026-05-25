@@ -2,21 +2,22 @@
 
 #include "../../layer.h"
 #include "../common.h"
+#include "ops.h"
 
 namespace sorei::nn {
 
 class ElemwiseUnary : public TypedLayer<float> {
   public:
     using Op = std::variant<
-        cuda::Identity,
-        cuda::AddScaleUnary,
-        cuda::DivLeftUnary,
-        cuda::Clamp,
-        cuda::Abs,
-        cuda::ReLU,
-        cuda::ClampedReLU,
-        cuda::SquaredClampedReLU,
-        cuda::Sigmoid>;
+        unary::Identity,
+        unary::AddScale,
+        unary::DivLeft,
+        unary::Clamp,
+        unary::Abs,
+        unary::ReLU,
+        unary::ClampedReLU,
+        unary::SquaredClampedReLU,
+        unary::Sigmoid>;
 
   public:
     ElemwiseUnary(Layer* input, Op op)

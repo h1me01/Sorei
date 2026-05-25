@@ -125,15 +125,6 @@ static std::pair<HostMatrix<float>, HostMatrix<float>> run_binary_bwd(
 
 } // namespace
 
-TEST(Kernels, Set) {
-    DeviceMatrix<float> m({4, 3});
-    set(m, 7.5f);
-    cudaDeviceSynchronize();
-    auto host = m.to_host();
-    for (int i = 0; i < 12; ++i)
-        EXPECT_NEAR(host(i), 7.5f, 1e-6f);
-}
-
 TEST(Kernels, SGemm_Basic) {
     auto A = make_device({2, 3}, {1, 2, 3, 4, 5, 6});
     auto B = make_device({3, 2}, {7, 8, 9, 10, 11, 12});
@@ -183,7 +174,7 @@ TEST(Kernels, SGemm_TransposeA) {
 }
 
 TEST(Kernels, UnaryFwd_Identity) {
-    auto out = run_unary_fwd({-1.0f, 0.0f, 2.5f}, Identity{});
+    auto out = run_unary_fwd({-1.0f, 0.0f, 2.5f}, unary::Identity{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), -1.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.0f, 1e-6f);
@@ -191,7 +182,7 @@ TEST(Kernels, UnaryFwd_Identity) {
 }
 
 TEST(Kernels, UnaryFwd_ReLU) {
-    auto out = run_unary_fwd({-2.0f, 0.0f, 1.5f}, ReLU{});
+    auto out = run_unary_fwd({-2.0f, 0.0f, 1.5f}, unary::ReLU{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 0.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.0f, 1e-6f);
@@ -199,7 +190,7 @@ TEST(Kernels, UnaryFwd_ReLU) {
 }
 
 TEST(Kernels, UnaryFwd_ClampedReLU) {
-    auto out = run_unary_fwd({-1.0f, 0.5f, 2.0f}, ClampedReLU{});
+    auto out = run_unary_fwd({-1.0f, 0.5f, 2.0f}, unary::ClampedReLU{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 0.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.5f, 1e-6f);
@@ -207,7 +198,7 @@ TEST(Kernels, UnaryFwd_ClampedReLU) {
 }
 
 TEST(Kernels, UnaryFwd_SquaredClampedReLU) {
-    auto out = run_unary_fwd({-1.0f, 0.5f, 2.0f}, SquaredClampedReLU{});
+    auto out = run_unary_fwd({-1.0f, 0.5f, 2.0f}, unary::SquaredClampedReLU{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 0.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.25f, 1e-5f);
@@ -215,18 +206,18 @@ TEST(Kernels, UnaryFwd_SquaredClampedReLU) {
 }
 
 TEST(Kernels, UnaryFwd_Sigmoid) {
-    auto out = run_unary_fwd({0.0f}, Sigmoid{});
+    auto out = run_unary_fwd({0.0f}, unary::Sigmoid{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 0.5f, 1e-5f);
 
-    auto out2 = run_unary_fwd({10.0f, -10.0f}, Sigmoid{});
+    auto out2 = run_unary_fwd({10.0f, -10.0f}, unary::Sigmoid{});
     auto host2 = out2.to_host();
     EXPECT_GT((double)host2(0), 0.99);
     EXPECT_LT((double)host2(1), 0.01);
 }
 
 TEST(Kernels, UnaryFwd_Abs) {
-    auto out = run_unary_fwd({-3.0f, 0.0f, 2.0f}, Abs{});
+    auto out = run_unary_fwd({-3.0f, 0.0f, 2.0f}, unary::Abs{});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 3.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.0f, 1e-6f);
@@ -234,135 +225,135 @@ TEST(Kernels, UnaryFwd_Abs) {
 }
 
 TEST(Kernels, UnaryFwd_Clamp) {
-    auto out = run_unary_fwd({-5.0f, 0.3f, 5.0f}, Clamp{-1.0f, 1.0f});
+    auto out = run_unary_fwd({-5.0f, 0.3f, 5.0f}, unary::Clamp{-1.0f, 1.0f});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), -1.0f, 1e-6f);
     EXPECT_NEAR(host(1), 0.3f, 1e-6f);
     EXPECT_NEAR(host(2), 1.0f, 1e-6f);
 }
 
-TEST(Kernels, UnaryFwd_AddScaleUnary) {
-    auto out = run_unary_fwd({1.0f, -2.0f}, AddScaleUnary{2.0f, 3.0f});
+TEST(Kernels, UnaryFwd_AddScale) {
+    auto out = run_unary_fwd({1.0f, -2.0f}, unary::AddScale{2.0f, 3.0f});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 5.0f, 1e-5f);
     EXPECT_NEAR(host(1), -1.0f, 1e-5f);
 }
 
-TEST(Kernels, UnaryFwd_DivLeftUnary) {
-    auto out = run_unary_fwd({2.0f, 4.0f}, DivLeftUnary{8.0f});
+TEST(Kernels, UnaryFwd_DivLeft) {
+    auto out = run_unary_fwd({2.0f, 4.0f}, unary::DivLeft{8.0f});
     auto host = out.to_host();
     EXPECT_NEAR(host(0), 4.0f, 1e-5f);
     EXPECT_NEAR(host(1), 2.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_ReLU_Positive) {
-    auto g = run_unary_bwd({2.0f}, {3.0f}, ReLU{});
+    auto g = run_unary_bwd({2.0f}, {3.0f}, unary::ReLU{});
     EXPECT_NEAR(g(0), 3.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_ReLU_Negative) {
-    auto g = run_unary_bwd({-1.0f}, {3.0f}, ReLU{});
+    auto g = run_unary_bwd({-1.0f}, {3.0f}, unary::ReLU{});
     EXPECT_NEAR(g(0), 0.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_Sigmoid) {
-    auto g = run_unary_bwd({0.0f}, {2.0f}, Sigmoid{});
+    auto g = run_unary_bwd({0.0f}, {2.0f}, unary::Sigmoid{});
     EXPECT_NEAR(g(0), 0.5f, 1e-4f);
 }
 
 TEST(Kernels, UnaryBwd_Abs) {
-    auto g_pos = run_unary_bwd({3.0f}, {1.0f}, Abs{});
-    auto g_neg = run_unary_bwd({-2.0f}, {1.0f}, Abs{});
+    auto g_pos = run_unary_bwd({3.0f}, {1.0f}, unary::Abs{});
+    auto g_neg = run_unary_bwd({-2.0f}, {1.0f}, unary::Abs{});
     EXPECT_NEAR(g_pos(0), 1.0f, 1e-5f);
     EXPECT_NEAR(g_neg(0), -1.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_AddScale) {
-    auto g = run_unary_bwd({5.0f}, {1.0f}, AddScaleUnary{4.0f, 0.0f});
+    auto g = run_unary_bwd({5.0f}, {1.0f}, unary::AddScale{4.0f, 0.0f});
     EXPECT_NEAR(g(0), 4.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_ClampedReLU) {
-    auto g_in = run_unary_bwd({0.5f}, {2.0f}, ClampedReLU{});
+    auto g_in = run_unary_bwd({0.5f}, {2.0f}, unary::ClampedReLU{});
     EXPECT_NEAR(g_in(0), 2.0f, 1e-5f);
-    auto g_lo = run_unary_bwd({-0.5f}, {2.0f}, ClampedReLU{});
+    auto g_lo = run_unary_bwd({-0.5f}, {2.0f}, unary::ClampedReLU{});
     EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
-    auto g_hi = run_unary_bwd({1.5f}, {2.0f}, ClampedReLU{});
+    auto g_hi = run_unary_bwd({1.5f}, {2.0f}, unary::ClampedReLU{});
     EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_SquaredClampedReLU) {
-    auto g_in = run_unary_bwd({0.5f}, {1.0f}, SquaredClampedReLU{});
+    auto g_in = run_unary_bwd({0.5f}, {1.0f}, unary::SquaredClampedReLU{});
     EXPECT_NEAR(g_in(0), 1.0f, 1e-5f);
-    auto g_lo = run_unary_bwd({-1.0f}, {1.0f}, SquaredClampedReLU{});
+    auto g_lo = run_unary_bwd({-1.0f}, {1.0f}, unary::SquaredClampedReLU{});
     EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
-    auto g_hi = run_unary_bwd({2.0f}, {1.0f}, SquaredClampedReLU{});
+    auto g_hi = run_unary_bwd({2.0f}, {1.0f}, unary::SquaredClampedReLU{});
     EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_Clamp) {
-    auto g_in = run_unary_bwd({0.5f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    auto g_in = run_unary_bwd({0.5f}, {2.0f}, unary::Clamp{-1.0f, 1.0f});
     EXPECT_NEAR(g_in(0), 2.0f, 1e-5f);
-    auto g_hi = run_unary_bwd({2.0f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    auto g_hi = run_unary_bwd({2.0f}, {2.0f}, unary::Clamp{-1.0f, 1.0f});
     EXPECT_NEAR(g_hi(0), 0.0f, 1e-5f);
-    auto g_lo = run_unary_bwd({-2.0f}, {2.0f}, Clamp{-1.0f, 1.0f});
+    auto g_lo = run_unary_bwd({-2.0f}, {2.0f}, unary::Clamp{-1.0f, 1.0f});
     EXPECT_NEAR(g_lo(0), 0.0f, 1e-5f);
 }
 
 TEST(Kernels, UnaryBwd_DivLeft) {
-    auto g0 = run_unary_bwd({2.0f}, {1.0f}, DivLeftUnary{6.0f});
+    auto g0 = run_unary_bwd({2.0f}, {1.0f}, unary::DivLeft{6.0f});
     EXPECT_NEAR(g0(0), -1.5f, 1e-4f);
-    auto g1 = run_unary_bwd({3.0f}, {1.0f}, DivLeftUnary{6.0f});
+    auto g1 = run_unary_bwd({3.0f}, {1.0f}, unary::DivLeft{6.0f});
     EXPECT_NEAR(g1(0), -6.0f / 9.0f, 1e-4f);
 }
 
 TEST(Kernels, BinaryFwd_Add) {
-    auto c = run_binary_fwd({1, 2, 3}, {4, 5, 6}, 3, 1, AddBinary{});
+    auto c = run_binary_fwd({1, 2, 3}, {4, 5, 6}, 3, 1, binary::Add{});
     EXPECT_NEAR(c(0), 5.0f, 1e-5f);
     EXPECT_NEAR(c(1), 7.0f, 1e-5f);
     EXPECT_NEAR(c(2), 9.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryFwd_Sub) {
-    auto c = run_binary_fwd({5, 5, 5}, {1, 2, 3}, 3, 1, SubBinary{});
+    auto c = run_binary_fwd({5, 5, 5}, {1, 2, 3}, 3, 1, binary::Sub{});
     EXPECT_NEAR(c(0), 4.0f, 1e-5f);
     EXPECT_NEAR(c(1), 3.0f, 1e-5f);
     EXPECT_NEAR(c(2), 2.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryFwd_Mul) {
-    auto c = run_binary_fwd({2, 3, 4}, {5, 6, 7}, 3, 1, MulBinary{});
+    auto c = run_binary_fwd({2, 3, 4}, {5, 6, 7}, 3, 1, binary::Mul{});
     EXPECT_NEAR(c(0), 10.0f, 1e-5f);
     EXPECT_NEAR(c(1), 18.0f, 1e-5f);
     EXPECT_NEAR(c(2), 28.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryFwd_Div) {
-    auto c = run_binary_fwd({6.0f, 9.0f}, {2.0f, 3.0f}, 2, 1, DivBinary{});
+    auto c = run_binary_fwd({6.0f, 9.0f}, {2.0f, 3.0f}, 2, 1, binary::Div{});
     EXPECT_NEAR(c(0), 3.0f, 1e-5f);
     EXPECT_NEAR(c(1), 3.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryBwd_Add) {
-    auto [ga, gb] = run_binary_bwd({1}, {2}, {3}, 1, 1, AddBinary{});
+    auto [ga, gb] = run_binary_bwd({1}, {2}, {3}, 1, 1, binary::Add{});
     EXPECT_NEAR(ga(0), 3.0f, 1e-5f);
     EXPECT_NEAR(gb(0), 3.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryBwd_Sub) {
-    auto [ga, gb] = run_binary_bwd({5}, {2}, {2}, 1, 1, SubBinary{});
+    auto [ga, gb] = run_binary_bwd({5}, {2}, {2}, 1, 1, binary::Sub{});
     EXPECT_NEAR(ga(0), 2.0f, 1e-5f);
     EXPECT_NEAR(gb(0), -2.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryBwd_Mul) {
-    auto [ga, gb] = run_binary_bwd({3}, {4}, {1}, 1, 1, MulBinary{});
+    auto [ga, gb] = run_binary_bwd({3}, {4}, {1}, 1, 1, binary::Mul{});
     EXPECT_NEAR(ga(0), 4.0f, 1e-5f);
     EXPECT_NEAR(gb(0), 3.0f, 1e-5f);
 }
 
 TEST(Kernels, BinaryBwd_Div) {
-    auto [ga, gb] = run_binary_bwd({6}, {3}, {1}, 1, 1, DivBinary{});
+    auto [ga, gb] = run_binary_bwd({6}, {3}, {1}, 1, 1, binary::Div{});
     EXPECT_NEAR(ga(0), 1.0f / 3.0f, 1e-5f);
     EXPECT_NEAR(gb(0), -6.0f / (3.0f * 3.0f), 1e-5f);
 }
@@ -379,7 +370,7 @@ TEST(Kernels, BinaryBroadcast_Fwd_Add) {
     auto gd = DeviceMatrix<float>::from_host(data);
     DeviceMatrix<float> gout({4, 3});
 
-    ElemwiseBinary::broadcast_forward(gb, gd, gout, AddBinary{});
+    ElemwiseBinary::broadcast_forward(gb, gd, gout, binary::Add{});
     cudaDeviceSynchronize();
     auto host = gout.to_host();
 
@@ -404,7 +395,7 @@ TEST(Kernels, BinaryBroadcast_Bwd_Add_BiasGrad) {
     DeviceMatrix<float> gd_g({4, 3});
     gd_g.clear();
 
-    ElemwiseBinary::broadcast_backward(gb, gb_g, gd, gd_g, go, AddBinary{});
+    ElemwiseBinary::broadcast_backward(gb, gb_g, gd, gd_g, go, binary::Add{});
     cudaDeviceSynchronize();
     auto bias_grad = gb_g.to_host();
     auto data_grad = gd_g.to_host();

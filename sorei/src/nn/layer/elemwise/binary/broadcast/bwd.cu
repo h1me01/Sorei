@@ -1,4 +1,4 @@
-#include "binary.h"
+#include "../binary.h"
 
 namespace sorei::nn {
 

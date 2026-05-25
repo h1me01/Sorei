@@ -27,7 +27,7 @@ class Network {
             SOREI_CHECK(loss_->shape().size() == 1);
             running_loss_.resize(loss_->shape());
             running_loss_.clear();
-            cuda::set(loss_->grad(), 1.0f);
+            loss_->grad().upload(matrix::HostMatrix<float>::filled(loss_->shape(), 1.0f));
         }
     }
 
@@ -40,24 +40,22 @@ class Network {
         for (auto* layer : layers_)
             layer->forward();
 
-        if (loss_) {
-            ElemwiseBinary::forward(running_loss_, loss_->data(), running_loss_, cuda::AddBinary{});
-        }
+        if (loss_)
+            ElemwiseBinary::forward(running_loss_, loss_->data(), running_loss_, binary::Add{});
     }
 
     void backward() {
         SOREI_CHECK(loss_);
 
-        for (auto* layer : layers_) {
+        for (auto* layer : layers_)
             if (auto* tl = dynamic_cast<TypedLayer<float>*>(layer))
                 tl->reset_grad_write();
-        }
 
         for (int i = (int)layers_.size() - 1; i >= 0; --i)
             layers_[i]->backward();
     }
 
-    const std::vector<Param*> params() const {
+    std::vector<Param*> params() const {
         std::vector<Param*> result;
 
         std::unordered_set<Param*> seen;
@@ -79,7 +77,7 @@ class Network {
     TypedLayer<float>* loss_;
 
     static bool contains(const std::vector<Layer*>& layers, Layer* target) {
-        return std::find(layers.begin(), layers.end(), target) != layers.end();
+        return std::ranges::find(layers, target) != layers.end();
     }
 };
 

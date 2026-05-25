@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../cublas/cublas.h"
 #include "../layer.h"
 
 namespace sorei::nn {

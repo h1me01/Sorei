@@ -25,7 +25,7 @@ inline float grad_check(
     layer->forward();
     cudaDeviceSynchronize();
 
-    cuda::set(layer->grad(), 1.0f);
+    layer->grad().upload(HostMatrix<float>::filled(layer->shape(), 1.0f));
     cudaDeviceSynchronize();
 
     for (auto* p : params) {

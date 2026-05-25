@@ -4,8 +4,9 @@
 #include <type_traits>
 #include <vector>
 
-#include "../../cuda/include.h"
+#include "../../cuda_utils.h"
 #include "../../matrix/include.h"
+#include "../../util.h"
 
 namespace sorei::nn {
 

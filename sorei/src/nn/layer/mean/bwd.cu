@@ -34,7 +34,7 @@ void Mean::backward() {
     else
         mean_bwd_kernel<false><<<grid_size, BLOCK_SIZE>>>(in_g.data(), out_g.data(), in_g.size());
 
-    SOREI_CUDA_CHECK(cudaGetLastError());
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn

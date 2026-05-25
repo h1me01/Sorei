@@ -30,8 +30,7 @@ class Graph {
         for (int i = 0; i < (int)top_order.size(); i++)
             index[top_order[i]] = i;
 
-        for (int i = 0; i < (int)top_order.size(); i++) {
-            auto* n = top_order[i];
+        for (auto* n : top_order) {
 
             std::string inputs;
             for (auto* inp : n->inputs()) {
@@ -49,7 +48,7 @@ class Graph {
             if (auto* c = dynamic_cast<ConcatBase*>(n))
                 extra += (c->axis() == ConcatAxis::Rows) ? " [axis=rows]" : " [axis=cols]";
 
-            std::cout << "[" << std::right << std::setw(2) << i << "] " << std::left
+            std::cout << "[" << std::right << std::setw(2) << index[n] << "] " << std::left
                       << std::setw(23) << n->name() << " dim=" << std::setw(4) << n->shape().rows()
                       << (inputs.empty() ? "" : " <- [" + inputs + "]") << extra << "\n";
         }
@@ -61,9 +60,9 @@ class Graph {
         std::unordered_set<Layer*> in_stack;
 
         std::function<void(Layer*)> dfs = [&](Layer* node) {
-            if (!node || visited.count(node))
+            if (!node || visited.contains(node))
                 return;
-            if (in_stack.count(node))
+            if (in_stack.contains(node))
                 error("Graph: cycle detected");
 
             in_stack.insert(node);
@@ -110,9 +109,7 @@ class Graph {
 
     void erase(Layer* op) {
         SOREI_CHECK(op);
-        auto it = std::find_if(nodes_.begin(), nodes_.end(), [op](const auto& p) {
-            return p.get() == op;
-        });
+        auto it = std::ranges::find_if(nodes_, [op](const auto& p) { return p.get() == op; });
 
         if (it != nodes_.end()) {
             std::erase_if(named_ops_, [op](const auto& kv) { return kv.second == op; });

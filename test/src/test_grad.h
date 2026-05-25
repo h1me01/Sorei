@@ -9,93 +9,96 @@ using namespace sorei;
 using namespace sorei::cuda;
 using namespace sorei::test;
 
+namespace unary = sorei::nn::unary;
+namespace binary = sorei::nn::binary;
+
 TEST(Grad, ElemwiseUnary_ReLU) {
     auto p = make_param({6, 4}, 0.2f, 1.5f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), ReLU{});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::ReLU{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseUnary_ClampedReLU) {
     auto p = make_param({6, 4}, 0.1f, 0.9f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), ClampedReLU{});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::ClampedReLU{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseUnary_SquaredClampedReLU) {
     auto p = make_param({6, 4}, 0.2f, 0.8f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), SquaredClampedReLU{});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::SquaredClampedReLU{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseUnary_Sigmoid) {
     auto p = make_param({6, 4}, -1.5f, 1.5f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), Sigmoid{});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::Sigmoid{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.02f);
 }
 
 TEST(Grad, ElemwiseUnary_Abs) {
     auto p = make_param({6, 4}, 0.3f, 1.5f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), Abs{});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::Abs{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseUnary_Clamp) {
     auto p = make_param({4, 3}, -0.5f, 0.5f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), Clamp{-1.0f, 1.0f});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::Clamp{-1.0f, 1.0f});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.02f);
 }
 
 TEST(Grad, ElemwiseUnary_AddScale) {
     auto p = make_param({4, 3}, -1.0f, 1.0f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), AddScaleUnary{3.0f, -1.0f});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::AddScale{3.0f, -1.0f});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.01f);
 }
 
 TEST(Grad, ElemwiseUnary_DivLeft) {
     auto p = make_param({4, 3}, 0.5f, 2.0f);
-    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), DivLeftUnary{6.0f});
+    auto layer = std::make_unique<nn::ElemwiseUnary>(p.get(), unary::DivLeft{6.0f});
     EXPECT_GRAD_OK(grad_check(layer.get(), {p.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseBinary_Add) {
     auto a = make_param({4, 3});
     auto b = make_param({4, 3});
-    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), AddBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), binary::Add{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {a.get(), b.get()}), 0.01f);
 }
 
 TEST(Grad, ElemwiseBinary_Sub) {
     auto a = make_param({4, 3});
     auto b = make_param({4, 3});
-    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), SubBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), binary::Sub{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {a.get(), b.get()}), 0.01f);
 }
 
 TEST(Grad, ElemwiseBinary_Mul) {
     auto a = make_param({4, 3}, 0.2f, 1.0f);
     auto b = make_param({4, 3}, 0.2f, 1.0f);
-    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), MulBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), binary::Mul{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {a.get(), b.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseBinary_Div) {
     auto a = make_param({4, 3}, 0.5f, 2.0f);
     auto b = make_param({4, 3}, 1.0f, 3.0f);
-    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), DivBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(a.get(), b.get(), binary::Div{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {a.get(), b.get()}), 0.05f);
 }
 
 TEST(Grad, ElemwiseBinary_Broadcast_Add) {
     auto bias = make_param({4, 1});
     auto data = make_param({4, 5});
-    auto layer = std::make_unique<nn::ElemwiseBinary>(bias.get(), data.get(), AddBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(bias.get(), data.get(), binary::Add{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {bias.get(), data.get()}), 0.01f);
 }
 
 TEST(Grad, ElemwiseBinary_Broadcast_Mul) {
     auto scale = make_param({3, 1}, 0.5f, 2.0f);
     auto data = make_param({3, 4}, 0.5f, 2.0f);
-    auto layer = std::make_unique<nn::ElemwiseBinary>(scale.get(), data.get(), MulBinary{});
+    auto layer = std::make_unique<nn::ElemwiseBinary>(scale.get(), data.get(), binary::Mul{});
     EXPECT_GRAD_OK(grad_check(layer.get(), {scale.get(), data.get()}), 0.05f);
 }
 

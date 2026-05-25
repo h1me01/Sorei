@@ -20,7 +20,7 @@ class Affine : public TypedLayer<float> {
     void forward() override {
         MatMul::forward(weight_->data(), input_->data(), data());
         ElemwiseBinary::broadcast_forward(
-            bias_->data(), data(), data(), ElemwiseBinary::Op{cuda::AddBinary{}}
+            bias_->data(), data(), data(), ElemwiseBinary::Op{binary::Add{}}
         );
     }
 
@@ -36,7 +36,7 @@ class Affine : public TypedLayer<float> {
             data(),
             tmp,
             grad(),
-            ElemwiseBinary::Op{cuda::AddBinary{}},
+            ElemwiseBinary::Op{binary::Add{}},
             ow_bias
         );
         MatMul::backward(

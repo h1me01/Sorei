@@ -29,7 +29,7 @@ struct SimpleSquareLoss {
         param->data().upload(m);
         param->grad().clear();
 
-        sq = std::make_unique<ElemwiseBinary>(param.get(), param.get(), MulBinary{});
+        sq = std::make_unique<ElemwiseBinary>(param.get(), param.get(), binary::Mul{});
         loss = std::make_unique<Mean>(sq.get());
     }
 
@@ -38,7 +38,7 @@ struct SimpleSquareLoss {
         loss->forward();
         cudaDeviceSynchronize();
 
-        set(loss->grad(), 1.0f);
+        loss->grad().upload(HostMatrix<float>::filled(loss->shape(), 1.0f));
         sq->grad().clear();
         param->grad().clear();
         loss->backward();

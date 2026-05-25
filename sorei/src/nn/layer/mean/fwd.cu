@@ -35,7 +35,7 @@ void Mean::forward() {
     const int grid_size = cuda::ceil_div(in.size(), BLOCK_SIZE);
     mean_fwd_kernel<<<grid_size, BLOCK_SIZE>>>(in.data(), out.data(), in.size());
 
-    SOREI_CUDA_CHECK(cudaGetLastError());
+    SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }
 
 } // namespace sorei::nn

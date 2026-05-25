@@ -12,6 +12,8 @@ using namespace sorei::matrix;
 using namespace sorei::nn;
 using namespace sorei::cuda;
 
+namespace unary = sorei::nn::unary;
+
 TEST(Layer, Param_Shape) {
     Param p({8, 4});
     EXPECT_EQ(p.data().rows(), 8);
@@ -26,7 +28,7 @@ TEST(Layer, InputFloat_Shape) {
 
 TEST(Layer, ElemwiseUnary_Shape) {
     Param p({6, 4});
-    ElemwiseUnary layer(&p, ReLU{});
+    ElemwiseUnary layer(&p, unary::ReLU{});
     EXPECT_EQ(layer.data().rows(), 6);
     EXPECT_EQ(layer.data().cols(), 4);
 }
@@ -34,7 +36,7 @@ TEST(Layer, ElemwiseUnary_Shape) {
 TEST(Layer, ElemwiseBinary_Shape_NonBroadcast) {
     Param a({4, 3});
     Param b({4, 3});
-    ElemwiseBinary layer(&a, &b, AddBinary{});
+    ElemwiseBinary layer(&a, &b, binary::Add{});
     EXPECT_EQ(layer.data().rows(), 4);
     EXPECT_EQ(layer.data().cols(), 3);
 }
@@ -42,7 +44,7 @@ TEST(Layer, ElemwiseBinary_Shape_NonBroadcast) {
 TEST(Layer, ElemwiseBinary_Shape_Broadcast) {
     Param bias({4, 1});
     Param data({4, 5});
-    ElemwiseBinary layer(&bias, &data, AddBinary{});
+    ElemwiseBinary layer(&bias, &data, binary::Add{});
     EXPECT_EQ(layer.data().rows(), 4);
     EXPECT_EQ(layer.data().cols(), 5);
 }
@@ -129,7 +131,7 @@ TEST(Layer, SparseAffine_Shape) {
 
 TEST(Layer, ElemwiseUnary_Forward_ReLU) {
     auto p = test::make_param_filled({4, 1}, -1.0f);
-    ElemwiseUnary layer(p.get(), ReLU{});
+    ElemwiseUnary layer(p.get(), unary::ReLU{});
 
     layer.forward();
     cudaDeviceSynchronize();
@@ -142,7 +144,7 @@ TEST(Layer, ElemwiseUnary_Forward_ReLU) {
 TEST(Layer, ElemwiseBinary_Forward_Add) {
     auto a = test::make_param_filled({3, 2}, 1.0f);
     auto b = test::make_param_filled({3, 2}, 2.0f);
-    ElemwiseBinary layer(a.get(), b.get(), AddBinary{});
+    ElemwiseBinary layer(a.get(), b.get(), binary::Add{});
 
     layer.forward();
     cudaDeviceSynchronize();

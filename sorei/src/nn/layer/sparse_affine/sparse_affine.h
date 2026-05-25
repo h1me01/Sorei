@@ -3,12 +3,14 @@
 #include <variant>
 
 #include "../concat/concat.h"
+#include "../elemwise/include.h"
 #include "../input.h"
 #include "../layer.h"
 
 namespace sorei::nn {
 
-using ActOp = std::variant<cuda::Identity, cuda::ReLU, cuda::ClampedReLU, cuda::SquaredClampedReLU>;
+using ActOp =
+    std::variant<unary::Identity, unary::ReLU, unary::ClampedReLU, unary::SquaredClampedReLU>;
 
 class SparseAffineBase : public TypedLayer<float> {
   public:
@@ -31,7 +33,7 @@ class SparseAffineBase : public TypedLayer<float> {
 
     void set_activation(ActOp act_op) { act_op_ = act_op; }
     ActOp activation() const { return act_op_; }
-    bool has_activation() const { return !std::holds_alternative<cuda::Identity>(act_op_); }
+    bool has_activation() const { return !std::holds_alternative<unary::Identity>(act_op_); }
 
     InputInt* input() const { return input_; }
     Layer* weight() const { return weight_; }
@@ -50,7 +52,7 @@ class SparseAffineBase : public TypedLayer<float> {
   protected:
     int out_offset_ = 0;
     FusedConcat* concat_ = nullptr;
-    ActOp act_op_ = cuda::Identity{};
+    ActOp act_op_ = unary::Identity{};
 
     InputInt* input_;
     TypedLayer<float>* weight_;

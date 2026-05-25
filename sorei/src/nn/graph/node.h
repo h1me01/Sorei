@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../layer/include.h"
 #include "../../matrix/include.h"
+#include "../layer/include.h"
 
 namespace sorei::nn {
 

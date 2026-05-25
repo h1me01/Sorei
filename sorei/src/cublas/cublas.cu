@@ -1,4 +1,6 @@
 #include <cstdlib>
+#include <cublas_v2.h>
+#include <cusparse_v2.h>
 
 #include "cublas.h"
 
@@ -14,7 +16,7 @@
         }                                                                                          \
     } while (0)
 
-namespace sorei::cuda::cublas {
+namespace sorei::cublas {
 
 namespace {
 cublasHandle_t get_handle() {
@@ -40,11 +42,10 @@ void sgemm(
     int m = trans_a ? a.cols() : a.rows();
     int k = trans_a ? a.rows() : a.cols();
     int n = trans_b ? b.rows() : b.cols();
-    int k_b = trans_b ? b.cols() : b.rows();
 
-    SOREI_CHECK(k == k_b);
     SOREI_CHECK(c.rows() == m);
     SOREI_CHECK(c.cols() == n);
+    SOREI_CHECK(k == (trans_b ? b.cols() : b.rows()));
 
     SOREI_CHECK(a.data());
     SOREI_CHECK(b.data());
@@ -68,4 +69,4 @@ void sgemm(
     ));
 }
 
-} // namespace sorei::cuda::cublas
+} // namespace sorei::cublas

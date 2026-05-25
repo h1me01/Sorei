@@ -1,11 +1,9 @@
 #pragma once
 
-#include <cublas_v2.h>
-#include <cusparse_v2.h>
-
+#include "../matrix/include.h"
 #include "../util.h"
 
-namespace sorei::cuda::cublas {
+namespace sorei::cublas {
 
 void sgemm(
     bool trans_a,
@@ -17,4 +15,4 @@ void sgemm(
     matrix::DeviceMatrix<float>& c
 );
 
-} // namespace sorei::cuda::cublas
+} // namespace sorei::cublas

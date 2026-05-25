@@ -2,12 +2,13 @@
 
 #include "../../layer.h"
 #include "../common.h"
+#include "ops.h"
 
 namespace sorei::nn {
 
 class ElemwiseBinary : public TypedLayer<float> {
   public:
-    using Op = std::variant<cuda::AddBinary, cuda::SubBinary, cuda::MulBinary, cuda::DivBinary>;
+    using Op = std::variant<binary::Add, binary::Sub, binary::Mul, binary::Div>;
 
   public:
     ElemwiseBinary(Layer* input1, Layer* input2, Op op)

@@ -4,7 +4,7 @@
 #include <limits>
 #include <random>
 
-#include "../../rng/rng.h"
+#include "../../rng.h"
 #include "layer.h"
 
 namespace sorei::nn {

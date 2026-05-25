@@ -2,6 +2,7 @@
 
 #include <cuda_runtime.h>
 
+#include "../cuda_utils.h"
 #include "host.h"
 #include "host_pinned.h"
 

@@ -73,12 +73,12 @@ class GraphOptimizer {
     }
 
     static std::optional<ActOp> as_activation(const ElemwiseUnary::Op& op) {
-        if (std::holds_alternative<cuda::ReLU>(op))
-            return ActOp{std::get<cuda::ReLU>(op)};
-        if (std::holds_alternative<cuda::ClampedReLU>(op))
-            return ActOp{std::get<cuda::ClampedReLU>(op)};
-        if (std::holds_alternative<cuda::SquaredClampedReLU>(op))
-            return ActOp{std::get<cuda::SquaredClampedReLU>(op)};
+        if (std::holds_alternative<unary::ReLU>(op))
+            return ActOp{std::get<unary::ReLU>(op)};
+        if (std::holds_alternative<unary::ClampedReLU>(op))
+            return ActOp{std::get<unary::ClampedReLU>(op)};
+        if (std::holds_alternative<unary::SquaredClampedReLU>(op))
+            return ActOp{std::get<unary::SquaredClampedReLU>(op)};
         return std::nullopt;
     }
 

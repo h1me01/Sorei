@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "../../cuda/include.h"
+#include "../../util.h"
 #include "../layer/param.h"
 
 namespace sorei::nn {
@@ -20,8 +20,8 @@ class Optimizer {
 
     virtual ~Optimizer() = default;
 
-    virtual void load_state(const std::string& path) {}
-    virtual void save_state(const std::string& path) const {}
+    virtual void load_state(const std::string& path) = 0;
+    virtual void save_state(const std::string& path) const = 0;
 
     virtual void step(float lr) = 0;
 

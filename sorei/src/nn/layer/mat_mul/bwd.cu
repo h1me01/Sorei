@@ -19,12 +19,12 @@ void MatMul::backward(
     SOREI_CHECK(in.data());
 
     if (!weight_g.empty())
-        cuda::cublas::sgemm(false, true, alpha, out_g, in, ow_weight_g ? 0.0f : 1.0f, weight_g);
+        cublas::sgemm(false, true, alpha, out_g, in, ow_weight_g ? 0.0f : 1.0f, weight_g);
 
     if (!in_g.empty()) {
         SOREI_CHECK(in_g.cols() == out_g.cols());
         SOREI_CHECK(in_g.rows() == weight.cols());
-        cuda::cublas::sgemm(true, false, alpha, weight, out_g, ow_in_g ? 0.0f : 1.0f, in_g);
+        cublas::sgemm(true, false, alpha, weight, out_g, ow_in_g ? 0.0f : 1.0f, in_g);
     }
 }
 

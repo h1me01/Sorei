@@ -28,7 +28,7 @@ __global__ void sparse_affine_bwd_kernel(
     const int out_idx = batch_idx * out_r + row;
 
     float out_val = out[out_idx];
-    if constexpr (std::is_same_v<Op, cuda::SquaredClampedReLU>)
+    if constexpr (std::is_same_v<Op, unary::SquaredClampedReLU>)
         out_val = sqrtf(out_val);
 
     const float grad = out_g[out_idx] * op.backward(out_val);

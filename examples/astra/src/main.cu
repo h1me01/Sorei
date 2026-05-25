@@ -47,6 +47,16 @@ class WDLScheduler {
     int step_count_ = 0;
 };
 
+std::string device_info() {
+    int device = -1;
+    SOREI_CUDA_CHECK(cudaGetDevice(&device));
+
+    cudaDeviceProp prop{};
+    SOREI_CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
+
+    return prop.name;
+}
+
 int main() {
     const float lr = 0.001f;
     const int epochs = 400;
@@ -77,7 +87,7 @@ int main() {
     );
 
     sorei::println("\nTraining configuration:");
-    sorei::println("  Device         {}", sorei::device_info());
+    sorei::println("  Device         {}", device_info());
     sorei::println("  Epochs         {}", epochs);
     sorei::println("  Batch Size     {}", batch_size);
     sorei::println("  Batches/Epoch  {}", batches_per_epoch);

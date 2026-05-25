@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace sorei::cuda {
+namespace sorei::nn::unary {
 
 struct Identity {
     static constexpr std::string_view name = "Identity";
@@ -11,7 +11,7 @@ struct Identity {
     __device__ float backward(float x) const { return 1.0f; }
 };
 
-struct AddScaleUnary {
+struct AddScale {
     static constexpr std::string_view name = "AddScale";
 
     float scale = 1.0f;
@@ -20,7 +20,7 @@ struct AddScaleUnary {
     __device__ float backward(float x) const { return scale; }
 };
 
-struct DivLeftUnary {
+struct DivLeft {
     static constexpr std::string_view name = "DivLeftScalar";
 
     float scalar = 1.0f;
@@ -33,7 +33,7 @@ struct Clamp {
 
     float min_val = 0.0f;
     float max_val = 1.0f;
-    __device__ float forward(float x) const { return clamp(x, min_val, max_val); }
+    __device__ float forward(float x) const { return max(min_val, min(max_val, x)); }
     __device__ float backward(float x) const { return (x > min_val && x < max_val) ? 1.0f : 0.0f; }
 };
 
@@ -57,7 +57,7 @@ struct ReLU {
 struct ClampedReLU {
     static constexpr std::string_view name = "ClampedReLU";
 
-    __device__ float forward(float x) const { return clamp(x, 0.0f, 1.0f); }
+    __device__ float forward(float x) const { return max(0.0f, min(1.0f, x)); }
     __device__ float backward(float x) const { return (x > 0.0f && x < 1.0f) ? 1.0f : 0.0f; }
 };
 
@@ -66,7 +66,7 @@ struct SquaredClampedReLU {
     static constexpr std::string_view name = "SquaredClampedReLU";
 
     __device__ float forward(float x) const {
-        x = clamp(x, 0.0f, 1.0f);
+        x = max(0.0f, min(1.0f, x));
         return x * x;
     }
     __device__ float backward(float x) const { return (x > 0.0f && x < 1.0f) ? 2.0f * x : 0.0f; }
@@ -82,4 +82,4 @@ struct Sigmoid {
     }
 };
 
-} // namespace sorei::cuda
+} // namespace sorei::nn::unary

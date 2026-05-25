@@ -2,9 +2,9 @@
 
 #include <string_view>
 
-namespace sorei::cuda {
+namespace sorei::nn::binary {
 
-struct AddBinary {
+struct Add {
     static constexpr std::string_view name = "Add";
 
     __device__ float forward(float a, float b) const { return a + b; }
@@ -14,7 +14,7 @@ struct AddBinary {
     }
 };
 
-struct SubBinary {
+struct Sub {
     static constexpr std::string_view name = "Sub";
 
     __device__ float forward(float a, float b) const { return a - b; }
@@ -24,7 +24,7 @@ struct SubBinary {
     }
 };
 
-struct MulBinary {
+struct Mul {
     static constexpr std::string_view name = "Mul";
 
     __device__ float forward(float a, float b) const { return a * b; }
@@ -34,7 +34,7 @@ struct MulBinary {
     }
 };
 
-struct DivBinary {
+struct Div {
     static constexpr std::string_view name = "Div";
 
     __device__ float forward(float a, float b) const { return a / b; }
@@ -44,4 +44,4 @@ struct DivBinary {
     }
 };
 
-} // namespace sorei::cuda
+} // namespace sorei::nn::binary

@@ -1,29 +1,10 @@
-#include "../../cuda/util.h"
+#include "../../cuda_utils.h"
 
 #include "adam.h"
 
 namespace sorei::nn {
 
 constexpr int BLOCK_SIZE = 1024;
-
-__device__ void adam_update(
-    float& val,
-    float& mom,
-    float& vel,
-    const float grad,
-    const float lr,
-    const float beta1,
-    const float beta2,
-    const float decay,
-    const float min_val,
-    const float max_val
-) {
-    val *= decay;
-    mom = beta1 * mom + (1.0f - beta1) * grad;
-    vel = beta2 * vel + (1.0f - beta2) * grad * grad;
-    val -= lr * mom / (sqrtf(vel) + 1e-8f);
-    val = cuda::clamp(val, min_val, max_val);
-}
 
 __global__ void adam_kernel(
     float* data,
@@ -43,15 +24,19 @@ __global__ void adam_kernel(
     if (vec_idx >= size)
         return;
 
+    const auto update = [&](float& val, float& mom, float& vel, float grad) {
+        val *= decay;
+        mom = beta1 * mom + (1.0f - beta1) * grad;
+        vel = beta2 * vel + (1.0f - beta2) * grad * grad;
+        val -= lr * mom / (sqrtf(vel) + 1e-8f);
+        val = max(min_val, min(max_val, val));
+    };
+
     if (vec_idx + 4 <= size) {
         float4 val = cuda::as_vec<float4>(data)[idx];
         float4 mom = cuda::as_vec<float4>(moms)[idx];
         float4 vel = cuda::as_vec<float4>(vels)[idx];
         const float4 grad = cuda::as_vec<const float4>(grads)[idx];
-
-        const auto update = [&](float& v, float& m, float& ve, float g) {
-            adam_update(v, m, ve, g, lr, beta1, beta2, decay, min_val, max_val);
-        };
 
         update(val.x, mom.x, vel.x, grad.x);
         update(val.y, mom.y, vel.y, grad.y);
@@ -62,11 +47,8 @@ __global__ void adam_kernel(
         cuda::as_vec<float4>(moms)[idx] = mom;
         cuda::as_vec<float4>(vels)[idx] = vel;
     } else {
-        for (int i = vec_idx; i < size; i++) {
-            adam_update(
-                data[i], moms[i], vels[i], grads[i], lr, beta1, beta2, decay, min_val, max_val
-            );
-        }
+        for (int i = vec_idx; i < size; i++)
+            update(data[i], moms[i], vels[i], grads[i]);
     }
 }
 

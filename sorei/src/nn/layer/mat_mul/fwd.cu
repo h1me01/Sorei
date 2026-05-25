@@ -18,7 +18,7 @@ void MatMul::forward(
     SOREI_CHECK(in.data());
     SOREI_CHECK(out.data());
 
-    cuda::cublas::sgemm(false, false, alpha, weight, in, beta, out);
+    cublas::sgemm(false, false, alpha, weight, in, beta, out);
 }
 
 } // namespace sorei::nn

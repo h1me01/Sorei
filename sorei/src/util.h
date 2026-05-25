@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <format>
 #include <iostream>
-#include <string>
 #include <string_view>
 
 #define SOREI_CHECK(expr)                                                                          \
@@ -16,20 +15,6 @@
             std::exit(1);                                                                          \
         }                                                                                          \
     } while (0)
-
-#define SOREI_CUDA_CHECK(expr)                                                                     \
-    do {                                                                                           \
-        cudaError_t result = (expr);                                                               \
-        if (result != cudaSuccess) {                                                               \
-            printf("CUDA error: error when calling %s\n", #expr);                                  \
-            printf("    file: %s\n", __FILE__);                                                    \
-            printf("    line: %d\n", __LINE__);                                                    \
-            printf("    error: %s\n", cudaGetErrorString(result));                                 \
-            std::exit(1);                                                                          \
-        }                                                                                          \
-    } while (0)
-
-#define SOREI_CUDA_KERNEL_LAUNCH_CHECK() SOREI_CUDA_CHECK(cudaGetLastError())
 
 namespace sorei {
 
@@ -56,18 +41,6 @@ T* checked_cast(Base* ptr) {
     T* typed = dynamic_cast<T*>(ptr);
     SOREI_CHECK(typed);
     return typed;
-}
-
-inline void set_device(int id) { SOREI_CUDA_CHECK(cudaSetDevice(id)); }
-
-inline std::string device_info() {
-    int device = -1;
-    SOREI_CUDA_CHECK(cudaGetDevice(&device));
-
-    cudaDeviceProp prop{};
-    SOREI_CUDA_CHECK(cudaGetDeviceProperties(&prop, device));
-
-    return prop.name;
 }
 
 } // namespace sorei

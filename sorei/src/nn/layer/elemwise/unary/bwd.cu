@@ -19,13 +19,12 @@ unary_bwd_kernel(const float* in_d, float* in_g, const float* out_g, const int s
         in_g[idx] += val;
 }
 
-void ElemwiseUnary::backward(
-    matrix::DeviceMatrix<float>& in,
-    matrix::DeviceMatrix<float>& in_g,
-    const matrix::DeviceMatrix<float>& out_g,
-    const Op& op,
-    bool overwrite
-) {
+void ElemwiseUnary::backward() {
+    auto& in = input_->data();
+    auto& in_g = input_->grad();
+    auto& out_g = grad();
+    const bool overwrite = input_->consume_grad_write();
+
     if (in_g.empty())
         return;
 
@@ -38,14 +37,15 @@ void ElemwiseUnary::backward(
 
     std::visit(
         [&](auto&& o) {
-            if (overwrite)
+            if (overwrite) {
                 unary_bwd_kernel<std::decay_t<decltype(o)>, true>
                     <<<grid, BLOCK_SIZE>>>(in.data(), in_g.data(), out_g.data(), in.size(), o);
-            else
+            } else {
                 unary_bwd_kernel<std::decay_t<decltype(o)>, false>
                     <<<grid, BLOCK_SIZE>>>(in.data(), in_g.data(), out_g.data(), in.size(), o);
+            }
         },
-        op
+        op_
     );
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();

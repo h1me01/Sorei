@@ -1,4 +1,4 @@
-#include "../binary.h"
+#include "binary.h"
 
 namespace sorei::nn {
 
@@ -12,12 +12,11 @@ binary_forward_kernel(const float* a, const float* b, float* c, const int n, Op 
         c[idx] = op.forward(a[idx], b[idx]);
 }
 
-void ElemwiseBinary::forward(
-    const matrix::DeviceMatrix<float>& a,
-    const matrix::DeviceMatrix<float>& b,
-    matrix::DeviceMatrix<float>& c,
-    const Op& op
-) {
+void ElemwiseBinary::forward() {
+    auto& a = input1_->data();
+    auto& b = input2_->data();
+    auto& c = data();
+
     SOREI_CHECK(a.size() == b.size());
     SOREI_CHECK(a.size() == c.size());
 
@@ -31,7 +30,7 @@ void ElemwiseBinary::forward(
         [&](auto&& o) {
             binary_forward_kernel<<<grid, BLOCK_SIZE>>>(a.data(), b.data(), c.data(), a.size(), o);
         },
-        op
+        op_
     );
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();

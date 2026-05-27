@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "../../cuda_utils.h"
+#include "../../cuda/utils.h"
 #include "../../matrix/include.h"
 #include "../../util.h"
 

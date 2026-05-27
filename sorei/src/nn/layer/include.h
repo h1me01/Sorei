@@ -1,6 +1,6 @@
 #pragma once
 
-#include "affine.h"
+#include "affine/affine.h"
 #include "concat/concat.h"
 #include "elemwise/include.h"
 #include "input.h"

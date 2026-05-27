@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-#include "../cuda_utils.h"
+#include "../cuda/utils.h"
 #include "base.h"
 
 namespace sorei::matrix {

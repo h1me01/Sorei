@@ -11,7 +11,6 @@
 #include "grad_check.h" // make_param
 
 using namespace sorei;
-using namespace sorei::cuda;
 using namespace sorei::matrix;
 using namespace sorei::nn;
 
@@ -38,7 +37,7 @@ struct SimpleSquareLoss {
         loss->forward();
         cudaDeviceSynchronize();
 
-        loss->grad().upload(HostMatrix<float>::filled(loss->shape(), 1.0f));
+        sorei::cuda::set(loss->grad(), 1.0f);
         sq->grad().clear();
         param->grad().clear();
         loss->backward();

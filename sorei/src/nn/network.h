@@ -4,9 +4,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../cuda/ops.h"
 #include "layer/include.h"
 
-namespace sorei::nn::network {
+namespace sorei::nn {
 
 class Network {
   public:
@@ -27,7 +28,7 @@ class Network {
             SOREI_CHECK(loss_->shape().size() == 1);
             running_loss_.resize(loss_->shape());
             running_loss_.clear();
-            loss_->grad().upload(matrix::HostMatrix<float>::filled(loss_->shape(), 1.0f));
+            cuda::set(loss_->grad(), 1.0f);
         }
     }
 
@@ -41,7 +42,7 @@ class Network {
             layer->forward();
 
         if (loss_)
-            ElemwiseBinary::forward(running_loss_, loss_->data(), running_loss_, binary::Add{});
+            cuda::add(running_loss_, loss_->data(), running_loss_);
     }
 
     void backward() {
@@ -81,4 +82,4 @@ class Network {
     }
 };
 
-} // namespace sorei::nn::network
+} // namespace sorei::nn

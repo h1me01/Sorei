@@ -11,9 +11,10 @@ __global__ void unary_fwd_kernel(const float* in, float* out, const int size, Op
         out[idx] = op.forward(in[idx]);
 }
 
-void ElemwiseUnary::forward(
-    const matrix::DeviceMatrix<float>& in, matrix::DeviceMatrix<float>& out, const Op& op
-) {
+void ElemwiseUnary::forward() {
+    auto& in = input_->data();
+    auto& out = data();
+
     SOREI_CHECK(in.size() == out.size());
 
     SOREI_CHECK(in.data());
@@ -25,7 +26,7 @@ void ElemwiseUnary::forward(
         [&](auto&& o) {
             unary_fwd_kernel<<<grid, BLOCK_SIZE>>>(in.data(), out.data(), in.size(), o);
         },
-        op
+        op_
     );
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();

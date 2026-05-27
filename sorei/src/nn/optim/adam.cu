@@ -1,4 +1,4 @@
-#include "../../cuda_utils.h"
+#include "../../cuda/utils.h"
 
 #include "adam.h"
 

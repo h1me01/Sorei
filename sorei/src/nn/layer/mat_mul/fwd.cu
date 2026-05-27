@@ -5,11 +5,11 @@ namespace sorei::nn {
 constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
 
-void MatMul::forward(
-    const matrix::DeviceMatrix<float>& weight,
-    const matrix::DeviceMatrix<float>& in,
-    matrix::DeviceMatrix<float>& out
-) {
+void MatMul::forward() {
+    auto& weight = weight_->data();
+    auto& in = input_->data();
+    auto& out = data();
+
     SOREI_CHECK(in.cols() == out.cols());
     SOREI_CHECK(weight.rows() == out.rows());
     SOREI_CHECK(weight.cols() == in.rows());

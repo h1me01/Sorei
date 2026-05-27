@@ -1,4 +1,4 @@
-#include "../binary.h"
+#include "binary.h"
 
 namespace sorei::nn {
 
@@ -32,16 +32,16 @@ __global__ void binary_backward_kernel(
     }
 }
 
-void ElemwiseBinary::backward(
-    const matrix::DeviceMatrix<float>& a,
-    matrix::DeviceMatrix<float>& a_g,
-    const matrix::DeviceMatrix<float>& b,
-    matrix::DeviceMatrix<float>& b_g,
-    const matrix::DeviceMatrix<float>& c_g,
-    const Op& op,
-    bool ow_a_g,
-    bool ow_b_g
-) {
+void ElemwiseBinary::backward() {
+    const bool ow_a_g = input1_->consume_grad_write();
+    const bool ow_b_g = input2_->consume_grad_write();
+
+    auto& a = input1_->data();
+    auto& b = input2_->data();
+    auto& a_g = input1_->grad();
+    auto& b_g = input2_->grad();
+    auto& c_g = grad();
+
     SOREI_CHECK(a.size() == b.size());
     SOREI_CHECK(a.size() == c_g.size());
 
@@ -63,7 +63,7 @@ void ElemwiseBinary::backward(
                     );
             };
 
-            bool ha = !a_g.empty(), hb = !b_g.empty();
+            const bool ha = !a_g.empty(), hb = !b_g.empty();
             if (ha && hb) {
                 if (ow_a_g && ow_b_g)
                     launch.template operator()<true, true, true, true>();
@@ -85,7 +85,7 @@ void ElemwiseBinary::backward(
                     launch.template operator()<false, true, false, false>();
             }
         },
-        op
+        op_
     );
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();

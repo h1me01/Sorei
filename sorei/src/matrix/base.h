@@ -53,21 +53,6 @@ class HostMatrixBase {
         return out;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const HostMatrixBase& m) {
-        const auto& s = m.self();
-        os << "Matrix " << s.shape() << "\n" << std::fixed << std::setprecision(4);
-        for (int r = 0; r < s.rows(); ++r) {
-            os << "  [ ";
-            for (int c = 0; c < s.cols(); ++c) {
-                os << std::setw(10) << s(r, c);
-                if (c + 1 < s.cols())
-                    os << ", ";
-            }
-            os << " ]\n";
-        }
-        return os;
-    }
-
   private:
     Derived& self() { return static_cast<Derived&>(*this); }
     const Derived& self() const { return static_cast<const Derived&>(*this); }

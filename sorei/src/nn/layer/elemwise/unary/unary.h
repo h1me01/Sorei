@@ -25,21 +25,8 @@ class ElemwiseUnary : public TypedLayer<float> {
           input_(checked_cast<TypedLayer<float>>(input)),
           op_(op) {}
 
-    void forward() override { forward(input_->data(), data(), op_); }
-    void backward() override {
-        backward(input_->data(), input_->grad(), grad(), op_, input_->consume_grad_write());
-    }
-
-    static void
-    forward(const matrix::DeviceMatrix<float>& in, matrix::DeviceMatrix<float>& out, const Op& op);
-
-    static void backward(
-        matrix::DeviceMatrix<float>& in,
-        matrix::DeviceMatrix<float>& in_g,
-        const matrix::DeviceMatrix<float>& out_g,
-        const Op& op,
-        bool overwrite
-    );
+    void forward() override;
+    void backward() override;
 
     Op op() const { return op_; }
     std::vector<LayerInputSlot> mutable_inputs() override { return {LayerInputSlot::from(input_)}; }

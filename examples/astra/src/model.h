@@ -101,10 +101,10 @@ struct AstraModel : sorei::nn::Model {
         l3 = b.affine_layer(L2_SIZE, OUTPUT_BUCKETS);
 
         // inputs
-        auto stm_in = b.input_int("stm_in", {32, 0});
-        auto nstm_in = b.input_int("nstm_in", {32, 0});
-        auto output_bucket = b.bucket_index("output_bucket", OUTPUT_BUCKETS, 0);
-        auto target = b.input_float("target", {1, 0});
+        auto stm_in = b.input_int("stm_in", {32, 1});
+        auto nstm_in = b.input_int("nstm_in", {32, 1});
+        auto output_bucket = b.bucket_index("output_bucket", OUTPUT_BUCKETS, 1);
+        auto target = b.input_float("target", {1, 1});
 
         // forward pass
         auto repeated_factorizer = b.concat(
@@ -133,10 +133,8 @@ struct AstraModel : sorei::nn::Model {
     float predict(const std::string& fen) {
         chess::Position pos;
         pos.set(fen);
-        std::vector<binpack::TrainingDataEntry> ds{{pos}};
-
         AstraInputs batch;
-        batch.fill(ds);
+        batch.fill({binpack::TrainingDataEntry{pos}});
 
         forward({
             {"stm_in", batch.stm_indices},

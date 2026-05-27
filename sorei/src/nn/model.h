@@ -121,10 +121,10 @@ class Model {
 
   private:
     Graph graph_;
-    std::unique_ptr<network::Network> net_;
+    std::unique_ptr<Network> net_;
     std::unordered_map<std::string, Layer*> layer_map_;
 
-    network::Network& network() {
+    Network& network() {
         if (!net_) {
             GraphBuilder b{graph_};
             auto [pred_node, loss_node] = build_graph(b);
@@ -140,7 +140,7 @@ class Model {
             for (const auto& node : sorted)
                 layer_map_[node->name()] = node;
 
-            net_ = std::make_unique<network::Network>(std::move(sorted), pred, loss);
+            net_ = std::make_unique<Network>(std::move(sorted), pred, loss);
         }
         return *net_;
     }

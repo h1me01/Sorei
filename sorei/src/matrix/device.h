@@ -2,7 +2,7 @@
 
 #include <cuda_runtime.h>
 
-#include "../cuda_utils.h"
+#include "../cuda/utils.h"
 #include "host.h"
 #include "host_pinned.h"
 
@@ -112,8 +112,7 @@ class DeviceMatrix {
     template <typename HostSrc>
     void upload_async(const HostSrc& src, cudaStream_t stream) {
         SOREI_CHECK(src.shape() == shape_);
-        SOREI_CUDA_CHECK(
-            cudaMemcpyAsync(data_, src.data(), bytes(), cudaMemcpyHostToDevice, stream)
+        SOREI_CUDA_CHECK(cudaMemcpyAsync(data_, src.data(), bytes(), cudaMemcpyHostToDevice, stream)
         );
     }
 
@@ -127,8 +126,7 @@ class DeviceMatrix {
     template <typename HostDst>
     void download_async(HostDst& dst, cudaStream_t stream) const {
         SOREI_CHECK(dst.shape() == shape_);
-        SOREI_CUDA_CHECK(
-            cudaMemcpyAsync(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost, stream)
+        SOREI_CUDA_CHECK(cudaMemcpyAsync(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost, stream)
         );
     }
 

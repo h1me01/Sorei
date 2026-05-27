@@ -5,12 +5,13 @@
 
 namespace sorei::nn {
 
-class MatMul : public TypedLayer<float> {
+class Affine : public TypedLayer<float> {
   public:
-    MatMul(Layer* weight, Layer* input)
-        : TypedLayer<float>("MatMul"),
+    Affine(Layer* input, Layer* weight, Layer* bias)
+        : TypedLayer<float>("Affine"),
+          input_(checked_cast<TypedLayer<float>>(input)),
           weight_(checked_cast<TypedLayer<float>>(weight)),
-          input_(checked_cast<TypedLayer<float>>(input)) {
+          bias_(checked_cast<TypedLayer<float>>(bias)) {
 
         SOREI_CHECK(weight_->shape().cols() == input_->shape().rows());
     }
@@ -19,7 +20,9 @@ class MatMul : public TypedLayer<float> {
     void backward() override;
 
     std::vector<LayerInputSlot> mutable_inputs() override {
-        return {LayerInputSlot::from(weight_), LayerInputSlot::from(input_)};
+        return {
+            LayerInputSlot::from(input_), LayerInputSlot::from(weight_), LayerInputSlot::from(bias_)
+        };
     }
 
     matrix::Shape shape() const override {
@@ -27,8 +30,9 @@ class MatMul : public TypedLayer<float> {
     }
 
   private:
-    TypedLayer<float>* weight_;
     TypedLayer<float>* input_;
+    TypedLayer<float>* weight_;
+    TypedLayer<float>* bias_;
 };
 
 } // namespace sorei::nn

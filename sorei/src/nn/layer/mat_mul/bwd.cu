@@ -4,15 +4,16 @@ namespace sorei::nn {
 
 constexpr float alpha = 1.0f;
 
-void MatMul::backward(
-    const matrix::DeviceMatrix<float>& weight,
-    matrix::DeviceMatrix<float>& weight_g,
-    const matrix::DeviceMatrix<float>& in,
-    matrix::DeviceMatrix<float>& in_g,
-    const matrix::DeviceMatrix<float>& out_g,
-    bool ow_in_g,
-    bool ow_weight_g
-) {
+void MatMul::backward() {
+    const bool ow_in_g = input_->consume_grad_write();
+    const bool ow_weight_g = weight_->consume_grad_write();
+
+    auto& weight = weight_->data();
+    auto& weight_g = weight_->grad();
+    auto& in = input_->data();
+    auto& in_g = input_->grad();
+    auto& out_g = grad();
+
     SOREI_CHECK(weight.rows() == out_g.rows());
 
     SOREI_CHECK(weight.data());

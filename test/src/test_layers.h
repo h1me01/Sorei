@@ -33,22 +33,6 @@ TEST(Layer, ElemwiseUnary_Shape) {
     EXPECT_EQ(layer.data().cols(), 4);
 }
 
-TEST(Layer, ElemwiseBinary_Shape_NonBroadcast) {
-    Param a({4, 3});
-    Param b({4, 3});
-    ElemwiseBinary layer(&a, &b, binary::Add{});
-    EXPECT_EQ(layer.data().rows(), 4);
-    EXPECT_EQ(layer.data().cols(), 3);
-}
-
-TEST(Layer, ElemwiseBinary_Shape_Broadcast) {
-    Param bias({4, 1});
-    Param data({4, 5});
-    ElemwiseBinary layer(&bias, &data, binary::Add{});
-    EXPECT_EQ(layer.data().rows(), 4);
-    EXPECT_EQ(layer.data().cols(), 5);
-}
-
 TEST(Layer, MatMul_Shape) {
     Param w({8, 6});
     Param x({6, 4});

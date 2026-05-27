@@ -88,20 +88,6 @@ TEST(Grad, ElemwiseBinary_Div) {
     EXPECT_GRAD_OK(grad_check(layer.get(), {a.get(), b.get()}), 0.05f);
 }
 
-TEST(Grad, ElemwiseBinary_Broadcast_Add) {
-    auto bias = make_param({4, 1});
-    auto data = make_param({4, 5});
-    auto layer = std::make_unique<nn::ElemwiseBinary>(bias.get(), data.get(), binary::Add{});
-    EXPECT_GRAD_OK(grad_check(layer.get(), {bias.get(), data.get()}), 0.01f);
-}
-
-TEST(Grad, ElemwiseBinary_Broadcast_Mul) {
-    auto scale = make_param({3, 1}, 0.5f, 2.0f);
-    auto data = make_param({3, 4}, 0.5f, 2.0f);
-    auto layer = std::make_unique<nn::ElemwiseBinary>(scale.get(), data.get(), binary::Mul{});
-    EXPECT_GRAD_OK(grad_check(layer.get(), {scale.get(), data.get()}), 0.05f);
-}
-
 TEST(Grad, MatMul) {
     auto w = make_param({3, 4});
     auto x = make_param({4, 5});

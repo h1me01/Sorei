@@ -63,15 +63,13 @@ class BinpackLoader {
           filenames_(std::move(filenames)),
           shuffle_buffer_size_(shuffle_buffer_size),
           num_workers_(shuffle_buffer_size > 0 ? 1 : num_worker_threads(thread_count)),
-          stream_(
-              std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
-                  num_reader_threads(thread_count_),
-                  filenames_,
-                  std::ios::in | std::ios::binary,
-                  true,
-                  std::move(skip_predicate)
-              )
-          ) {
+          stream_(std::make_unique<binpack::CompressedTrainingDataEntryParallelReader>(
+              num_reader_threads(thread_count_),
+              filenames_,
+              std::ios::in | std::ios::binary,
+              true,
+              std::move(skip_predicate)
+          )) {
 
         validate_files(filenames_);
         stop_flag_.store(false);

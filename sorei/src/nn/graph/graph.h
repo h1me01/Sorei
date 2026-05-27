@@ -31,7 +31,6 @@ class Graph {
             index[top_order[i]] = i;
 
         for (auto* n : top_order) {
-
             std::string inputs;
             for (auto* inp : n->inputs()) {
                 if (!inputs.empty())

@@ -7,7 +7,7 @@ constexpr int BLOCK_SIZE = 1024;
 constexpr float alpha = 1.0f;
 constexpr float beta = 0.0f;
 
-__global__ void bias_add_kernel(const float* bias, float* out, const int rows, const int cols) {
+__global__ void bias_add_fwd_kernel(const float* bias, float* out, const int rows, const int cols) {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < rows * cols)
         out[idx] += bias[idx % rows];
@@ -33,7 +33,7 @@ void Affine::forward() {
     cublas::sgemm(false, false, alpha, weight, in, beta, out);
 
     const int grid = cuda::ceil_div(out.size(), BLOCK_SIZE);
-    bias_add_kernel<<<grid, BLOCK_SIZE>>>(bias.data(), out.data(), out.rows(), out.cols());
+    bias_add_fwd_kernel<<<grid, BLOCK_SIZE>>>(bias.data(), out.data(), out.rows(), out.cols());
 
     SOREI_CUDA_KERNEL_LAUNCH_CHECK();
 }

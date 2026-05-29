@@ -51,18 +51,6 @@ class HostMatrix : public HostMatrixBase<T, HostMatrix<T>> {
 
     ~HostMatrix() = default;
 
-    static HostMatrix zeros(const Shape& shape) {
-        HostMatrix m(shape);
-        m.clear();
-        return m;
-    }
-
-    static HostMatrix filled(const Shape& shape, const T& value) {
-        HostMatrix m(shape);
-        m.fill(value);
-        return m;
-    }
-
     int rows() const { return shape_.rows(); }
     int cols() const { return shape_.cols(); }
     int size() const { return shape_.size(); }
@@ -76,6 +64,14 @@ class HostMatrix : public HostMatrixBase<T, HostMatrix<T>> {
             shape_ = new_shape;
             data_ = new_shape.size() > 0 ? std::make_unique<T[]>(new_shape.size()) : nullptr;
         }
+    }
+
+    HostMatrix transpose() const {
+        HostMatrix out(Shape{cols(), rows()});
+        for (int r = 0; r < rows(); ++r)
+            for (int c = 0; c < cols(); ++c)
+                out(c, r) = (*this)(r, c);
+        return out;
     }
 
   private:

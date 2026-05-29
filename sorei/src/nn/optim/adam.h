@@ -26,7 +26,7 @@ class AdamW : public Optimizer {
         }
     }
 
-    void load_state(const std::string& path) override {
+    void load_state(const std::string& path) {
         const std::filesystem::path state_path = std::filesystem::path(path);
         if (!std::filesystem::exists(state_path))
             error("Optimizer: state directory does not exist {}", state_path.string());
@@ -41,7 +41,7 @@ class AdamW : public Optimizer {
         }
     }
 
-    void save_state(const std::string& path) const override {
+    void save_state(const std::string& path) const {
         const std::filesystem::path state_path = std::filesystem::path(path);
 
         try {

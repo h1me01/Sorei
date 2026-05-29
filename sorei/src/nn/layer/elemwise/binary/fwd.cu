@@ -5,8 +5,7 @@ namespace sorei::nn {
 constexpr int BLOCK_SIZE = 1024;
 
 template <typename Op>
-__global__ void
-binary_forward_kernel(const float* a, const float* b, float* c, const int n, Op op) {
+__global__ void binary_fwd_kernel(const float* a, const float* b, float* c, const int n, Op op) {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < n)
         c[idx] = op.forward(a[idx], b[idx]);
@@ -28,7 +27,7 @@ void ElemwiseBinary::forward() {
 
     std::visit(
         [&](auto&& o) {
-            binary_forward_kernel<<<grid, BLOCK_SIZE>>>(a.data(), b.data(), c.data(), a.size(), o);
+            binary_fwd_kernel<<<grid, BLOCK_SIZE>>>(a.data(), b.data(), c.data(), a.size(), o);
         },
         op_
     );

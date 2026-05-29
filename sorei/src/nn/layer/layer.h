@@ -99,18 +99,6 @@ class TypedLayer : public Layer {
 
     virtual ~TypedLayer() = default;
 
-    matrix::DeviceMatrix<T>& data() {
-        if (!drop_buffers_)
-            data_.resize(shape());
-        return data_;
-    }
-
-    matrix::DeviceMatrix<T>& grad() {
-        if (requires_grad() && !drop_buffers_)
-            grad_.resize(shape());
-        return grad_;
-    }
-
     bool consume_grad_write() {
         bool first = grad_first_write_;
         grad_first_write_ = false;
@@ -118,6 +106,18 @@ class TypedLayer : public Layer {
     }
 
     void reset_grad_write() { grad_first_write_ = true; }
+
+    matrix::DeviceMatrix<T>& data() {
+        if (!drop_buffers_)
+            data_.resize(shape());
+        return data_;
+    }
+
+    matrix::DeviceMatrix<T>& grad() {
+        if (!drop_buffers_ && requires_grad())
+            grad_.resize(shape());
+        return grad_;
+    }
 
   protected:
     void drop_buffers() {

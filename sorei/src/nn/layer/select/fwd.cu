@@ -22,8 +22,7 @@ __global__ void select_fwd_kernel(
     const int bucket = indices[batch_idx];
     const int in_offset = in_r * batch_idx + out_r * bucket + out_idx;
 
-    const int out_offset = out_r * batch_idx + out_idx;
-    out[out_offset] = in[in_offset];
+    out[out_r * batch_idx + out_idx] = in[in_offset];
 }
 
 void Select::forward() {

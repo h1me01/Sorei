@@ -62,18 +62,6 @@ class HostPinnedMatrix : public HostMatrixBase<T, HostPinnedMatrix<T>> {
 
     ~HostPinnedMatrix() { free(); }
 
-    static HostPinnedMatrix zeros(const Shape& shape) {
-        HostPinnedMatrix m(shape);
-        m.clear();
-        return m;
-    }
-
-    static HostPinnedMatrix filled(const Shape& shape, const T& value) {
-        HostPinnedMatrix m(shape);
-        m.fill(value);
-        return m;
-    }
-
     int rows() const { return shape_.rows(); }
     int cols() const { return shape_.cols(); }
     int size() const { return shape_.size(); }

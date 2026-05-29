@@ -82,59 +82,57 @@ class DeviceMatrix {
         alloc();
     }
 
-    void clear(cudaStream_t stream = 0) {
+    void clear() {
         if (data_)
-            SOREI_CUDA_CHECK(cudaMemsetAsync(data_, 0, bytes(), stream));
+            SOREI_CUDA_CHECK(cudaMemset(data_, 0, bytes()));
     }
 
-    template <typename HostSrc>
-    void upload(const HostSrc& src) {
+    template <typename Src>
+    void upload(const Src& src) {
         SOREI_CHECK(src.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpy(data_, src.data(), bytes(), cudaMemcpyHostToDevice));
+        if constexpr (std::is_same_v<Src, DeviceMatrix>) {
+            SOREI_CUDA_CHECK(cudaMemcpy(data_, src.data(), bytes(), cudaMemcpyDeviceToDevice));
+        } else {
+            SOREI_CUDA_CHECK(cudaMemcpy(data_, src.data(), bytes(), cudaMemcpyHostToDevice));
+        }
     }
 
-    template <typename HostDst>
-    void download(HostDst& dst) const {
+    template <typename Dst>
+    void download(Dst& dst) const {
         SOREI_CHECK(dst.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost));
+        if constexpr (std::is_same_v<Dst, DeviceMatrix>) {
+            SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), data_, bytes(), cudaMemcpyDeviceToDevice));
+        } else {
+            SOREI_CUDA_CHECK(cudaMemcpy(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost));
+        }
     }
 
-    void upload(const DeviceMatrix& src) {
+    template <typename Src>
+    void upload_async(const Src& src, cudaStream_t stream = 0) {
         SOREI_CHECK(src.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpy(data_, src.data_, bytes(), cudaMemcpyDeviceToDevice));
+        if constexpr (std::is_same_v<Src, DeviceMatrix>) {
+            SOREI_CUDA_CHECK(
+                cudaMemcpyAsync(data_, src.data(), bytes(), cudaMemcpyDeviceToDevice, stream)
+            );
+        } else {
+            SOREI_CUDA_CHECK(
+                cudaMemcpyAsync(data_, src.data(), bytes(), cudaMemcpyHostToDevice, stream)
+            );
+        }
     }
 
-    void download(DeviceMatrix& dst) const {
+    template <typename Dst>
+    void download_async(Dst& dst, cudaStream_t stream = 0) const {
         SOREI_CHECK(dst.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpy(dst.data_, data_, bytes(), cudaMemcpyDeviceToDevice));
-    }
-
-    template <typename HostSrc>
-    void upload_async(const HostSrc& src, cudaStream_t stream) {
-        SOREI_CHECK(src.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpyAsync(data_, src.data(), bytes(), cudaMemcpyHostToDevice, stream)
-        );
-    }
-
-    void upload_async(const DeviceMatrix& src, cudaStream_t stream) {
-        SOREI_CHECK(src.shape() == shape_);
-        SOREI_CUDA_CHECK(
-            cudaMemcpyAsync(data_, src.data_, bytes(), cudaMemcpyDeviceToDevice, stream)
-        );
-    }
-
-    template <typename HostDst>
-    void download_async(HostDst& dst, cudaStream_t stream) const {
-        SOREI_CHECK(dst.shape() == shape_);
-        SOREI_CUDA_CHECK(cudaMemcpyAsync(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost, stream)
-        );
-    }
-
-    void download_async(DeviceMatrix& dst, cudaStream_t stream) const {
-        SOREI_CHECK(dst.shape() == shape_);
-        SOREI_CUDA_CHECK(
-            cudaMemcpyAsync(dst.data_, data_, bytes(), cudaMemcpyDeviceToDevice, stream)
-        );
+        if constexpr (std::is_same_v<Dst, DeviceMatrix>) {
+            SOREI_CUDA_CHECK(
+                cudaMemcpyAsync(dst.data(), data_, bytes(), cudaMemcpyDeviceToDevice, stream)
+            );
+        } else {
+            SOREI_CUDA_CHECK(
+                cudaMemcpyAsync(dst.data(), data_, bytes(), cudaMemcpyDeviceToHost, stream)
+            );
+        }
     }
 
     HostMatrix<T> to_host() const {

@@ -22,24 +22,22 @@ __global__ void select_bwd_kernel(
     const int bucket = indices[batch_idx];
     const int in_offset = in_r * batch_idx + out_r * bucket + out_idx;
 
-    const int out_offset = out_r * batch_idx + out_idx;
-    in_g[in_offset] += out_g[out_offset];
+    in_g[in_offset] += out_g[out_r * batch_idx + out_idx];
 }
 
 void Select::backward() {
     auto& in_g = input_->grad();
+    if (in_g.empty())
+        return;
+
     auto& out_g = grad();
     auto& indices = bucket_->data();
-
-    if (!input_->requires_grad())
-        return;
 
     SOREI_CHECK(indices.rows() == 1);
     SOREI_CHECK(in_g.cols() == out_g.cols());
     SOREI_CHECK(out_g.cols() == indices.cols());
     SOREI_CHECK(in_g.rows() % out_g.rows() == 0);
 
-    SOREI_CHECK(in_g.data());
     SOREI_CHECK(out_g.data());
     SOREI_CHECK(indices.data());
 

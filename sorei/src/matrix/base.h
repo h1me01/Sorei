@@ -45,14 +45,6 @@ class HostMatrixBase {
     void clear() { std::memset(self().data(), 0, self().bytes()); }
     void fill(const T& value) { std::fill_n(self().data(), self().size(), value); }
 
-    Derived transpose() const {
-        Derived out(Shape{self().cols(), self().rows()});
-        for (int r = 0; r < self().rows(); ++r)
-            for (int c = 0; c < self().cols(); ++c)
-                out(c, r) = (*this)(r, c);
-        return out;
-    }
-
   private:
     Derived& self() { return static_cast<Derived&>(*this); }
     const Derived& self() const { return static_cast<const Derived&>(*this); }

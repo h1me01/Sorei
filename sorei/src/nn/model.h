@@ -131,7 +131,7 @@ class Model {
             auto* pred = pred_node.get();
             auto* loss = loss_node.get();
 
-            if (loss && loss->shape().rows() != 1)
+            if (loss && loss->shape().size() != 1)
                 error("Model: loss output must be a scalar");
 
             GraphOptimizer{graph_, pred, loss};

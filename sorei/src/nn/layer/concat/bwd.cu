@@ -35,7 +35,8 @@ void Concat::backward() {
     int offset = 0;
     for (const auto& input : inputs_) {
         auto& in_g = input->grad();
-        SOREI_CHECK(in_g.data());
+        if (in_g.empty())
+            continue;
 
         const int blocks = cuda::ceil_div(in_g.size(), BLOCK_SIZE);
 

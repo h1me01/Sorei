@@ -40,7 +40,6 @@ __global__ void sparse_affine_pairwise_mul_fwd_vec_kernel(
         const int idx = shared_indices[i];
         if (idx == -1)
             break;
-
         const int base = idx * weight_r4 + row4;
         sum_a = cuda::add_t4(sum_a, w4[base]);
         sum_b = cuda::add_t4(sum_b, w4[base + half4]);

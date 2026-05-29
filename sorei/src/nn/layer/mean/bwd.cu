@@ -18,10 +18,10 @@ __global__ void mean_bwd_kernel(float* in_g, const float* out_g, const int size)
 }
 
 void Mean::backward() {
-    if (!input_->requires_grad())
+    auto& in_g = input_->grad();
+    if (in_g.empty())
         return;
 
-    auto& in_g = input_->grad();
     auto& out_g = grad();
 
     SOREI_CHECK(out_g.size() == 1);

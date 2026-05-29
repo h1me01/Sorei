@@ -5,7 +5,7 @@ namespace sorei::nn {
 constexpr int BLOCK_SIZE = 1024;
 
 template <typename Op, bool GradA, bool GradB, bool OverwriteA, bool OverwriteB>
-__global__ void binary_backward_kernel(
+__global__ void binary_bwd_kernel(
     const float* a, const float* b, float* a_g, float* b_g, const float* c_g, const int size, Op op
 ) {
     const int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -57,7 +57,7 @@ void ElemwiseBinary::backward() {
     std::visit(
         [&](auto&& o) {
             auto launch = [&]<bool GradA, bool GradB, bool OvA, bool OvB>() {
-                binary_backward_kernel<std::decay_t<decltype(o)>, GradA, GradB, OvA, OvB>
+                binary_bwd_kernel<std::decay_t<decltype(o)>, GradA, GradB, OvA, OvB>
                     <<<grid, BLOCK_SIZE>>>(
                         a.data(), b.data(), a_g.data(), b_g.data(), c_g.data(), a.size(), o
                     );

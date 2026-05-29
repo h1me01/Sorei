@@ -9,9 +9,6 @@
 
 namespace sorei::nn {
 
-using ActOp =
-    std::variant<unary::Identity, unary::ReLU, unary::ClampedReLU, unary::SquaredClampedReLU>;
-
 class SparseAffineBase : public TypedLayer<float> {
   public:
     SparseAffineBase(InputInt* input, Layer* weight, Layer* bias)
@@ -23,7 +20,7 @@ class SparseAffineBase : public TypedLayer<float> {
         SOREI_CHECK(input);
     }
 
-    void fuse_with_concat(FusedConcat* c) {
+    void fuse(FusedConcat* c) {
         SOREI_CHECK(c);
         concat_ = c;
         out_offset_ = c->offset_of(this);
@@ -31,8 +28,17 @@ class SparseAffineBase : public TypedLayer<float> {
         drop_buffers();
     }
 
-    void set_activation(ActOp act_op) { act_op_ = act_op; }
-    ActOp activation() const { return act_op_; }
+    bool set_activation(ElemwiseUnary::Op op) {
+        bool supported = std::holds_alternative<unary::ReLU>(op) ||
+                         std::holds_alternative<unary::ClampedReLU>(op) ||
+                         std::holds_alternative<unary::SquaredClampedReLU>(op);
+        if (!supported)
+            return false;
+        act_op_ = op;
+        return true;
+    }
+
+    ElemwiseUnary::Op activation() const { return act_op_; }
     bool has_activation() const { return !std::holds_alternative<unary::Identity>(act_op_); }
 
     InputInt* input() const { return input_; }
@@ -52,18 +58,18 @@ class SparseAffineBase : public TypedLayer<float> {
   protected:
     int out_offset_ = 0;
     FusedConcat* concat_ = nullptr;
-    ActOp act_op_ = unary::Identity{};
+    ElemwiseUnary::Op act_op_ = unary::Identity{};
 
     InputInt* input_;
     TypedLayer<float>* weight_;
     TypedLayer<float>* bias_;
 
     matrix::DeviceMatrix<float>& effective_data() {
-        return concat_ ? concat_->data() : TypedLayer<float>::data();
+        return concat_ ? concat_->data() : SparseAffineBase::data();
     }
 
     matrix::DeviceMatrix<float>& effective_grad() {
-        return concat_ ? concat_->grad() : TypedLayer<float>::grad();
+        return concat_ ? concat_->grad() : SparseAffineBase::grad();
     }
 };
 

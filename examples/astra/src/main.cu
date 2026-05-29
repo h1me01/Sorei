@@ -125,7 +125,7 @@ void train(
                  {"target", astra_inputs.targets}}
             );
             model.backward();
-            optim.step(lr_sched.get_lr());
+            optim.step(lr_sched.lr());
 
             if (batch % 100 == 0 || batch == batches_per_epoch) {
                 float time_sec = timer.elapsed() / 1000.0f;

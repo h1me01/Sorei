@@ -72,16 +72,6 @@ class GraphOptimizer {
         }
     }
 
-    static std::optional<ActOp> as_activation(const ElemwiseUnary::Op& op) {
-        if (std::holds_alternative<unary::ReLU>(op))
-            return ActOp{std::get<unary::ReLU>(op)};
-        if (std::holds_alternative<unary::ClampedReLU>(op))
-            return ActOp{std::get<unary::ClampedReLU>(op)};
-        if (std::holds_alternative<unary::SquaredClampedReLU>(op))
-            return ActOp{std::get<unary::SquaredClampedReLU>(op)};
-        return std::nullopt;
-    }
-
     // Fusion passes
 
     void fuse_sparse_affine() {
@@ -91,11 +81,9 @@ class GraphOptimizer {
             if (!unary)
                 return false;
 
-            auto act = as_activation(unary->op());
-            if (!act)
+            if (!sa.set_activation(unary->op()))
                 return false;
 
-            sa.set_activation(*act);
             redirect_and_remove(unary, &sa);
             return true;
         });
@@ -131,32 +119,9 @@ class GraphOptimizer {
 
             auto* fused = static_cast<FusedConcat*>(graph_.emplace<FusedConcat>(cn.inputs()));
             for (auto* inp : fused->inputs())
-                static_cast<SparseAffineBase*>(inp)->fuse_with_concat(fused);
+                static_cast<SparseAffineBase*>(inp)->fuse(fused);
 
             redirect_and_remove(&cn, fused);
-            return true;
-        });
-
-        // fuse activation following FusedConcat into each SparseAffineBase input
-        fixed_point<FusedConcat>([this](FusedConcat& cn, const ConsumerMap& consumers) -> bool {
-            auto* unary = dynamic_cast<ElemwiseUnary*>(sole_consumer(&cn, consumers));
-            if (!unary)
-                return false;
-
-            auto act = as_activation(unary->op());
-            if (!act)
-                return false;
-
-            bool ok = std::ranges::all_of(cn.inputs(), [&](Layer* inp) {
-                return !static_cast<SparseAffineBase*>(inp)->has_activation();
-            });
-            if (!ok)
-                return false;
-
-            for (auto* inp : cn.inputs())
-                static_cast<SparseAffineBase*>(inp)->set_activation(*act);
-
-            redirect_and_remove(unary, &cn);
             return true;
         });
     }

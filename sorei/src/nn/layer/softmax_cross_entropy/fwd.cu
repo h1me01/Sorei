@@ -3,13 +3,13 @@
 namespace sorei::nn {
 
 // inspired from https://github.com/Infatoshi/mnist-cuda
-__global__ void softmax_cross_entropy_forward_kernel(
+__global__ void softmax_cross_entropy_fwd_kernel(
     const float* logits,
     const int* labels,
     float* losses,
     float* probs,
-    int batch_size,
-    int num_classes
+    const int batch_size,
+    const int num_classes
 ) {
     extern __shared__ float shared_logits[];
 
@@ -56,9 +56,7 @@ __global__ void softmax_cross_entropy_forward_kernel(
 
     if (tid < num_classes) {
         float prob = expf(sample_logits[tid] - max_logit) / sum_exp;
-
         sample_probs[tid] = prob;
-
         if (tid == labels[sample])
             losses[sample] = -logf(max(prob, 1e-7f));
     }
@@ -72,10 +70,10 @@ void SoftmaxCrossEntropy::forward() {
     losses.resize(shape());
     probs_.resize(logits.shape());
 
-    const int threads = get_block_size();
-    const size_t smem = threads * sizeof(float);
+    const int block_size = get_block_size();
+    const size_t smem = block_size * sizeof(float);
 
-    softmax_cross_entropy_forward_kernel<<<logits.cols(), threads, smem>>>(
+    softmax_cross_entropy_fwd_kernel<<<logits.cols(), block_size, smem>>>(
         logits.data(), labels.data(), losses.data(), probs_.data(), logits.cols(), logits.rows()
     );
 

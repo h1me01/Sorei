@@ -28,8 +28,7 @@ class ConcatBase : public TypedLayer<float> {
 
     matrix::Shape shape() const override {
         bool is_vertical = (axis_ == ConcatAxis::Rows);
-        auto base_shape = inputs_[0]->shape();
-        const int fixed = is_vertical ? base_shape.cols() : base_shape.rows();
+        const int fixed = is_vertical ? inputs_[0]->shape().cols() : inputs_[0]->shape().rows();
 
         int total = 0;
         for (const auto& input : inputs_) {

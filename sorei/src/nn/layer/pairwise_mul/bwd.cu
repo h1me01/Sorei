@@ -30,10 +30,10 @@ __global__ void pairwise_mul_bwd_kernel(
 }
 
 void PairwiseMul::backward() {
-    if (!input_->requires_grad())
+    auto& in_g = input_->grad();
+    if (in_g.empty())
         return;
 
-    auto& in_g = input_->grad();
     auto& out_g = grad();
     auto& in = input_->data();
 

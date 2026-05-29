@@ -52,7 +52,7 @@ int main() {
             auto [images, labels] = train_loader.next();
             model.feed(images, labels);
             model.backward();
-            optim.step(lr_sched.get_lr());
+            optim.step(lr_sched.lr());
         }
 
         sorei::print(

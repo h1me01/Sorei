@@ -13,8 +13,11 @@ Node Node::neg() const { return gb().neg(*this); }
 Node Node::pairwise_mul() const { return gb().pairwise_mul(*this); }
 Node Node::mean() const { return gb().mean(*this); }
 Node Node::clamp(float lo, float hi) const { return gb().clamp(*this, lo, hi); }
-Node Node::repeat(int count) const { return gb().repeat(*this, count); }
 Node Node::select(BucketIndex* index) const { return gb().select(*this, index); }
+Node Node::mat_mul(const Node& weight) const { return gb().mat_mul(*this, weight); }
+Node Node::affine(const Node& weight, const Node& bias) const {
+    return gb().affine(*this, weight, bias);
+}
 Node Node::softmax_cross_entropy(const Node& labels) const {
     return gb().softmax_cross_entropy(*this, labels);
 }

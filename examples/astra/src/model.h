@@ -19,9 +19,7 @@ class AstraInputs {
         9, 9, 9, 9, 9, 9, 9, 9, //
         9, 9, 9, 9, 9, 9, 9, 9, //
     };
-
     static constexpr int NUM_INPUT_BUCKETS = std::ranges::max(INPUT_BUCKET) + 1;
-
     static constexpr int FEATURE_SIZE = 768;
     static constexpr float EVAL_SCALE = 400.0f;
 
@@ -30,8 +28,7 @@ class AstraInputs {
     sorei::matrix::HostPinnedMatrix<int> bucket_indices;
     sorei::matrix::HostPinnedMatrix<float> targets;
 
-    void
-    fill(const std::vector<binpack::TrainingDataEntry>& entries, const float wdl_weight = 0.5f) {
+    void fill(const std::vector<binpack::TrainingDataEntry>& entries, float wdl_weight = 0.5f) {
         const int n = static_cast<int>(entries.size());
 
         stm_indices.resize({32, n});
@@ -113,8 +110,8 @@ struct AstraModel : sorei::nn::Model {
         );
         auto factorized_ftw = repeated_factorizer + ft.weight;
 
-        auto ft_stm = b.affine(stm_in, factorized_ftw, ft.bias).clamped_relu().pairwise_mul();
-        auto ft_nstm = b.affine(nstm_in, factorized_ftw, ft.bias).clamped_relu().pairwise_mul();
+        auto ft_stm = stm_in.affine(factorized_ftw, ft.bias).clamped_relu().pairwise_mul();
+        auto ft_nstm = nstm_in.affine(factorized_ftw, ft.bias).clamped_relu().pairwise_mul();
         auto cat_ft = b.concat({ft_stm, ft_nstm});
 
         auto l1_out = l1(cat_ft).select(output_bucket);

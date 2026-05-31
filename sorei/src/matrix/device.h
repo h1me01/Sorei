@@ -3,8 +3,8 @@
 #include <cuda_runtime.h>
 
 #include "../cuda/utils.h"
+#include "../util.h"
 #include "host.h"
-#include "host_pinned.h"
 
 namespace sorei::matrix {
 

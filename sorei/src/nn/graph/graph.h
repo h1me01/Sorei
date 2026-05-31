@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "../layer/include.h"
@@ -108,7 +109,6 @@ class Graph {
     void erase(Layer* op) {
         SOREI_CHECK(op);
         auto it = std::ranges::find_if(nodes_, [op](const auto& p) { return p.get() == op; });
-
         if (it != nodes_.end()) {
             std::erase_if(named_ops_, [op](const auto& kv) { return kv.second == op; });
             nodes_.erase(it);

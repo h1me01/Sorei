@@ -52,7 +52,7 @@ Then train with an optimizer and a learning-rate scheduler:
 ```cpp
 MyModel model;
 auto optim    = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
-auto lr_sched = sorei::nn::CosineAnnealing(lr, lr * 0.1f, epochs);
+auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * 0.1f, epochs);
 
 for (int epoch = 0; epoch < epochs; ++epoch) {
     model.forward({{"x", inputs}, {"labels", targets}});

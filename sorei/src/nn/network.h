@@ -18,7 +18,6 @@ class Network {
 
         for (auto* layer : layers_)
             SOREI_CHECK(layer);
-
         SOREI_CHECK(prediction_);
         SOREI_CHECK(contains(layers_, prediction_));
         SOREI_CHECK(!loss_ || contains(layers_, loss_));
@@ -40,7 +39,6 @@ class Network {
     void forward() {
         for (auto* layer : layers_)
             layer->forward();
-
         if (loss_)
             cuda::add(running_loss_, loss_->data(), running_loss_);
     }

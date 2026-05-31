@@ -8,7 +8,7 @@ namespace sorei::cuda {
 void add(
     const matrix::DeviceMatrix<float>& a,
     const matrix::DeviceMatrix<float>& b,
-    matrix::DeviceMatrix<float>& out
+    matrix::DeviceMatrix<float>& c
 );
 
 void set(matrix::DeviceMatrix<float>& a, const float v);

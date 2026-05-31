@@ -149,7 +149,7 @@ void train(
         if (epoch % save_rate == 0 || epoch == epochs) {
             std::string e_checkpoint_dir = checkpoint_dir + "/epoch_" + std::to_string(epoch);
             std::filesystem::create_directories(e_checkpoint_dir);
-            model.save_params(e_checkpoint_dir + "/model.nn");
+            model.save_params(e_checkpoint_dir + "/model.bin");
             optim.save_state(e_checkpoint_dir + "/optimizer");
         }
 
@@ -175,7 +175,7 @@ int main() {
         0.000025f,
         WDLScheduler(1.0f, 1.0f, stage2_epochs),
         "stage2_checkpoints",
-        std::format("stage1_checkpoints/epoch_{}/model.nn", stage1_epochs)
+        std::format("stage1_checkpoints/epoch_{}/model.bin", stage1_epochs)
     );
 
     return 0;

@@ -30,7 +30,8 @@ class Node {
     Node mean() const;
     Node clamp(float lo, float hi) const;
     Node select(BucketIndex* index) const;
-    Node repeat(int count) const;
+    Node mat_mul(const Node& weight) const;
+    Node affine(const Node& weight, const Node& bias) const;
     Node softmax_cross_entropy(const Node& labels) const;
 
     Node operator+(const Node& rhs) const;

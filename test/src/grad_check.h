@@ -109,7 +109,7 @@ inline std::unique_ptr<nn::Param> make_param_filled(const Shape& shape, float va
 }
 
 inline std::unique_ptr<nn::InputInt> make_input_int(int cols, const std::vector<int>& vals) {
-    auto inp = std::make_unique<nn::Input<int>>(Shape{1, cols}, "input");
+    auto inp = std::make_unique<nn::Input<int>>("input", Shape{1, cols});
     HostMatrix<int> m({1, cols});
     for (int i = 0; i < cols; ++i)
         m(0, i) = vals[i];

@@ -21,7 +21,7 @@ TEST(Layer, Param_Shape) {
 }
 
 TEST(Layer, InputFloat_Shape) {
-    InputFloat inp({5, 3}, "input");
+    InputFloat inp("input", {5, 3});
     EXPECT_EQ(inp.data().rows(), 5);
     EXPECT_EQ(inp.data().cols(), 3);
 }
@@ -82,14 +82,14 @@ TEST(Layer, Concat_Cols_Shape) {
 
 TEST(Layer, SoftmaxCrossEntropy_Shape) {
     Param logits({10, 5});
-    Input<int> labels({1, 5}, "labels");
+    Input<int> labels("labels", {1, 5});
     SoftmaxCrossEntropy layer(&logits, &labels);
     EXPECT_EQ(layer.data().rows(), 1);
     EXPECT_EQ(layer.data().cols(), 5);
 }
 
 TEST(Layer, BucketIndex_Shape) {
-    BucketIndex bidx(3, 8, "bidx");
+    BucketIndex bidx("bidx", 3, 8);
     EXPECT_EQ(bidx.data().rows(), 1);
     EXPECT_EQ(bidx.data().cols(), 8);
 }
@@ -97,7 +97,7 @@ TEST(Layer, BucketIndex_Shape) {
 TEST(Layer, Select_Shape) {
     const int count = 4, out_dim = 8, batch = 5;
     Param inp({count * out_dim, batch});
-    BucketIndex bidx(count, batch, "bidx");
+    BucketIndex bidx("bidx", count, batch);
     Select sel(&inp, &bidx);
     EXPECT_EQ(sel.data().rows(), out_dim);
     EXPECT_EQ(sel.data().cols(), batch);
@@ -107,7 +107,7 @@ TEST(Layer, SparseAffine_Shape) {
     const int out_dim = 4, n_features = 8, max_entries = 5, batch = 6;
     Param weight({out_dim, n_features});
     Param bias({out_dim, 1});
-    Input<int> indices({max_entries, batch}, "indices");
+    Input<int> indices("indices", {max_entries, batch});
     SparseAffine layer(&indices, &weight, &bias);
     EXPECT_EQ(layer.data().rows(), out_dim);
     EXPECT_EQ(layer.data().cols(), batch);
@@ -257,7 +257,7 @@ TEST(Layer, Select_Forward) {
     inp.data().upload(src);
     inp.grad().clear();
 
-    BucketIndex bidx(2, 2, "bidx");
+    BucketIndex bidx("bidx", 2, 2);
     HostMatrix<int> idx_src({1, 2});
     idx_src(0, 0) = 0;
     idx_src(0, 1) = 1;
@@ -291,7 +291,7 @@ TEST(Layer, SparseAffine_Forward) {
     bias.data().upload(b_src);
     bias.grad().clear();
 
-    Input<int> indices({2, 2}, "indices");
+    Input<int> indices("indices", {2, 2});
     HostMatrix<int> idx_src({2, 2});
     idx_src(0, 0) = 0;
     idx_src(1, 0) = -1;

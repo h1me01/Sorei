@@ -152,7 +152,7 @@ TEST(Grad, Select) {
 
     auto input = make_param({count * output_dim, batch}, -1.0f, 1.0f);
 
-    nn::BucketIndex bidx(count, batch, "bidx");
+    nn::BucketIndex bidx("bidx", count, batch);
     {
         matrix::HostMatrix<int> bdata({1, batch});
         bdata(0, 0) = 0;
@@ -171,7 +171,7 @@ TEST(Grad, SparseAffine_ScalarPath) {
     auto weight = make_param({out_dim, n_features}, -0.5f, 0.5f);
     auto bias = make_param({out_dim, 1}, -0.1f, 0.1f);
 
-    nn::Input<int> indices({max_entries, batch}, "indices");
+    nn::Input<int> indices("indices", {max_entries, batch});
     {
         matrix::HostMatrix<int> idx({max_entries, batch});
         idx(0, 0) = 0;
@@ -199,7 +199,7 @@ TEST(Grad, SparseAffine_VecPath) {
     auto weight = make_param({out_dim, n_features}, -0.5f, 0.5f);
     auto bias = make_param({out_dim, 1}, -0.1f, 0.1f);
 
-    nn::Input<int> indices({max_entries, batch}, "indices");
+    nn::Input<int> indices("indices", {max_entries, batch});
     {
         matrix::HostMatrix<int> idx({max_entries, batch});
         idx(0, 0) = 0;

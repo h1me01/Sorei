@@ -7,7 +7,7 @@ namespace sorei::nn {
 template <typename T>
 class Input : public TypedLayer<T> {
   public:
-    Input(const matrix::Shape& shape, const std::string& name)
+    Input(const std::string& name, const matrix::Shape& shape)
         : TypedLayer<T>(name),
           shape_(shape) {}
 

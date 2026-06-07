@@ -7,7 +7,7 @@
 #include "../sf_binpack/training_data_format.h"
 #include "sorei/nn.h"
 
-class AstraInputs {
+class SparseInputs {
   public:
     static constexpr std::array<int, 64> INPUT_BUCKET = {
         0, 1, 2, 3, 3, 2, 1, 0, //
@@ -80,7 +80,7 @@ class AstraInputs {
     }
 };
 
-struct AstraModel : sorei::nn::Model {
+struct NNUEModel : sorei::nn::Model {
     static constexpr int FT_SIZE = 1536;
     static constexpr int L1_SIZE = 16;
     static constexpr int L2_SIZE = 32;
@@ -91,8 +91,8 @@ struct AstraModel : sorei::nn::Model {
 
     sorei::nn::GraphOutput build_graph(sorei::nn::GraphBuilder& b) override {
         // params
-        factorizer = b.param(AstraInputs::FEATURE_SIZE, FT_SIZE);
-        ft = b.affine_layer(AstraInputs::NUM_INPUT_BUCKETS * AstraInputs::FEATURE_SIZE, FT_SIZE);
+        factorizer = b.param(SparseInputs::FEATURE_SIZE, FT_SIZE);
+        ft = b.affine_layer(SparseInputs::NUM_INPUT_BUCKETS * SparseInputs::FEATURE_SIZE, FT_SIZE);
         l1 = b.affine_layer(FT_SIZE, L1_SIZE * OUTPUT_BUCKETS);
         l2 = b.affine_layer(2 * L1_SIZE, L2_SIZE * OUTPUT_BUCKETS);
         l3 = b.affine_layer(L2_SIZE, OUTPUT_BUCKETS);
@@ -105,7 +105,7 @@ struct AstraModel : sorei::nn::Model {
 
         // forward pass
         auto repeated_factorizer = b.concat(
-            std::vector<sorei::nn::Node>(AstraInputs::NUM_INPUT_BUCKETS, factorizer),
+            std::vector<sorei::nn::Node>(SparseInputs::NUM_INPUT_BUCKETS, factorizer),
             sorei::nn::ConcatAxis::Cols
         );
         auto factorized_ftw = repeated_factorizer + ft.weight;
@@ -130,7 +130,7 @@ struct AstraModel : sorei::nn::Model {
     float predict(const std::string& fen) {
         chess::Position pos;
         pos.set(fen);
-        AstraInputs batch;
+        SparseInputs batch;
         batch.fill({binpack::TrainingDataEntry{pos}});
 
         forward({
@@ -140,7 +140,7 @@ struct AstraModel : sorei::nn::Model {
             {"target", batch.targets},
         });
 
-        return prediction().to_host()(0) * AstraInputs::EVAL_SCALE;
+        return prediction().to_host()(0) * SparseInputs::EVAL_SCALE;
     }
 
     void quantize_params(const std::string& path = "quantized_model.nnue") {
@@ -154,7 +154,7 @@ struct AstraModel : sorei::nn::Model {
         sorei::matrix::HostMatrix<float> factorized_ftw(ftw.shape());
         for (int r = 0; r < ftw.rows(); r++)
             for (int c = 0; c < ftw.cols(); c++)
-                factorized_ftw(r, c) = ftw(r, c) + facto(r, c % AstraInputs::FEATURE_SIZE);
+                factorized_ftw(r, c) = ftw(r, c) + facto(r, c % SparseInputs::FEATURE_SIZE);
 
         write_quantized<int16_t>(f, factorized_ftw, 255);
         write_quantized<int16_t>(f, ft.bias.data().to_host(), 255);

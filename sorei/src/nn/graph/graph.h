@@ -102,7 +102,7 @@ class Graph {
         auto [it, inserted] = named_ops_.try_emplace(name, nullptr);
         if (!inserted)
             error("Graph: duplicate name '{}'", name);
-        it->second = emplace<T>(std::forward<Args>(args)..., name);
+        it->second = emplace<T>(name, std::forward<Args>(args)...);
         return static_cast<T*>(it->second);
     }
 

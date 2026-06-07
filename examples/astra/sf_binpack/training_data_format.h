@@ -6543,8 +6543,8 @@ struct CompressedTrainingDataEntryParallelReader {
                 }
 
                 if (!m_localBuffer.empty()) {
-                    auto& prng = rng::get_thread_local_rng();
-                    std::shuffle(m_localBuffer.begin(), m_localBuffer.end(), prng);
+                    //auto& prng = rng::get_thread_local_rng();
+                    //std::shuffle(m_localBuffer.begin(), m_localBuffer.end(), prng);
 
                     bool success = m_ringBuffer.put(m_localBuffer, [this]() {
                         return this->should_stop_producer();

@@ -31,7 +31,7 @@ class WDLScheduler {
         SOREI_CHECK(max_epochs > 1);
     }
 
-    float get_wdl() const {
+    float wdl() const {
         if (step_count_ >= max_epochs_)
             return end_wdl_;
         float t = static_cast<float>(step_count_) / max_epochs_;
@@ -68,7 +68,7 @@ void train(
     const int batches_per_epoch = 6104;
     const int save_rate = 100;
 
-    AstraModel model;
+    NNUEModel model;
     for (auto p : model.params())
         p->set_bounds(-0.99f, 0.99f);
 
@@ -77,7 +77,7 @@ void train(
         sorei::println("Loaded model parameters from {}", model_path);
     }
 
-    AstraInputs astra_inputs;
+    SparseInputs inputs;
 
     auto optim = sorei::nn::AdamW(model.params(), 0.9f, 0.999f, 0.01f);
     auto lr_sched = sorei::nn::CosineAnnealingLR(lr, lr * std::pow(0.3f, 3), epochs);
@@ -116,13 +116,13 @@ void train(
         model.zero_running_loss();
 
         for (int batch = 1; batch <= batches_per_epoch; batch++) {
-            astra_inputs.fill(binpack_loader.next(), wdl_sched.get_wdl());
+            inputs.fill(binpack_loader.next(), wdl_sched.wdl());
 
             model.forward(
-                {{"stm_in", astra_inputs.stm_indices},
-                 {"nstm_in", astra_inputs.nstm_indices},
-                 {"output_bucket", astra_inputs.bucket_indices},
-                 {"target", astra_inputs.targets}}
+                {{"stm_in", inputs.stm_indices},
+                 {"nstm_in", inputs.nstm_indices},
+                 {"output_bucket", inputs.bucket_indices},
+                 {"target", inputs.targets}}
             );
             model.backward();
             optim.step(lr_sched.lr());
@@ -168,14 +168,14 @@ int main() {
     const int stage1_epochs = 600;
     const int stage2_epochs = 200;
 
-    train(stage1_epochs, 0.001f, WDLScheduler(0.2f, 0.6f, stage1_epochs), "stage1_checkpoints");
+    train(stage1_epochs, 0.001f, WDLScheduler(0.2f, 0.6f, stage1_epochs), "stage1");
 
     train(
         stage2_epochs,
         0.000025f,
         WDLScheduler(1.0f, 1.0f, stage2_epochs),
-        "stage2_checkpoints",
-        std::format("stage1_checkpoints/epoch_{}/model.bin", stage1_epochs)
+        "stage2",
+        std::format("stage1/epoch_{}/model.bin", stage1_epochs)
     );
 
     return 0;

@@ -53,26 +53,14 @@ class Model {
         for (const auto& input : inputs) {
             std::visit(
                 [&](const auto* t) {
-                    auto it = layer_map_.find(input.name);
-                    if (it == layer_map_.end())
-                        error("Model: input '{}' not found", input.name);
-                    auto* layer = it->second;
-
-                    if (auto* in = dynamic_cast<InputInt*>(layer)) {
-                        in->resize(t->shape());
-                        in->data().upload(*t);
-                    } else if (auto* in = dynamic_cast<InputFloat*>(layer)) {
-                        in->resize(t->shape());
-                        in->data().upload(*t);
-                    } else if (auto* b = dynamic_cast<BucketIndex*>(layer)) {
-                        SOREI_CHECK(t->shape().rows() == 1);
-                        b->resize(t->size());
-                        b->data().upload(*t);
+                    if (auto it = input_float_.find(input.name); it != input_float_.end()) {
+                        it->second->resize(t->shape());
+                        it->second->data().upload(*t);
+                    } else if (auto it = input_int_.find(input.name); it != input_int_.end()) {
+                        it->second->resize(t->shape());
+                        it->second->data().upload(*t);
                     } else {
-                        error(
-                            "Model: '{}' must map to InputInt, InputFloat, or BucketIndex",
-                            input.name
-                        );
+                        error("Model: input '{}' not found", input.name);
                     }
                 },
                 input.matrix
@@ -123,7 +111,8 @@ class Model {
   private:
     Graph graph_;
     std::unique_ptr<Network> net_;
-    std::unordered_map<std::string, Layer*> layer_map_;
+    std::unordered_map<std::string, InputFloat*> input_float_;
+    std::unordered_map<std::string, InputInt*> input_int_;
 
     Network& network() {
         if (!net_) {
@@ -138,8 +127,12 @@ class Model {
             GraphOptimizer{graph_, pred, loss};
             auto sorted = graph_.topological_sort({pred, loss});
 
-            for (const auto& node : sorted)
-                layer_map_[node->name()] = node;
+            for (const auto& node : sorted) {
+                if (auto* input_float = dynamic_cast<InputFloat*>(node))
+                    input_float_[input_float->name()] = input_float;
+                else if (auto* input_int = dynamic_cast<InputInt*>(node))
+                    input_int_[input_int->name()] = input_int;
+            }
 
             net_ = std::make_unique<Network>(std::move(sorted), pred, loss);
         }

@@ -72,6 +72,14 @@ class Layer {
                 input.set(to);
     }
 
+    bool consume_grad_write() {
+        bool first = grad_first_write_;
+        grad_first_write_ = false;
+        return first;
+    }
+
+    void reset_grad_write() { grad_first_write_ = true; }
+
     virtual bool requires_grad() const {
         for (auto* input : inputs())
             if (input->requires_grad())
@@ -84,6 +92,7 @@ class Layer {
 
   private:
     std::string name_;
+    bool grad_first_write_ = true;
 };
 
 template <typename T>
@@ -99,13 +108,11 @@ class TypedLayer : public Layer {
 
     virtual ~TypedLayer() = default;
 
-    bool consume_grad_write() {
-        bool first = grad_first_write_;
-        grad_first_write_ = false;
-        return first;
+    void drop_buffers() {
+        data_ = matrix::DeviceMatrix<T>();
+        grad_ = matrix::DeviceMatrix<T>();
+        drop_buffers_ = true;
     }
-
-    void reset_grad_write() { grad_first_write_ = true; }
 
     matrix::DeviceMatrix<T>& data() {
         if (!drop_buffers_)
@@ -119,16 +126,8 @@ class TypedLayer : public Layer {
         return grad_;
     }
 
-  protected:
-    void drop_buffers() {
-        data_ = matrix::DeviceMatrix<T>();
-        grad_ = matrix::DeviceMatrix<T>();
-        drop_buffers_ = true;
-    }
-
   private:
     bool drop_buffers_ = false;
-    bool grad_first_write_ = true;
     matrix::DeviceMatrix<T> data_;
     matrix::DeviceMatrix<T> grad_;
 };

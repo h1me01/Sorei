@@ -46,9 +46,8 @@ class Network {
     void backward() {
         SOREI_CHECK(loss_);
 
-        for (auto* layer : layers_)
-            if (auto* tl = dynamic_cast<TypedLayer<float>*>(layer))
-                tl->reset_grad_write();
+        for (auto* l : layers_)
+            l->reset_grad_write();
 
         for (int i = (int)layers_.size() - 1; i >= 0; --i)
             layers_[i]->backward();

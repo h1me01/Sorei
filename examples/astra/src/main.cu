@@ -57,6 +57,37 @@ std::string device_info() {
     return prop.name;
 }
 
+constexpr std::array<double, 33> DESIRED_DISTRIBUTION = {
+    0.018411966423, 0.020641545085, 0.022727271053, //
+    0.024669162740, 0.026467201733, 0.028121406444, //
+    0.029631758462, 0.030998276198, 0.032220941240, //
+    0.033299772000, 0.034234750067, 0.035025893853, //
+    0.035673184944, 0.036176641754, 0.036536245870, //
+    0.036752015705, 0.036823932846, 0.036752015705, //
+    0.036536245870, 0.036176641754, 0.035673184944, //
+    0.035025893853, 0.034234750067, 0.033299772000, //
+    0.032220941240, 0.030998276198, 0.029631758462, //
+    0.028121406444, 0.026467201733, 0.024669162740, //
+    0.022727271053, 0.020641545085, 0.018411966423, //
+};
+
+bool piece_count_acceptance(const chess::Position& pos) {
+    static std::array<std::atomic<std::uint64_t>, 33> stats{};
+    static std::atomic<std::uint64_t> total_counter{0};
+
+    std::size_t pc = static_cast<std::size_t>(pos.piecesBB().count());
+
+    std::uint64_t count = stats[pc].fetch_add(1, std::memory_order_relaxed) + 1;
+    std::uint64_t total = total_counter.fetch_add(1, std::memory_order_relaxed) + 1;
+
+    double frequency = static_cast<double>(count) / static_cast<double>(total);
+    double acceptance = 0.5 * DESIRED_DISTRIBUTION[pc] / frequency;
+    double result = std::clamp(acceptance, 0.0, 1.0);
+
+    std::bernoulli_distribution dist(result);
+    return dist(rng::get_thread_local_rng());
+}
+
 void train(
     const int epochs,
     const float lr,
@@ -88,11 +119,12 @@ void train(
         {"data/data.binpack"},
         256 * 1024 * 1024,
         [](const binpack::TrainingDataEntry& e) {
-            return e.ply < 8                    //
-                   || e.isInCheck()             //
-                   || e.isCapturingMove()       //
-                   || std::abs(e.score) > 10000 //
-                   || e.move.type != chess::MoveType::Normal;
+            return e.ply < 8                                 //
+                   || e.isInCheck()                          //
+                   || e.isCapturingMove()                    //
+                   || std::abs(e.score) > 10000              //
+                   || e.move.type != chess::MoveType::Normal //
+                   || !piece_count_acceptance(e.pos);
         }
     );
 
